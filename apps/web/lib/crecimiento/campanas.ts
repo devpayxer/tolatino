@@ -188,9 +188,20 @@ export async function enviarLote(id: string): Promise<number> {
 
 /* El barrido: las campañas que ya tocan (hasta 5 por pasada, un lote cada una). */
 export async function campanasProgramadas(): Promise<number> {
-  const L = (await db().query<{ id: string }>(`select id::text from campaigns where status in ('programada', 'enviando') and scheduled_at <= now() order by scheduled_at limit 5`)).rows;
-  let n = 0;
-  for (const c of L) n += await enviarLote(c.id);
+  // 27 nov (9t9, los barridos que no son de dinero, 2ª tanda) · Cada campaña por su cuenta (lib/barrido-uno.ts): una que lanza no deja sin su lote a las de
+  // detrás; la tarea sale fallida diciendo cuál. Por tandas de 5 sin repetir en la corrida lo ya visto: una que lanza siempre, o que esa hora no manda
+  // (de noche en su ciudad: enviarLote da 0), ya no ocupa la tajada de las demás; hasta 5 lotes mandados por corrida, como antes.
+  const U = await import("../barrido-uno"), B = new U.Fallos("campanas"), TOPE = 5;
+  let n = 0, lotes = 0;
+  await U.porTandas(B, TOPE, async (vistos) => lotes >= TOPE ? [] : (await db().query<{ id: string }>(
+    `select id::text from campaigns where status in ('programada', 'enviando') and scheduled_at <= now() and not (id = any($1::bigint[])) order by scheduled_at, campaigns.id limit ${TOPE}`, [vistos])).rows,
+  (c) => `campaña ${c.id}`, async (c) => {
+    if (lotes >= TOPE) return;
+    const k = await enviarLote(c.id);
+    n += k;
+    if (k > 0) lotes++;
+  });
+  B.fin();
   return n;
 }
 

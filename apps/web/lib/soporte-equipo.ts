@@ -551,7 +551,11 @@ export async function barrerSoporte(): Promise<number> {
   if (!L.length) return 0;
   const { avisar } = await import("./avisos");
   const h = (await db().query<{ h: number }>(`select cfg_int('soporte_sla_h') as h`)).rows[0]?.h ?? 8;
-  for (const x of L) if (x.staff) await avisar(x.staff, "sop_vencido", { num: x.num, horas: h }, { href: `/admin/soporte?caso=${x.num}`, ref: ["support", x.num] });
+  // 27 nov (9t9, los barridos que no son de dinero, 2ª tanda) · Cada aviso por su cuenta (lib/barrido-uno.ts): el caso ya subió a «alta» arriba, así que un
+  // aviso que lanzaba dejaba sin el suyo, para siempre, a los casos de detrás; ahora siguen y la tarea sale fallida diciendo cuál.
+  await (await import("./barrido-uno")).cadaUno("soporte", L.filter((x) => x.staff), (x) => x.num, async (x) => {
+    await avisar(x.staff!, "sop_vencido", { num: x.num, horas: h }, { href: `/admin/soporte?caso=${x.num}`, ref: ["support", x.num] });
+  });
   return L.length;
 }
 

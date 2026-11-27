@@ -276,12 +276,17 @@ async function turnoNegocio(e: Fila, n: Numero, tel: string, texto: string, lang
 export async function barrerCanales(): Promise<{ retomadas: number; purgadas: number }> {
   const L = (await db().query<{ id: string }>(
     `select id::text from compa_inbound where (estado = 'recibido' and received_at < now() - interval '1 minute') or (estado = 'procesando' and attempts < 3 and received_at < now() - interval '5 minutes')
-      order by received_at limit 50`)).rows;
+      order by received_at, compa_inbound.id limit 50`)).rows;
+  // 27 nov (9t9, los barridos que no son de dinero, 2ª tanda) · Orden estable y cada entrada por su cuenta (lib/barrido-uno.ts): una que lanza no deja sin
+  // retomar a las de detrás ni sin la purga por retención (antes la tarea se cortaba ahí); la tarea sale fallida diciendo cuál. procesar() no lanza por
+  // el turno (hasta 3 intentos y «falló»): lo que se ve aquí es la base.
+  const U = await import("../barrido-uno"), B = new U.Fallos("compaCanales");
   let retomadas = 0;
-  for (const x of L) if ((await procesar(x.id)) !== "nada") retomadas++;
+  await B.cada(L, (x) => `entrada ${x.id}`, async (x) => { if ((await procesar(x.id)) !== "nada") retomadas++; });
   const dias = await valor("compa_canal_retener_dias");
-  const a = (await db().query(`update compa_inbound set body = null, from_enc = null, purged_at = now() where purged_at is null and received_at < now() - make_interval(days => $1::int) and estado in ('hecho', 'fallo')`, [dias])).rowCount ?? 0;
-  const b = (await db().query(`update compa_outbound set body = null, purged_at = now() where purged_at is null and created_at < now() - make_interval(days => $1::int) and status <> 'pendiente'`, [dias])).rowCount ?? 0;
+  const a = (await B.uno("purga entradas", () => db().query(`update compa_inbound set body = null, from_enc = null, purged_at = now() where purged_at is null and received_at < now() - make_interval(days => $1::int) and estado in ('hecho', 'fallo')`, [dias])))?.rowCount ?? 0;
+  const b = (await B.uno("purga salidas", () => db().query(`update compa_outbound set body = null, purged_at = now() where purged_at is null and created_at < now() - make_interval(days => $1::int) and status <> 'pendiente'`, [dias])))?.rowCount ?? 0;
+  B.fin();
   return { retomadas, purgadas: a + b };
 }
 

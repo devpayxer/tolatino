@@ -90,28 +90,34 @@ export async function simularBanco(userId: string, pi: string, aprobar: boolean)
 export async function vencerVerificaciones(): Promise<number> {
   // 26 nov (LAUNCH «el dinero dice lo que pasó» (1)) · La que ya tiene su alerta suelta:<pi> (no se soltó pasada la gracia, o Stripe ya la había cobrado) no se
   // vuelve a intentar: la tiene el equipo de dinero (y no tapa a las demás).
+  // 27 nov (9t9, los barridos que no son de dinero, 2ª tanda; este suelta dinero) · Cada verificación por su cuenta (lib/barrido-uno.ts): una que lanza (la
+  // base, o soltarSuelta) ya no deja sin soltar las retenciones de detrás; la tarea sale fallida diciendo cuál. Por tandas de 200 (la que venció antes
+  // primero) sin repetir en la corrida lo ya visto: una que lanza siempre, o que se salta (en sesión ya en el libro; Stripe aún no la soltó), no vuelve
+  // a ocupar la tajada de las demás. Cada pi una sola vez por corrida, como antes.
   const C = await import("../cobros");
-  const L = (await db().query<{ pi: string; kind: string; uid: string; biz: string | null; city: string | null; amt: number; ultimo: boolean }>(
+  const U = await import("../barrido-uno"), B = new U.Fallos("verificaciones");
+  let n = 0;
+  await U.porTandas(B, 200, async (vistos) => (await db().query<{ pi: string; kind: string; uid: string; biz: string | null; city: string | null; amt: number; ultimo: boolean }>(
     `select a.pi, a.kind, a.user_id::text as uid, a.business_id as biz, a.city_id as city, a.amount_cents as amt, a.expires_at < now() - make_interval(mins => $1::int) as ultimo from payment_actions a
       where a.expires_at < now() and (a.status = 'pendiente' or (a.status = 'verificada' and a.kind = 'en_sesion'
             and not exists (select 1 from payments p where p.stripe_payment_intent = a.pi)
             and not exists (select 1 from sponsorship_payments s where s.pi = a.pi)
             and not exists (select 1 from payment_actions b where b.base_idem = a.base_idem and b.created_at > a.created_at)))
         and not exists (select 1 from money_alerts m where m.kind = 'hold_stuck' and m.subject_id = 'suelta:' || a.pi)
-      order by a.expires_at limit 200`, [C.SUELTA_ESPERA_MIN])).rows;
-  let n = 0;
-  for (const x of L) {
+        and not (a.pi = any($2::text[]))
+      order by a.expires_at, a.pi limit 200`, [C.SUELTA_ESPERA_MIN, vistos])).rows, (x) => x.pi, async (x) => {
     // Una retención verificada que sí entró al libro después (carrera con el flujo) no se suelta: se vuelve a mirar dentro del update.
-    if (x.kind === "en_sesion" && (await db().query(`select 1 from payments where stripe_payment_intent = $1::text`, [x.pi])).rowCount) continue;
+    if (x.kind === "en_sesion" && (await db().query(`select 1 from payments where stripe_payment_intent = $1::text`, [x.pi])).rowCount) return;
     // 26 nov · Por cobros › soltarSuelta: la que no se suelta se reintenta en el próximo barrido y, pasada la gracia (SUELTA_ESPERA_MIN después de vencer),
     // alerta y se deja (antes se reintentaba sin fin en silencio); la que Stripe ya había cobrado alerta en el acto. Guardián liberarSoloPorLaRegla.
     const r = await C.soltarSuelta(x.pi, { que: { es: x.kind === "renovacion" ? "Verificación del banco de una renovación de Pro que nadie completó a tiempo" : x.kind === "renta" ? "Verificación del banco del depósito de una renta que el cliente no completó a tiempo" : "Verificación del banco que nadie completó a tiempo (la retención no entró al libro)",
       en: x.kind === "renovacion" ? "Bank verification of a Pro renewal nobody completed in time" : x.kind === "renta" ? "Bank verification of a rental deposit the customer did not complete in time" : "Bank verification nobody completed in time (the hold never entered the books)" }, monto: x.amt, persona: x.uid, negocio: x.biz, ciudad: x.city, luego: "deja", ultimo: x.ultimo });
-    if (r.e !== "liberada") continue;
+    if (r.e !== "liberada") return;
     const u = await db().query(`update payment_actions set status = 'vencida' where pi = $1::text and status in ('pendiente', 'verificada') and expires_at < now()`, [x.pi]);
     n += u.rowCount ?? 0;
     // 27 nov (LAUNCH 9q) · La renta que la esperaba aplica su fallo de siempre (falloRecoger: cambia la tarjeta), una vez (quien venció la verificación).
     if (u.rowCount && x.kind === "renta") await sigueRenta(x.pi);
-  }
+  });
+  B.fin();
   return n;
 }

@@ -88,6 +88,15 @@ async function sinVariantes(filas: string[]) {
   await db().query(`update media set var_widths = '{}', var_bytes = '{}', var_at = now() where id = any($1::uuid[]) and var_at is null`, [filas]);
 }
 
+/* 27 nov (9t9, 2ª tanda) · El archivo, o null si el almacén dice que no está (404: es un resultado, la foto se anota sin variantes); cualquier otro fallo
+   del almacén lanza, y en los barridos lo anota lib/barrido-uno.ts (la tarea sale fallida diciendo cuál) en vez de contarlo en silencio. */
+export async function leerSiHay(clave: string): Promise<Buffer | null> {
+  try { return await leerObjeto(clave); } catch (e) {
+    if (/^almacenamiento 404\b/.test(String((e as Error)?.message ?? e))) return null;
+    throw e;
+  }
+}
+
 /* El barrido (cada minuto, en lib/barrido.ts): una tanda de fotos públicas de NUESTRO almacén sin variantes. Las de afuera (la semilla usa
    Pexels) no se tocan. Idempotente (mismo nombre, mismo contenido) y sin pisarse con una subida: solo toma las que tienen más de 2 minutos (la
    subida genera las suyas en el mismo pedido). Una copia de otra fila (Repetir evento, foto de la galería en una novedad) toma lo anotado del
@@ -95,34 +104,34 @@ async function sinVariantes(filas: string[]) {
 export async function barrerVariantes(): Promise<{ hechas: number; copiadas: number; sinMaestra: number; fallos: number }> {
   const out = { hechas: 0, copiadas: 0, sinMaestra: 0, fallos: 0 };
   if (!mediosListos()) return out;
-  const t0 = Date.now();
-  const r = await db().query<{ id: string; url: string }>(
+  // 27 nov (9t9, los barridos que no son de dinero, 2ª tanda) · Cada foto por su cuenta (lib/barrido-uno.ts): un error del almacén (no un 404) ya no se
+  // cuenta en silencio (la tarea salía bien): la tarea sale fallida diciendo cuál y las de detrás siguen. Por tandas de TANDA sin repetir en la corrida lo
+  // ya visto (una que falla siempre quedaba primera en la tajada y, con TANDA así, ninguna otra se convertía), dentro del mismo tope de tiempo.
+  const t0 = Date.now(), U = await import("./barrido-uno"), B = new U.Fallos("fotosVariantes");
+  await U.porTandas(B, TANDA, async (vistos) => (Date.now() - t0 > PRESUPUESTO_MS ? [] : (await db().query<{ id: string; url: string }>(
     `select id::text, url from media
-      where var_at is null and status = 'visible' and purged_at is null and url like '/medios/n/%.jpg' and created_at < now() - interval '2 minutes'
-      order by created_at limit ${TANDA}`);
-  for (const m of r.rows) {
-    if (Date.now() - t0 > PRESUPUESTO_MS) break;
+      where var_at is null and status = 'visible' and purged_at is null and url like '/medios/n/%.jpg' and created_at < now() - interval '2 minutes' and not (id = any($1::uuid[]))
+      order by created_at, media.id limit ${TANDA}`, [vistos])).rows), (m) => m.id, async (m) => {
+    if (Date.now() - t0 > PRESUPUESTO_MS) return;
     const clave = m.url.replace(/^\/medios\//, ""), u = MAESTRA.exec(clave);
-    if (!u) { await sinVariantes([m.id]); out.sinMaestra++; continue; }
+    if (!u) { await sinVariantes([m.id]); out.sinMaestra++; return; }
     const uuid = u[1]!;
     if (uuid !== m.id) {
       const c = await db().query(`update media c set bytes = o.bytes, var_widths = o.var_widths, var_bytes = o.var_bytes, var_at = o.var_at
                                     from media o where c.id = $1::uuid and o.id = $2::uuid and o.var_at is not null and c.var_at is null`, [m.id, uuid]);
-      if (c.rowCount) { out.copiadas++; continue; }
+      if (c.rowCount) { out.copiadas++; return; }
     }
     // El original (si existe y es otra fila) queda anotado junto con esta.
     const filas = uuid === m.id ? [m.id] : [m.id, uuid];
-    let maestra: Buffer;
-    try { maestra = await leerObjeto(clave); }
-    catch (e) {
-      if (/^almacenamiento 404\b/.test(String((e as Error)?.message ?? e))) { await sinVariantes(filas); out.sinMaestra++; } else out.fallos++;
-      continue;
-    }
+    const maestra = await leerSiHay(clave);
+    if (!maestra) { await sinVariantes(filas); out.sinMaestra++; return; }
     const x = await guardarVariantes(uuid, maestra, null, filas);
+    if (x === "fallo") throw new Error("el almacén no guardó sus variantes");
     if (x === "ok") out.hechas++;
-    else if (x === "fallo") out.fallos++;
     else { await sinVariantes(filas); out.sinMaestra++; }
-  }
+  });
+  out.fallos = B.fallidos;
+  B.fin();
   return out;
 }
 

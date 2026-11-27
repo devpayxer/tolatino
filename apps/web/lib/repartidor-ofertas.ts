@@ -143,7 +143,12 @@ export async function vencerOfertas(): Promise<number> {
     `update delivery_offers f set status = 'expired' from operations o where o.id = f.operation_id and f.status = 'open' and f.expires_at <= now()
       returning f.business_id as negocio, o.number as numero`);
   const { avisarNegocio } = await import("./avisos");
-  for (const x of r.rows) await avisarNegocio(x.negocio, "biz_oferta_vencio", { num: x.numero }, { href: `/panel/${x.negocio}/hoy?det=${detPanel(x.numero)}`, ref: ["order", x.numero] }).catch(() => undefined);
+  // 27 nov (9t9, los barridos que no son de dinero, 2ª tanda) · Cada aviso por su cuenta (lib/barrido-uno.ts), sin tragar el error: la oferta ya venció
+  // arriba, así que un aviso que no sale es un negocio que no se entera; antes se perdía en silencio, ahora la tarea sale fallida diciendo cuál (los
+  // de detrás siguen igual).
+  await (await import("./barrido-uno")).cadaUno("ofertas", r.rows, (x) => `${x.negocio}:${x.numero}`, async (x) => {
+    await avisarNegocio(x.negocio, "biz_oferta_vencio", { num: x.numero }, { href: `/panel/${x.negocio}/hoy?det=${detPanel(x.numero)}`, ref: ["order", x.numero] });
+  });
   return r.rowCount ?? 0;
 }
 

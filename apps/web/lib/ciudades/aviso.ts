@@ -27,9 +27,11 @@ export async function avisarAperturas(): Promise<number> {
       where c.status = 'on' and extract(hour from now() at time zone c.timezone) between ${AVISO_DESDE} and ${AVISO_HASTA}
         and (exists (select 1 from city_waitlist w where w.city_id = c.id and w.notified_at is null and w.removed_at is null)
           or exists (select 1 from early_access e where e.city_id = c.id and e.notified_at is null and e.removed_at is null))
-      order by c.sort limit 5`)).rows;
+      order by c.sort, c.id limit 5`)).rows;
   let n = 0;
-  for (const c of C) n += await lote(c, Math.max(50, Math.min(5000, cfg.ciudad_aviso_lote)));
+  // 27 nov (9t9, los barridos que no son de dinero, 2ª tanda) · Orden estable y cada ciudad por su cuenta (lib/barrido-uno.ts): una que lanza no deja sin su
+  // lote a las de detrás; la tarea sale fallida diciendo cuál.
+  await (await import("../barrido-uno")).cadaUno("avisoApertura", C, (c) => `ciudad ${c.id}`, async (c) => { n += await lote(c, Math.max(50, Math.min(5000, cfg.ciudad_aviso_lote))); });
   return n;
 }
 
@@ -58,16 +60,18 @@ async function lote(c: Ciu, max: number): Promise<number> {
     return { nuevos, n: W.length + E.length };
   });
   const base = BASE_URL();
-  for (const u of r.nuevos) {
+  // 27 nov (9t9, 2ª tanda) · Cada persona por su cuenta (lib/barrido-uno.ts): ya quedaron reclamadas arriba (una vez), así que un aviso que lanzaba dejaba
+  // sin el suyo, para siempre, a las de detrás; ahora siguen y la ciudad sale fallida diciendo cuántas.
+  await (await import("../barrido-uno")).cadaUno("avisoApertura", r.nuevos, (u) => u.uid, async (u) => {
     await avisar(u.uid, "ciudad_abierta", { ciudad: c.name }, { href: "/", ref: ["city", c.id] });
-    if (!u.correo) continue;
+    if (!u.correo) return;
     const es = u.lang !== "en";
     const { html, text } = marco({ es, pre: es ? `To'Latino ya abrió en ${c.name}` : `To'Latino is now open in ${c.name}`, titulo: es ? `To'Latino ya abrió en ${c.name}` : `To'Latino is now open in ${c.name}`,
       intro: es ? `Ya puedes ver los negocios, los eventos y la comunidad de ${c.name}. Te lo avisamos una sola vez, como prometimos.` : `You can now see the businesses, events and community of ${c.name}. We tell you just once, as promised.`,
       cta: { l: es ? "Abrir To'Latino" : "Open To'Latino", href: `${base}/` },
       pie: es ? "Te llega porque pediste que te avisáramos cuando abriera tu ciudad. No te vamos a escribir otra vez por esto." : "You get this because you asked us to tell you when your city opened. We will not write again about this." });
     await encolar({ userId: u.uid, city: c.id, to: u.correo, tpl: "city_open", subject: es ? `To'Latino ya abrió en ${c.name}` : `To'Latino is now open in ${c.name}`, html, text, ref: ["city", c.id], idem: `ciudad:${c.id}:${u.uid}` }).catch(() => null);
-  }
+  });
   return r.n;
 }
 

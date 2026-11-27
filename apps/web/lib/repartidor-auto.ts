@@ -28,10 +28,15 @@ export async function asignarSolos(solo: { negocio: string; numero: string } | n
         and coalesce(o.stage, '') <> 'delivered' and not (o.details ? 'rec_prog') and o.ready_at <= now() + make_interval(mins => $1::int) and o.ready_at > now() - interval '30 minutes'
       returning o.number as numero, o.business_id as biz, to_char(o.scheduled_at at time zone ci.timezone, 'FMHH12:MI AM') as hora,
                 (select d.user_id::text from delivery_drivers d where d.id = o.driver_id and d.status = 'active') as drv, b.name as negocio`, [antes])).rows;
-  for (const x of P) {
-    await avisarNegocio(x.biz, "biz_programado", { num: x.numero, hora: x.hora }, { href: `/panel/${x.biz}/hoy?det=ped:${x.numero}`, ref: ["order", x.numero] }).catch(() => undefined);
-    if (x.drv) await avisar(x.drv, "drv_programado", { num: x.numero, hora: x.hora, negocio: x.negocio }, { href: "/repartidor", ref: ["order", x.numero] }).catch(() => undefined);
-  }
+  // 27 nov (9t9, los barridos que no son de dinero, 2ª tanda) · Cada pedido por su cuenta (lib/barrido-uno.ts). El recordatorio ya quedó anotado arriba
+  // (una vez), así que un aviso que no sale es alguien que no se entera: antes se perdía en silencio; ahora la tarea sale fallida diciendo cuál y los de
+  // detrás siguen igual. La oferta sola (abajo): un pedido que lanza no deja sin repartidor a los de detrás. A cada repartidor en línea, su aviso con su
+  // .catch (como antes: la oferta ya está hecha).
+  const U = await import("./barrido-uno"), B = new U.Fallos("repartoSolo");
+  await B.cada(P, (x) => `recordatorio ${x.numero}`, async (x) => {
+    await avisarNegocio(x.biz, "biz_programado", { num: x.numero, hora: x.hora }, { href: `/panel/${x.biz}/hoy?det=ped:${x.numero}`, ref: ["order", x.numero] });
+    if (x.drv) await avisar(x.drv, "drv_programado", { num: x.numero, hora: x.hora, negocio: x.negocio }, { href: "/repartidor", ref: ["order", x.numero] });
+  });
   // 2 · La oferta sola: deliveries aceptados, sin repartidor, sin oferta abierta, que ya tocan (los programados, a rep_programado_min de estar listos).
   const L = (await db().query<{ numero: string; biz: string; n: number }>(
     `select o.number as numero, o.business_id as biz, (select count(*)::int from delivery_offers f where f.operation_id = o.id and f.created_by is null) as n
@@ -42,15 +47,16 @@ export async function asignarSolos(solo: { negocio: string; numero: string } | n
              or o.kind = 'market_order' and o.status_detail = 'listo' and o.scheduled_at <= now() + make_interval(mins => $1::int))
         and not exists (select 1 from delivery_offers f where f.operation_id = o.id and f.status = 'open' and f.expires_at > now())
         and ($2::text is null or (o.business_id = $2 and o.number = $3))
-      order by o.ready_at limit 50`, [antes, solo?.negocio ?? null, solo?.numero ?? null])).rows;
+      order by o.ready_at, o.id limit 50`, [antes, solo?.negocio ?? null, solo?.numero ?? null])).rows;
   let n = 0;
-  for (const x of L) {
-    if (x.n >= intentos) { await nadie(x.biz, x.numero, avisarNegocio); continue; }
+  await B.cada(L, (x) => `${x.biz}:${x.numero}`, async (x) => {
+    if (x.n >= intentos) { await nadie(x.biz, x.numero, avisarNegocio); return; }
     const r = await ofrecer(x.biz, x.numero, null, null);
-    if (!r.ok) { if (/en línea/.test(r.msg.es)) await nadie(x.biz, x.numero, avisarNegocio); continue; }
+    if (!r.ok) { if (/en línea/.test(r.msg.es)) await nadie(x.biz, x.numero, avisarNegocio); return; }
     n++;
     for (const a of ("avisos" in r ? r.avisos ?? [] : [])) await avisar(a.uid, "drv_oferta", a.vars, { href: "/repartidor", ref: ["order", x.numero] }).catch(() => undefined);
-  }
+  });
+  B.fin();
   return n + P.length;
 }
 

@@ -216,8 +216,14 @@ export async function barrerPush(): Promise<{ atascados: number; vencidos: numbe
         and created_at < now() - make_interval(hours => cfg_int('push_ttl_h')) - interval '5 minutes'
         and not exists (select 1 from push_outbox o where o.notification_id = notifications.id and o.status in ('pendiente', 'enviando'))
       returning id::text`)).rows;
-  for (const s of S) await (await import("../avisos")).smsRespaldo(s.id);
-  const tv = (await db().query(`update push_tokens set revoked_at = now(), revoked_reason = 'vencido'
-                                 where revoked_at is null and last_seen_at < now() - make_interval(days => cfg_int('push_inactivo_dias'))`)).rowCount ?? 0;
+  // 27 nov (9t9, los barridos que no son de dinero, 2ª tanda) · Cada SMS de respaldo por su cuenta (lib/barrido-uno.ts): el update de arriba ya los
+  // dio por «fallo», así que uno que lanzaba dejaba sin su SMS, para siempre, a los de detrás (y sin vencer los tokens); ahora siguen y la tarea sale
+  // fallida diciendo cuál.
+  const { smsRespaldo } = await import("../avisos");
+  const U = await import("../barrido-uno"), B = new U.Fallos("push");
+  await B.cada(S, (s) => `aviso ${s.id}`, (s) => smsRespaldo(s.id));
+  const tv = (await B.uno("tokens vencidos", () => db().query(`update push_tokens set revoked_at = now(), revoked_reason = 'vencido'
+                                 where revoked_at is null and last_seen_at < now() - make_interval(days => cfg_int('push_inactivo_dias'))`)))?.rowCount ?? 0;
+  B.fin();
   return { atascados: at, vencidos: V.length, reencolados, enviados, tokensVencidos: tv, respaldos: S.length };
 }

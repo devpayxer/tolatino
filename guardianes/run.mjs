@@ -6871,7 +6871,7 @@ const guardianes = {
     const v = sinComent(V), f = cuerpoFn(v, "barrerErrores");
     const ia = f.indexOf("insert into app_error_alerts"), iv = f.indexOf("avisar(u.id, \"err_vivo\"");
     if (ia < 0 || iv < 0 || iv < ia) falla(G, V, 0, "la alerta se anota (única) antes de avisar");
-    if (!/if \(!a\) continue;/.test(f)) falla(G, V, 0, "si la alerta ya estaba, no se avisa otra vez");
+    if (!/if \(!a\) return;/.test(f)) falla(G, V, 0, "si la alerta ya estaba, no se avisa otra vez");
     if (!/from app_error_groups g/.test(f) || !/g\.status <> 'silenciado'/.test(f)) falla(G, V, 0, "lee los grupos y lo silenciado no avisa");
     if (!/cfg_int|valor\("errores_pico_n"\)/.test(f)) falla(G, V, 0, "el pico sale de Configuración (errores_pico_n)");
     if (!/sinSms: true/.test(f)) falla(G, V, 0, "el aviso del equipo no va por SMS");
@@ -12528,7 +12528,8 @@ const guardianes = {
     // (5) El barrido y su índice.
     if (!/\["fotosVariantes", async \(\) => \(await import\("\.\/fotos-variantes"\)\)\.barrerVariantes\(\)\]/.test(sinComent(BR))) falla(G, BR, 0, "el barrido central no corre barrerVariantes (las fotos de antes nunca se convierten)");
     const PRED = "where var_at is null and status = 'visible' and purged_at is null and url like '/medios/n/%.jpg'";
-    if (!v.includes(`${PRED} and created_at < now() - interval '2 minutes'\n      order by created_at limit \${TANDA}`) || !/export const TANDA = ([1-9]|[1-4]\d|50);/.test(v))
+    // 27 nov (9t9, 2ª tanda) · Por tandas sin repetir lo visto en la vuelta (lib/barrido-uno.ts porTandas; barridoUnoPorUno, lista ND).
+    if (!v.includes(`${PRED} and created_at < now() - interval '2 minutes' and not (id = any($1::uuid[]))\n      order by created_at, media.id limit \${TANDA}`) || !/export const TANDA = ([1-9]|[1-4]\d|50);/.test(v))
       falla(G, V, 0, "la tanda del barrido sale por el índice parcial de 0195 (el mismo predicado), la más vieja primero, de a 50 como mucho");
     if (!existsSync(M) || !readFileSync(M, "utf8").includes(`create index if not exists media_variantes_pendientes_idx on media (created_at)\n  ${PRED};`)) falla(G, M, 0, "falta el índice parcial de las fotos sin variantes (el barrido recorrería todas las fotos)");
     // (6) La purga de una cuenta saca también las variantes, después de la maestra.
@@ -16652,9 +16653,11 @@ const guardianes = {
       const t = existsSync(f) ? sinComent(f) : "", i = t.indexOf(v), k = t.search(/insert into media \(/);
       if (i < 0 || k < 0 || i < k) falla(G, f, 0, "F3b: la subida de una foto privada genera sus variantes (guardarVariantesEn) después de guardar la maestra y su fila");
     }
-    const BV = "try { await borrarConVariantes(m.url, m.w, m.var_widths); } catch { continue; }", BV2 = 'if (mediosListos() && m.url.startsWith("privado/")) await borrarConVariantes(m.url, m.w, m.var_widths);';
-    // 27 nov · La de la ayuda ya no traga el error de una foto (try/catch → continue): va por lib/barrido-uno.ts (barridoUnoPorUno, lista ND).
-    const PURGA = { "apps/web/lib/mensajes-purga.ts": BV, "apps/web/lib/repartidor-barrido.ts": BV, [AC]: "\n    await borrarConVariantes(m.url, m.w, m.var_widths);\n", "apps/web/lib/compa/purga.ts": BV2, "apps/web/lib/datos/retener.ts": BV2 };
+    const BV2 = 'if (mediosListos() && m.url.startsWith("privado/")) await borrarConVariantes(m.url, m.w, m.var_widths);';
+    // 27 nov · Ni la de la ayuda ni (2ª tanda) las de Mensajes y de la entrega tragan ya el error de una foto (try/catch → continue): van por
+    // lib/barrido-uno.ts (barridoUnoPorUno, lista ND).
+    const BV3 = "\n    await borrarConVariantes(m.url, m.w, m.var_widths);\n";
+    const PURGA = { "apps/web/lib/mensajes-purga.ts": BV3, "apps/web/lib/repartidor-barrido.ts": BV3, [AC]: BV3, "apps/web/lib/compa/purga.ts": BV2, "apps/web/lib/datos/retener.ts": BV2 };
     for (const [f, v] of Object.entries(PURGA)) {
       const t = existsSync(f) ? sinComent(f) : "";
       if (!t.includes(v) || /borrarObjeto\(m\.url\)/.test(t)) falla(G, f, 0, "F3b: la purga o retención de una foto privada saca también sus variantes (borrarConVariantes con m.w y m.var_widths): si no, la variante sobrevive a la foto");
@@ -17122,8 +17125,11 @@ const guardianes = {
      (B) nada queda fuera por un tope: toda selección con «limit» de esas funciones lleva su «order by»; barrerPlanes elige lo que TOCA hoy en la ciudad del plan
          (TOCA_PLAN), por tandas, y la tarea «dinero» de barrido.ts no traga el error de un negocio. Al revés: alreves9t9; con la base: pruebas/e2e/din9t9.cjs.
      27 nov · (C) La misma clase en los barridos que NO son de dinero ya convertidos (lista ND: puertaAbre, eventoPrivado, bolRecordatorios, evtAforo, llaves,
-         datosArchivosVencer, llavesVencen, respaldosVigilar, temasResenas, esperaMesas, fotosAyudaPurga) y revertirDeudas sin su bucle a mano. Al revés:
-         alreves9t9; con la base: pruebas/e2e/barr9t9b.cjs (un elemento que falla y los demás siguen, en cada uno). */
+         datosArchivosVencer, llavesVencen, respaldosVigilar, temasResenas, esperaMesas, fotosAyudaPurga) y revertirDeudas sin su bucle a mano. 2ª tanda (27 nov):
+         los de «bucle por elemento sin el ayudante» (soporte, compaRespuestasAuto, compaCanales, push, errores, beta, tiendas, reportes, datosPurga, salud,
+         despliegues, mantenimientoAviso, campanas, verificaciones, avisoApertura, vacantes, ofertas, fotosEntrega, colasTomado, fotosSinEnviar, fotosVariantes,
+         fotosRevision, fotosPrivadas, ayudaDevuelto, repartoSolo) y compaRetencion. Al revés: alreves9t9; con la base: pruebas/e2e/barr9t9b.cjs (un elemento
+         que falla y los demás siguen, en cada uno). */
   barridoUnoPorUno() {
     const G = "barridoUnoPorUno", H = "apps/web/lib/barrido-uno.ts", BA = "apps/web/lib/barrido.ts", L = (x) => `apps/web/lib/${x}.ts`;
     if (!existsSync(H)) return falla(G, H, 0, "falta lib/barrido-uno.ts (el ayudante: un elemento malo no detiene a los demás)");
@@ -17168,7 +17174,7 @@ const guardianes = {
         const antes = l.slice(0, l.lastIndexOf(".catch("));
         if (!/(avis\w*|pasarela\.\w+|despuesDeVender)\([^()]*(\([^()]*\)[^()]*)*\)$/.test(antes) || /console\.error/.test(l)) falla(G, A, 0, `${f}: un .catch que traga el error de un elemento («${l.trim().slice(0, 90)}»): deja que lo anote lib/barrido-uno.ts`);
       }
-      for (const q of c.matchAll(/`[^`]*`/g)) if (/\blimit\s+(\d+|\$\d+)/.test(q[0]) && !/\border by\b/.test(q[0])) falla(G, A, 0, `${f}: una selección con tope sin orden («${q[0].replace(/\s+/g, " ").slice(0, 90)}»): con más filas que el tope, las de fuera de la tajada no se tocarían nunca`);
+      for (const q of c.matchAll(/`[^`]*`/g)) if (/\blimit\s+(\d+|\$\d+|\$\{\w+\})/.test(q[0]) && !/\border by\b/.test(q[0])) falla(G, A, 0, `${f}: una selección con tope sin orden («${q[0].replace(/\s+/g, " ").slice(0, 90)}»): con más filas que el tope, las de fuera de la tajada no se tocarían nunca`);
     }
     const b0 = sinComent(BA);
     // 27 nov · (C) Los barridos que NO son de dinero, ya convertidos (LAUNCH «Barridos por clase: lo que quedó de 9t9» (1), primera tanda): la misma clase,
@@ -17178,10 +17184,23 @@ const guardianes = {
     const ND = [["puerta", "barrerPuertaAbre", "puertaAbre"], ["evento-privado", "vencerEvp", "eventoPrivado"], ["evt-avisos", "barrerRecordatoriosBoletos", "bolRecordatorios"],
       ["evt-avisos", "barrerAforoEvt", "evtAforo"], ["llaves/llaves", "purgarRetos", "llaves", true], ["datos/exportar", "vencerExportaciones", "datosArchivosVencer"],
       ["sistema/salud", "avisarLlavesQueVencen", "llavesVencen"], ["sistema/despliegues", "vigilarRespaldos", "respaldosVigilar"], ["temas", "rehacerTemas", "temasResenas"],
-      ["mesa-espera", "barrerEsperaMesas", "esperaMesas"], ["ayuda-cita", "purgarFotosAyuda", "fotosAyudaPurga"]];
+      ["mesa-espera", "barrerEsperaMesas", "esperaMesas"], ["ayuda-cita", "purgarFotosAyuda", "fotosAyudaPurga"],
+      // 27 nov · 2ª tanda: los de «bucle por elemento sin el ayudante» y compaRetencion. medirSalud y soltarTomados escriben en una sola sentencia (sin bucle).
+      ["soporte-equipo", "barrerSoporte", "soporte"], ["compa/respuesta-auto", "contestarPendientes", "compaRespuestasAuto"], ["compa/canales", "barrerCanales", "compaCanales"],
+      ["compa/purga", "barrerRetencion", "compaRetencion"], ["push/cola", "barrerPush", "push"], ["errores/vivo", "barrerErrores", "errores"], ["beta", "barrerBeta", "beta"],
+      ["tiendas/tuberia", "barrerTiendas", "tiendas"], ["reportes", "barrerReportes", "reportes"], ["datos/purgar", "purgarVencidas", "datosPurga"],
+      ["sistema/salud", "medirSalud", "salud", true], ["sistema/despliegues", "avisarDespliegues", "despliegues"], ["sistema/despliegues", "avisarMantenimiento", "mantenimientoAviso"],
+      ["crecimiento/campanas", "campanasProgramadas", "campanas"], ["pagos/verificacion", "vencerVerificaciones", "verificaciones"], ["ciudades/aviso", "avisarAperturas", "avisoApertura"],
+      ["alertas", "barrerVacantes", "vacantes"], ["repartidor-ofertas", "vencerOfertas", "ofertas"], ["repartidor-barrido", "purgarFotosEntrega", "fotosEntrega"],
+      ["repartidor-barrido", "soltarTomados", "colasTomado", true], ["mensajes-purga", "purgarFotosSinEnviar", "fotosSinEnviar"], ["fotos-variantes", "barrerVariantes", "fotosVariantes"],
+      ["fotos-revision", "barrerRevision", "fotosRevision"], ["fotos-privadas", "barrerPrivadas", "fotosPrivadas"], ["ayuda-cita", "cerrarDevueltosSinRespuesta", "ayudaDevuelto"],
+      ["repartidor-auto", "asignarSolos", "repartoSolo"]];
     const EXC_ND = {
       "sistema/salud.avisarLlavesQueVencen": { "for (const u of equipo) {": "un aviso a cada persona del equipo, cada uno con su .catch (no es un barrido por elemento)" },
       "sistema/despliegues.vigilarRespaldos": { "for (const u of equipo) { await avisar(": "un aviso a cada persona del equipo, cada uno con su .catch (no es un barrido por elemento)" },
+      "sistema/despliegues.avisarDespliegues": { "for (const u of equipo) {": "un aviso a cada persona del equipo, cada uno con su .catch (no es un barrido por elemento)" },
+      "errores/vivo.barrerErrores": { "for (const u of equipo) {": "un aviso a cada persona del equipo, cada uno con su .catch (no es un barrido por elemento)" },
+      "repartidor-auto.asignarSolos": { 'for (const a of ("avisos" in r ? r.avisos ?? [] : [])) await avisar(': "un aviso a cada repartidor en línea de una oferta ya hecha, cada uno con su .catch (no es un barrido por elemento)" },
     };
     for (const [a, f, tarea, sinBucle] of ND) {
       const A = L(a);
@@ -17194,7 +17213,7 @@ const guardianes = {
         if (!/\b(cadaUno|porTandas)\(|new (\(await import\("\.\.?\/barrido-uno"\)\)\.|U\.)?Fallos\(/.test(c) || !/barrido-uno/.test(c)) falla(G, A, 0, `${f} no recorre sus elementos con lib/barrido-uno.ts (cadaUno / Fallos / porTandas): un elemento malo detendría a los demás (no dinero)`);
         else if (!new RegExp(`(cadaUno|Fallos)\\("${tarea}"`).test(c)) falla(G, A, 0, `${f}: el ayudante no lleva el nombre de su tarea («${tarea}»): el resumen de los fallidos diría otra cosa que Sistema › Tareas`);
         if (/new (\(await import\("\.\.?\/barrido-uno"\)\)\.|U\.)?Fallos\(/.test(c) && !/\bB\.fin\(\);/.test(c)) falla(G, A, 0, `${f} junta sus fallos y nunca llama fin(): la tarea saldría bien con elementos fallidos (no dinero)`);
-        if (/\bporTandas\(/.test(c) && !/\(vistos\) =>[\s\S]*= any\((\$\d+::\w+\[\]|\$\{\w+\})\)[\s\S]*\[(\.\.\.\w+, )?vistos\]/.test(c)) falla(G, A, 0, `${f}: porTandas sin dejar fuera lo ya visto en la corrida (= any($n) con vistos): uno que falla siempre volvería a ocupar la tajada`);
+        if (/\bporTandas\(/.test(c) && !/\(vistos\) =>[\s\S]*= any\((\$\d+::\w+\[\]|\$\{\w+\})\)[\s\S]*\[([^\[\]\n]*, )?vistos\]/.test(c)) falla(G, A, 0, `${f}: porTandas sin dejar fuera lo ya visto en la corrida (= any($n) con vistos): uno que falla siempre volvería a ocupar la tajada`);
       }
       const exc = EXC_ND[`${a}.${f}`] ?? {};
       for (const m of c.matchAll(/^.*for \(const .*$/gm)) { const l = m[0].trim(); if (!Object.keys(exc).some((x) => l.startsWith(x))) falla(G, A, 0, `${f}: bucle por elemento a mano («${l.slice(0, 90)}»): usa lib/barrido-uno.ts o escribe su excepción con motivo (no dinero)`); }
@@ -17204,7 +17223,8 @@ const guardianes = {
         const l = m[0], antes = l.slice(0, l.lastIndexOf(".catch("));
         if (!/avis\w*\([^()]*(\([^()]*\)[^()]*)*\)$/.test(antes) || /console\.error/.test(l)) falla(G, A, 0, `${f}: un .catch que traga el error de un elemento («${l.trim().slice(0, 90)}»): deja que lo anote lib/barrido-uno.ts (no dinero)`);
       }
-      for (const q of c.matchAll(/`[^`]*`/g)) if (/\blimit\s+(\d+|\$\d+)/.test(q[0]) && !/\border by\b/.test(q[0])) falla(G, A, 0, `${f}: una selección con tope sin orden («${q[0].replace(/\s+/g, " ").slice(0, 90)}»): con más filas que el tope, las de fuera de la tajada no se tocarían nunca (no dinero)`);
+      // 2ª tanda · También el tope de una constante («limit ${TANDA}»): la tajada de los reportes de fotos (fotosRevision) no tenía orden y no se veía.
+      for (const q of c.matchAll(/`[^`]*`/g)) if (/\blimit\s+(\d+|\$\d+|\$\{\w+\})/.test(q[0]) && !/\border by\b/.test(q[0])) falla(G, A, 0, `${f}: una selección con tope sin orden («${q[0].replace(/\s+/g, " ").slice(0, 90)}»): con más filas que el tope, las de fuera de la tajada no se tocarían nunca (no dinero)`);
     }
     // Los avisos de Eventos: la tajada se llena solo con lo que aún no se mandó (el «on conflict» descarta DESPUÉS del tope).
     const ea = sinComent(L("evt-avisos"));

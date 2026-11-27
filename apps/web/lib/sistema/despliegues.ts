@@ -76,17 +76,20 @@ const admins = async () => (await db().query<{ id: string }>(`select user_id::te
 export async function avisarDespliegues(): Promise<number> {
   const r = await db().query<{ id: string; entorno: string; commit: string; result: Resultado; motivo: string }>(
     `select id::text, entorno, left(commit_sha, 8) as commit, result, reason as motivo from deploy_releases
-      where result <> 'ok' and noticed_at is null and entorno <> 'pruebas' and not is_test order by finished_at limit 20`);
+      where result <> 'ok' and noticed_at is null and entorno <> 'pruebas' and not is_test order by finished_at, deploy_releases.id limit 20`);
   if (!r.rows.length) return 0;
   const { avisar } = await import("../avisos");
   const equipo = await admins();
-  for (const d of r.rows) {
+  // 27 nov (9t9, los barridos que no son de dinero, 2ª tanda) · Orden estable y cada despliegue por su cuenta (lib/barrido-uno.ts): uno que lanza no deja sin
+  // su aviso a los de detrás; la tarea sale fallida diciendo cuál. A cada persona del equipo, su aviso con su .catch (como antes).
+  await (await import("../barrido-uno")).cadaUno("despliegues", r.rows, (d) => `despliegue ${d.id}`, async (d) => {
     const vuelta = d.result === "vuelta_atras";
-    for (const u of equipo)
+    for (const u of equipo) {
       await avisar(u.id, "despliegue_vuelta", { que: vuelta ? "volvió atrás sola" : "no salió", que_en: vuelta ? "rolled back on its own" : "did not go out",
         entorno: d.entorno, commit: d.commit, motivo: d.motivo ?? "—" }, { href: "/admin/sistema/despliegues", ref: ["despliegue", d.id] }).catch(() => undefined);
+    }
     await db().query(`update deploy_releases set noticed_at = now() where id = $1 and noticed_at is null`, [d.id]);
-  }
+  });
   return r.rows.length;
 }
 
@@ -126,9 +129,15 @@ export async function avisarMantenimiento(): Promise<number> {
   const pend = (await db().query<{ id: string; desde: Date; hasta: Date; es: string; en: string; por: string; motivo: string }>(
     `select w.id::text, w.from_at as desde, w.to_at as hasta, w.message->>'es' as es, w.message->>'en' as en, w.by_staff::text as por, w.reason as motivo from maintenance_windows w
       where w.cancelled_at is null and w.notice_at is null and w.to_at > now() and w.from_at - make_interval(hours => cfg_int('mantenimiento_aviso_h')) <= now()
-      order by w.from_at limit 5`)).rows;
-  for (const w of pend)
+      order by w.from_at, w.id limit 5`)).rows;
+  // 27 nov (9t9, los barridos que no son de dinero, 2ª tanda) · Orden estable y cada ventana por su cuenta (lib/barrido-uno.ts): una que lanza no deja sin su
+  // anuncio a las de detrás ni sin retirar los que ya pasaron; la tarea sale fallida diciendo cuál.
+  const U = await import("../barrido-uno"), B = new U.Fallos("mantenimientoAviso");
+  await B.cada(pend, (w) => `ventana ${w.id}`, async (w) => {
     n += await anunciarMantenimiento({ id: w.id, hasta: w.hasta, por: w.por, motivo: w.motivo,
       es: `${hora(w.desde, false)} – ${hora(w.hasta, false)}. ${w.es}`, en: `${hora(w.desde, true)} – ${hora(w.hasta, true)}. ${w.en}` });
-  return n + (await retirarAnunciosDeMantenimiento());
+  });
+  n += (await B.uno("retirar", () => retirarAnunciosDeMantenimiento())) ?? 0;
+  B.fin();
+  return n;
 }

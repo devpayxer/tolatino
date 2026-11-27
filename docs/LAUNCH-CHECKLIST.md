@@ -2314,6 +2314,25 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       se dejó para no pisar el trabajo de El Compa); (2) y (5) esperan al fundador; (3), (7), (8) como estaban; lo de TOCA_PLAN al empezar el día con
       1 M de planes (0,35–0,39 s × hasta 20 tandas por minuto) se puede bajar llevando el día de la ciudad a cada rama de los candidatos si hace falta. La
       parte «planes» de la carga no corrió en el CI todavía (aquí, en una base desechable aparte).
+      _hecho (27 nov, Opus, 2ª tanda):_ **(1), los de «bucle por elemento sin el ayudante» y compaRetencion**, los 26: soporte, compaRespuestasAuto,
+      compaCanales, compaRetencion, push, errores, beta, tiendas, reportes, datosPurga, despliegues, mantenimientoAviso, campanas, **verificaciones**
+      (3-D Secure: suelta dinero; por tandas de 200, cada pi una vez por corrida), avisoApertura, vacantes, ofertas, fotosEntrega, fotosSinEnviar,
+      fotosVariantes, fotosRevision, fotosPrivadas, ayudaDevuelto y repartoSolo recorren cada elemento con `lib/barrido-uno.ts` (orden estable con su tope;
+      `porTandas` sin repetir lo visto donde uno que falla sigue tocando: compaRetencion, reportes, datosPurga, campanas, verificaciones, las cinco de fotos;
+      en reportes, datosPurga y campanas con el mismo tope de mandados por corrida que antes; en las de fotos, dentro del mismo tope de tiempo). salud
+      (medirSalud) y colasTomado (soltarTomados) escriben en UNA sentencia (sin bucle). Los pasos de después del bucle (purgas, tokens, pedidos, jti, retirar
+      anuncios) corren aunque un elemento falle. Guardián `barridoUnoPorUno` (lista ND +26; el tope «limit ${CONSTANTE}» ahora también pide orden: así salió
+      la tajada sin orden de los reportes de fotos); `alreves9t9` 61/61; `pruebas/e2e/barr9t9b.cjs` 82 ✓ (antes 27; 24 casos nuevos). Sin migración (ningún orden nuevo
+      pide índice). **Cambia de conducta (salen fallidas en Sistema › Tareas diciendo cuál, donde antes se tragaba o se contaba en silencio):**
+      fotosEntrega y fotosSinEnviar (`try/catch → continue`), fotosVariantes y fotosPrivadas (contaban «fallos» y la tarea salía bien), fotosRevision
+      (`.catch(() => "nada")`), compaRespuestasAuto (el barrido llama al turno directo: contestarAuto se lo tragaba; la acción del cliente sigue igual),
+      y los avisos que ya no llevan `.catch` porque el elemento ya quedó anotado (ofertas vencidas al negocio, «Me lo devolvieron» recordatorio y cierre,
+      recordatorio de los programados del reparto). Un reporte programado con una pestaña que ya no existe sale fallido cada vuelta (antes se saltaba
+      en silencio para siempre y ocupaba la tajada). Una foto privada ilegible queda sin variantes ('{}', como las públicas) en vez de reintentarse cada
+      minuto. Las campañas de una ciudad de noche ya no ocupan la tajada de 5 (las de otras ciudades salen). **Queda:** los bucles de la misma clase
+      DENTRO de ayudantes que no son la función del barrido: `push/cola.resolver` (SMS de respaldo de lo resuelto), `crecimiento/campanas.enviarLote` (SMS
+      por persona), `tiendas/tuberia.revisarTestflight` (por build; ya traga lo de Apple y aplaza) y `fotos-privadas.moverAPrivada` (variantes tras mover);
+      `ciudades/aviso.lote` sí se convirtió (las personas ya reclamadas). (2) y (5) esperan al fundador; (3), (7), (8) como estaban.
 - [ ] **→ 9t** · **Dinero por clase: lo que queda después de 9t8 (21 nov):** lo que de verdad sigue abierto de las líneas de 9t3–9t7 (cerradas arriba).
       **Se puede construir:** (a) **devolver otra vez unos boletos** desde su alerta `refund_failed` (9t3 (3)): `ticket_refund_lines` es única por boleto
       y Transacciones › Devolver no acepta órdenes `tickets`; camino: permitir `tickets` en `app/admin/acciones-tx.ts › devolverTx` (cobro `full`,

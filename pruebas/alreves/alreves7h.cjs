@@ -51,7 +51,7 @@ const casos = [
   ['libroSoloInsercion', M, "    raise exception 'compa_inbound: el procesamiento solo avanza';", "    null;"],
   ['libroSoloInsercion', M, "  if tg_op <> 'INSERT' then raise exception 'compa_canal_consent es solo de inserción'; end if;", "  if tg_op = 'DELETE' then return old; end if;"],
   ['libroSoloInsercion', M, "  if tg_op = 'DELETE' then raise exception 'un número de El Compa no se borra: se retira'; end if;", "  if tg_op = 'DELETE' then return old; end if;"],
-  ['libroSoloInsercion', K, "  const a = (await db().query(`update compa_inbound set body = null", "  await db().query(`delete from compa_canal_consent where at < now() - interval '1 year'`);\n  const a = (await db().query(`update compa_inbound set body = null"],
+  ['libroSoloInsercion', K, "  const a = (await B.uno(\"purga entradas\", () => db().query(`update compa_inbound set body = null", "  await db().query(`delete from compa_canal_consent where at < now() - interval '1 year'`);\n  const a = (await B.uno(\"purga entradas\", () => db().query(`update compa_inbound set body = null"],
   ['libroSoloInsercion', E, "update compa_links set used_at = now(), used_result = case", "update compa_links set expires_at = now() + interval '1 day', used_at = now(), used_result = case"],
   // compaTapaSecretos (7h): la entrada y la salida tapadas
   ['compaTapaSecretos', K, 'const body = e.texto.trim() ? tapar(e.texto.slice(0, 2000)).texto : null;', 'const body = e.texto.trim() ? e.texto.slice(0, 2000) : null;'],

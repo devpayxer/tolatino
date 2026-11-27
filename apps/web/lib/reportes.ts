@@ -101,16 +101,21 @@ const TURNO = `case r.cada
     when 'semana' then date_trunc('week', (now() at time zone 'America/New_York') - interval '8 hours') + interval '8 hours'
     else date_trunc('month', (now() at time zone 'America/New_York') - interval '8 hours') + interval '8 hours' end`;
 export async function barrerReportes(): Promise<number> {
-  const L = (await dbAnalisis().query<{ id: string; tab: string; cada: Cada; uid: string; email: string | null; lang: string; cities: string[]; turno: string }>(
+  // 27 nov (9t9, los barridos que no son de dinero, 2ª tanda) · Cada reporte por su cuenta (lib/barrido-uno.ts): uno que lanza no deja sin su correo a los
+  // de detrás; la tarea sale fallida diciendo cuál. Por tandas de 50 sin repetir en la corrida lo ya visto (uno que falla siempre se queda «por mandar» y,
+  // con 50 así, ningún otro salía), hasta 50 mandados por corrida como antes (las cifras de cada uno pesan). Una pestaña que ya no existe ya no se salta
+  // en silencio para siempre: sale fallida (se pausa en Analítica › Reportes).
+  const U = await import("./barrido-uno"), B = new U.Fallos("reportes"), TOPE = 50;
+  let n = 0, hechos = 0;
+  await U.porTandas(B, TOPE, async (vistos) => hechos >= TOPE ? [] : (await dbAnalisis().query<{ id: string; tab: string; cada: Cada; uid: string; email: string | null; lang: string; cities: string[]; turno: string }>(
     `select r.id::text, r.tab, r.cada, u.id::text as uid, u.email::text as email, coalesce(u.lang, 'es') as lang, m.cities, to_char(${TURNO}, 'YYYY-MM-DD"T"HH24:MI') as turno
        from scheduled_reports r join users u on u.id = r.by_staff_id join staff_members m on m.user_id = r.by_staff_id and m.status = 'active'
       where r.status = 'activo'
         and exists (select 1 from role_permissions p where p.role = m.role and p.section = 'analit' and p.action = 'ver' and p.allowed)
-        and coalesce(r.last_sent_at, r.created_at) < (${TURNO}) at time zone 'America/New_York'
-      order by r.id limit 50`)).rows;
-  let n = 0;
-  for (const r of L) {
-    if (!esTab(r.tab)) continue;
+        and coalesce(r.last_sent_at, r.created_at) < (${TURNO}) at time zone 'America/New_York' and not (r.id = any($1::bigint[]))
+      order by r.id limit ${TOPE}`, [vistos])).rows, (r) => `reporte ${r.id}`, async (r) => {
+    if (hechos >= TOPE) return;
+    if (!esTab(r.tab)) throw new Error(`pestaña que ya no existe (${String(r.tab).slice(0, 20)})`);
     const es = r.lang !== "en", t = TABS_REPORTE[r.tab], dias = CADA[r.cada].dias;
     if (r.email) {
       const filas = await cifrasReporte(r.tab, { cities: r.cities ?? [] }, dias, es);
@@ -122,7 +127,9 @@ export async function barrerReportes(): Promise<number> {
       n++;
     }
     await db().query(`update scheduled_reports set last_sent_at = now() where id = $1::bigint`, [r.id]);
-  }
+    hechos++;
+  });
+  B.fin();
   return n;
 }
 

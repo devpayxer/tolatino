@@ -463,14 +463,19 @@ export async function cerrarDevueltosSinRespuesta(): Promise<number> {
       where o.id = h.operation_id and h.status = 'answered' and h.outside_refund = 'pending' and h.outside_reminded_at is null
         and h.outside_pending_at <= now() - make_interval(hours => (${dias}) * 12)
       returning h.user_id::text as uid, h.number as hnum, o.number as numero, (${dias})::int as dias`)).rows;
-  for (const x of rec) await avisar(x.uid, "help_devuelto_rec", { num: x.hnum, dias: String(Math.ceil(x.dias / 2)) }, { href: hrefAyuda(x.numero), ref: ["help", x.hnum] }).catch(() => undefined);
+  // 27 nov (9t9, los barridos que no son de dinero, 2ª tanda) · Cada aviso por su cuenta (lib/barrido-uno.ts), sin tragar el error: el recordatorio y el
+  // cierre ya quedaron anotados (una vez), así que un aviso que no sale es una persona que no se entera; antes se perdía en silencio, ahora la tarea sale
+  // fallida diciendo cuál (los de detrás, y el cierre de abajo, siguen igual).
+  const U = await import("./barrido-uno"), B = new U.Fallos("ayudaDevuelto");
+  await B.cada(rec, (x) => `recordatorio ${x.hnum}`, (x) => avisar(x.uid, "help_devuelto_rec", { num: x.hnum, dias: String(Math.ceil(x.dias / 2)) }, { href: hrefAyuda(x.numero), ref: ["help", x.hnum] }));
   const L = (await db().query<{ uid: string; hnum: string; numero: string; dias: number }>(
     `update help_requests h set status = 'resolved', closed_by = 'system', outside_refund = 'expired', outside_at = now(), resolved_at = now(), updated_at = now(),
             resolution = 'Se cerró sola: pasaron ' || (${dias})::text || ' días sin que dijeras si te lo devolvieron.'
        from operations o
       where o.id = h.operation_id and h.status = 'answered' and h.outside_refund = 'pending' and h.outside_pending_at <= now() - make_interval(days => ${dias})
       returning h.user_id::text as uid, h.number as hnum, o.number as numero, (${dias})::int as dias`)).rows;
-  for (const x of L) await avisar(x.uid, "help_devuelto_cierre", { num: x.hnum, dias: String(x.dias) }, { href: hrefAyuda(x.numero), ref: ["help", x.hnum] }).catch(() => undefined);
+  await B.cada(L, (x) => `cierre ${x.hnum}`, (x) => avisar(x.uid, "help_devuelto_cierre", { num: x.hnum, dias: String(x.dias) }, { href: hrefAyuda(x.numero), ref: ["help", x.hnum] }));
+  B.fin();
   return L.length;
 }
 

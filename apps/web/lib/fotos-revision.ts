@@ -311,27 +311,36 @@ export async function barrerRevision(): Promise<{ publicadas: number; rechazadas
   await db().query(`select foto2_soltar_reservas(10)`);
   if (!mediosListos()) return out;
   const R = await reglasFotos(), t0 = Date.now();
-  const F = (await db().query<{ id: string }>(
+  // 27 nov (9t9, los barridos que no son de dinero, 2ª tanda) · Cada foto por su cuenta (lib/barrido-uno.ts): una que lanza ya no se traga
+  // (antes .catch(() => "nada"): la tarea salía bien y la foto seguía primera en la tajada; con TANDA_REVISION así, ninguna otra se revisaba): las de
+  // detrás siguen, por tandas sin repetir en la corrida lo ya visto (dentro del mismo tope de tiempo), y la tarea sale fallida diciendo cuál.
+  const U = await import("./barrido-uno"), B = new U.Fallos("fotosRevision");
+  await U.porTandas(B, TANDA_REVISION, async (vistos) => (Date.now() - t0 > 25_000 ? [] : (await db().query<{ id: string }>(
     `select id::text from media where status = 'review' and rev_llave is not null and purged_at is null and (rev_siguiente is null or rev_siguiente <= now())
         and rev_intentos < $1 and ($2 or rev_motivo = 'sin_servicio')
         -- Una de destino «privado» solo vuelve a mirarse si el modelo propio no la pudo mirar (su dudosa espera a una persona).
         and (not rev_sin_c2 or rev_motivo = 'sin_servicio')
         -- De una foto oculta por reportes se revisa la fila reportada; sus copias (mismo archivo) vuelven o salen con ella.
         and (rev_capa is distinct from 'c3' or exists (select 1 from photo_reports pr where pr.media_id = media.id))
-      order by rev_siguiente nulls first limit ${TANDA_REVISION}`, [R.c2.intentos, R.c2.on])).rows;
-  for (const x of F) {
-    if (Date.now() - t0 > 25_000) break;
-    const r = await revisarRetenida(x.id, R).catch(() => "nada" as const);
+        and not (id = any($3::uuid[]))
+      order by rev_siguiente nulls first, media.id limit ${TANDA_REVISION}`, [R.c2.intentos, R.c2.on, vistos])).rows), (x) => x.id, async (x) => {
+    if (Date.now() - t0 > 25_000) return;
+    const r = await revisarRetenida(x.id, R);
     if (r === "publicada") out.publicadas++; else if (r === "rechazada") out.rechazadas++; else if (r === "retenida") out.retenidas++;
-  }
+  });
   // Capa 3 de respaldo: una foto visible con N reportes abiertos que el reporte no alcanzó a ocultar (el aviso del reporte falló, o la regla se
   // encendió después). revisarReportes vuelve a contar como siempre (cuentas viejas, un dispositivo cuenta una vez).
+  // La más reportada hace más tiempo primero (antes la tajada sin orden), por tandas sin repetir lo visto.
   if (R.c3.on) {
-    const P = (await db().query<{ id: string }>(
+    await U.porTandas(B, TANDA_REVISION, async (vistos) => (Date.now() - t0 > 40_000 ? [] : (await db().query<{ id: string }>(
       `select pr.media_id::text as id from photo_reports pr join media m on m.id = pr.media_id
-        where pr.status = 'open' and m.status = 'visible' and m.purged_at is null group by pr.media_id having count(*) >= $1 limit ${TANDA_REVISION}`, [R.c3.reportes])).rows;
-    for (const x of P) { if (Date.now() - t0 > 40_000) break; if ((await revisarReportes(x.id).catch(() => "nada")) === "oculta") out.ocultadas++; }
+        where pr.status = 'open' and m.status = 'visible' and m.purged_at is null and not (pr.media_id = any($2::uuid[]))
+        group by pr.media_id having count(*) >= $1 order by min(pr.created_at), pr.media_id limit ${TANDA_REVISION}`, [R.c3.reportes, vistos])).rows), (x) => `reportes ${x.id}`, async (x) => {
+      if (Date.now() - t0 > 40_000) return;
+      if ((await revisarReportes(x.id)) === "oculta") out.ocultadas++;
+    }, { clave: (x) => x.id });
   }
+  B.fin();
   return out;
 }
 

@@ -23,21 +23,27 @@ export type ResPurga = { cuenta: string; ok: boolean; filas: number; tablas: num
 /* Las cuentas vencidas: el pedido + 30 días (la persona o el equipo) ya pasó, sin purga completa; una que falló espera una hora. Nunca alguien
    del equipo activo (se le quita el rol antes, en Sistema › Equipo). */
 export async function purgarVencidas(max = 5): Promise<ResPurga[]> {
-  const C = (await db().query<{ id: string }>(
+  // 27 nov (9t9, los barridos que no son de dinero, 2ª tanda) · Cada cuenta por su cuenta (lib/barrido-uno.ts): una purga que lanza (su transacción se
+  // deshace y no deja purge_runs) no deja sin purgar a las de detrás; la tarea sale fallida diciendo cuál. Por tandas de `max` sin repetir en la corrida lo
+  // ya visto (la que lanza vuelve a quedar primera y, con `max` así, ninguna otra se purgaba: D5 son 30 días), hasta `max` purgadas por corrida como antes.
+  const U = await import("../barrido-uno"), B = new U.Fallos("datosPurga");
+  const out: ResPurga[] = [];
+  await U.porTandas(B, max, async (vistos) => out.length >= max ? [] : (await db().query<{ id: string }>(
     `select u.id::text from users u
       where u.delete_at is not null and u.delete_at <= now() and u.status <> 'merged'
         and not exists (select 1 from purge_runs p where p.user_id = u.id and (p.ok or p.finished_at > now() - interval '1 hour'))
         and not exists (select 1 from staff_members s where s.user_id = u.id and s.status = 'active')
-      order by u.delete_at limit $1`, [max])).rows;
-  const out: ResPurga[] = [];
-  for (const x of C) {
+        and not (u.id = any($2::uuid[]))
+      order by u.delete_at, u.id limit $1`, [max, vistos])).rows, (x) => `cuenta ${x.id}`, async (x) => {
+    if (out.length >= max) return;
     // 9l · «Tu cuenta se borró» (L1547): después de la purga la cuenta ya no tiene teléfono; el aviso va al número de ANTES como SMS a un teléfono (cifrado
     // en phone_messages, que ahora se vacía a retener_sms_dias). Una vez: solo cuando esta corrida dejó la purga completa.
     const a = (await db().query<{ tel: string | null; city: string | null; lang: string }>(`select phone as tel, home_city_id as city, coalesce(lang, 'es') as lang from users where id = $1::uuid`, [x.id])).rows[0];
     const r = await purgarCuenta(x.id);
     out.push(r);
     if (r.ok && a?.tel) await (await import("../avisos")).avisarTelefono(a.tel, "cuenta_borrada", {}, { ref: ["user", x.id], city: a.city, en: a.lang === "en" }).catch(() => undefined);
-  }
+  });
+  B.fin();
   return out;
 }
 

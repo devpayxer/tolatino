@@ -87,7 +87,7 @@ const casos = [
   [G, 'apps/web/app/api/reclamo/documento/route.ts', '  await guardarVariantesEn(clave, img);\n', '', 'F3b: la subida de una foto privada genera sus variantes'],
   [G, FP, '    if (!(await existeObjeto(llave))) {', '    if (false) {', 'F3b: guardarVariantesEn nunca lanza'],
   // Variante que sobrevive a la purga (o a la retención, o al borrado de la cuenta).
-  [G, 'apps/web/lib/mensajes-purga.ts', 'try { await borrarConVariantes(m.url, m.w, m.var_widths); } catch { continue; }', 'try { await borrarConVariantes(m.url, null, null); } catch { continue; }', 'F3b: la purga o retención de una foto privada saca también sus variantes'],
+  [G, 'apps/web/lib/mensajes-purga.ts', '    await borrarConVariantes(m.url, m.w, m.var_widths);\n', '    await borrarConVariantes(m.url, null, null);\n', 'F3b: la purga o retención de una foto privada saca también sus variantes'],
   [G, 'apps/web/lib/datos/retener.ts', 'await borrarConVariantes(m.url, m.w, m.var_widths);', 'await (await import("../medios")).borrarObjeto(m.url);', 'F3b: la purga o retención de una foto privada saca también sus variantes'],
   [G, FP, '  await borrarObjeto(llave);\n  for (const v of clavesVariantes(llave, ancho, hechos)) await borrarObjeto(v);', '  await borrarObjeto(llave);', 'F3b: borrarConVariantes saca la maestra y DESPUÉS'],
   [G, 'apps/web/lib/fotos-variantes.ts', 'const MAESTRA_PRIVADA = new RegExp(`^privado/([oamer])/(${UUID})\\\\.jpg$`);', 'const MAESTRA_PRIVADA = new RegExp(`^privado/(o)/(${UUID})\\\\.jpg$`);', 'F3b: clavesVariantes conoce las variantes de TODAS las privadas'],

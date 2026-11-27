@@ -6,7 +6,7 @@
 //   - guardarVariantes: guarda n/<uuid>.w<ancho>.webp como image/webp y anota la fila; si el almacén falla NO lanza y no anota nada (el barrido
 //     repara); si la maestra desapareció mientras tanto (la purga), saca lo que acaba de guardar; una imagen rota no guarda nada
 //   - barrerVariantes: convierte, copia lo anotado del original a una copia, marca '{}' una maestra que ya no está y deja para después un error
-//     del almacén; la consulta es la del índice parcial (0195)
+//     del almacén (la tarea sale fallida diciendo cuál; las demás siguen); la consulta es la del índice parcial (0195)
 // Guardián fotosConVariantes. La prueba de punta a punta (con almacén de verdad) es pruebas/e2e/fot9u.cjs.
 const path = require('path');
 const { cargar, RAIZ } = require('../lib/ts-servidor.cjs');
@@ -133,12 +133,15 @@ const comoMaestra = (buf) => sharp(buf).rotate().resize({ width: 1600, height: 1
     if (/^update media c set/.test(sql)) return { rows: [], rowCount: 1 };
     return { rows: [], rowCount: 1 };
   };
-  const r = await F.barrerVariantes();
-  ok(r.hechas === 1 && r.sinMaestra === 1 && r.copiadas === 1 && r.fallos === 1, `barrido: 1 convertida, 1 sin maestra, 1 copia, 1 que espera a la próxima vuelta (${JSON.stringify(r)})`);
+  // 27 nov (9t9, 2ª tanda) · El error del almacén de una foto ya no se cuenta en silencio: la tarea sale fallida diciendo cuál (lib/barrido-uno.ts) y las
+  // demás siguen igual.
+  const err = await F.barrerVariantes().then(() => '', (e) => String(e?.message ?? e));
+  ok(err === `fotosVariantes: 1 de 4 fallaron (${CAE})` && Q.some((q) => /^update media c set/.test(q.sql)),
+    `barrido: 1 convertida, 1 sin maestra, 1 copia y la del error del almacén espera a la próxima vuelta; la tarea sale fallida diciendo cuál («${err}»)`);
   ok(G.has(`n/${A}.w320.webp`) && G.has(`n/${A}.w500.webp`) && !G.has(`n/${A}.w640.webp`), 'barrido: la maestra de 500 recibe 320 y 500');
   const sel = Q.find((q) => /^select id::text, url from media/.test(q.sql)).sql.replace(/\s+/g, ' ');
-  ok(/where var_at is null and status = 'visible' and purged_at is null and url like '\/medios\/n\/%\.jpg' and created_at < now\(\) - interval '2 minutes' order by created_at limit 20/.test(sel),
-    'barrido: pide la tanda por el predicado del índice parcial (0195), las de más de 2 minutos, de a 20');
+  ok(/where var_at is null and status = 'visible' and purged_at is null and url like '\/medios\/n\/%\.jpg' and created_at < now\(\) - interval '2 minutes' and not \(id = any\(\$1::uuid\[\]\)\) order by created_at, media\.id limit 20/.test(sel),
+    'barrido: pide la tanda por el predicado del índice parcial (0195), las de más de 2 minutos, sin las ya vistas en la vuelta, de a 20');
   const marca = Q.find((q) => /var_widths = '\{\}'/.test(q.sql));
   ok(marca && eq(marca.params[0], [SIN]) && !Q.some((q) => /var_widths = '\{\}'/.test(q.sql) && q.params[0].includes(CAE)), 'barrido: la maestra que no está queda con \'{}\' (no se reintenta); el error del almacén no se marca');
 

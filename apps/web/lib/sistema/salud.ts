@@ -19,6 +19,15 @@ export const SERVICIOS: Servicio[] = ["base", "barrido", "push", "disco", "error
 const CADA_MIN = 5;
 export const AVISO_LLAVE_DIAS = 30;
 
+/* El disco (lo usado de «/»). Que no se pueda leer es una medición (la fila sale mal), no un error de la tarea. */
+async function disco(): Promise<{ service: Servicio; ok: boolean; latency_ms: number | null; value: number | null; detail: string }> {
+  try {
+    const d = await statfs("/");
+    const pct = d.blocks > 0 ? Math.round((1 - d.bavail / d.blocks) * 100) : 0;
+    return { service: "disco", ok: pct < 85, latency_ms: null, value: pct, detail: `${pct} % usado` };
+  } catch { return { service: "disco", ok: false, latency_ms: null, value: null, detail: "no se pudo leer el disco" }; }
+}
+
 /* ── La medición (barrido, cada 5 minutos; cada servicio en su fila, solo inserción) ── */
 export async function medirSalud(): Promise<number> {
   const ultima = (await db().query<{ hace: number | null }>(`select extract(epoch from now() - max(at))::float as hace from health_checks where not is_test and service <> 'vigia'`)).rows[0]?.hace;
@@ -37,15 +46,15 @@ export async function medirSalud(): Promise<number> {
   const p = (await db().query<{ n: number; vieja: number | null }>(
     `select count(*)::int as n, extract(epoch from now() - min(not_before))::int as vieja from push_outbox where status = 'pendiente' and not_before <= now()`)).rows[0];
   filas.push({ service: "push", ok: (p?.vieja ?? 0) < 600, latency_ms: null, value: p?.n ?? 0, detail: `${p?.n ?? 0} en cola · la más vieja hace ${p?.vieja ?? 0} s` });
-  try {
-    const d = await statfs("/");
-    const pct = d.blocks > 0 ? Math.round((1 - d.bavail / d.blocks) * 100) : 0;
-    filas.push({ service: "disco", ok: pct < 85, latency_ms: null, value: pct, detail: `${pct} % usado` });
-  } catch { filas.push({ service: "disco", ok: false, latency_ms: null, value: null, detail: "no se pudo leer el disco" }); }
+  filas.push(await disco());
   const e = (await db().query<{ n: number }>(`select count(*)::int as n from app_error_events where at > now() - interval '1 hour'`)).rows[0]?.n ?? 0;
   filas.push({ service: "errores", ok: e < 100, latency_ms: null, value: e, detail: `${e} en la última hora` });
-  for (const f of filas)
-    await db().query(`insert into health_checks (service, ok, latency_ms, value, detail, is_test) values ($1, $2, $3, $4, $5, false)`, [f.service, f.ok, f.latency_ms, f.value, f.detail]);
+  // 27 nov (9t9, los barridos que no son de dinero, 2ª tanda) · Las cinco filas en una sola escritura (antes una por una: si una fallaba, las de detrás no
+  // quedaban y la medición salía a medias).
+  await db().query(
+    `insert into health_checks (service, ok, latency_ms, value, detail, is_test)
+     select x.s, x.o, x.l, x.v, x.d, false from unnest($1::text[], $2::boolean[], $3::int[], $4::numeric[], $5::text[]) as x(s, o, l, v, d)`,
+    [filas.map((f) => f.service), filas.map((f) => f.ok), filas.map((f) => f.latency_ms), filas.map((f) => f.value), filas.map((f) => f.detail)]);
   await db().query(`select health_checks_purgar()`);
   return filas.length;
 }

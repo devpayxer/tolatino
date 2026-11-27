@@ -9,6 +9,8 @@
 //   un .catch o un try/catch que traga el error (evento privado, fotos de la ayuda), sin fin() (mesas; evento privado en el barrido central), el ayudante
 //   con otro nombre que su tarea, una selección con tope sin orden (recordatorios de boletos, retos de llaves, «¿ya se avisó?» de las llaves), porTandas
 //   que no deja fuera lo visto (archivos de datos), los avisos de Eventos con lo ya mandado dentro de la tajada, y barrido.ts que ya no llama al barrido.
+//   27 nov, 2ª tanda · Los de «bucle por elemento sin el ayudante» y compaRetencion (soporte, El Compa, push, errores, beta, tiendas, reportes, purga de
+//   cuentas, salud, despliegues, mantenimiento, campañas, verificaciones (3-D Secure), apertura, vacantes, ofertas, colas y las fotos): un caso cada uno.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
@@ -16,6 +18,7 @@ const H = 'apps/web/lib/barrido-uno.ts', PL = 'apps/web/lib/planes.ts', RE = 'ap
 const ME = 'apps/web/lib/mercado.ts', BA = 'apps/web/lib/barrido.ts', LQ = 'apps/web/lib/evt-liquidacion.ts', SU = 'apps/web/lib/suscripcion.ts', MG = 'packages/db/migrations/0208_barrido_lo_que_toca.sql';
 const PU = 'apps/web/lib/puerta.ts', EP = 'apps/web/lib/evento-privado.ts', EA = 'apps/web/lib/evt-avisos.ts', LL = 'apps/web/lib/llaves/llaves.ts', DX = 'apps/web/lib/datos/exportar.ts';
 const SA = 'apps/web/lib/sistema/salud.ts', TE = 'apps/web/lib/temas.ts', MS = 'apps/web/lib/mesa-espera.ts', AC = 'apps/web/lib/ayuda-cita.ts';
+const L2 = (x) => `apps/web/lib/${x}`;
 const G = 'barridoUnoPorUno';
 const casos = [
   // El ayudante
@@ -59,6 +62,36 @@ const casos = [
   [MS, 'U.Fallos("esperaMesas")', 'U.Fallos("mesas")', 'barrerEsperaMesas: el ayudante no lleva el nombre de su tarea'],
   [AC, '    await borrarConVariantes(m.url, m.w, m.var_widths);', '    try { await borrarConVariantes(m.url, m.w, m.var_widths); } catch { return; }', 'purgarFotosAyuda: un try/catch que traga el error'],
   [BA, '["temasResenas", async () => (await import("./temas")).rehacerTemas()]', '["temasResenas", async () => (await import("./temas")).temasDe("")]', 'la tarea «temasResenas» de barrido.ts ya no llama a rehacerTemas'],
+  // 27 nov · 2ª tanda: los de «bucle por elemento sin el ayudante» y compaRetencion (lista ND): el bucle a mano, el .catch o el try/catch que traga el error,
+  // sin fin(), el ayudante con otro nombre, la selección con tope sin orden (también «limit ${CONSTANTE}») y porTandas que no deja fuera lo visto.
+  [L2("soporte-equipo.ts"), "  await (await import(\"./barrido-uno\")).cadaUno(\"soporte\", L.filter((x) => x.staff), (x) => x.num, async (x) => {", "  await (async (L2: { num: string; staff: string | null }[], _i: unknown, f: (x: { num: string; staff: string | null }) => Promise<void>) => { for (const x of L2) await f(x); })(L.filter((x) => x.staff), (x) => x.num, async (x) => {", "barrerSoporte no recorre sus elementos con lib/barrido-uno.ts"],
+  [L2("compa/respuesta-auto.ts"), "(x) => turnoAuto(x.id));", "(x) => turnoAuto(x.id).catch(() => ({ que: \"nada\" })));", "contestarPendientes: un .catch que traga el error"],
+  [L2("compa/canales.ts"), "  B.fin();\n  return { retomadas, purgadas: a + b };", "  return { retomadas, purgadas: a + b };", "barrerCanales junta sus fallos y nunca llama fin()"],
+  [L2("compa/purga.ts"), "order by c.purged_at, m.id limit 50`, [vistos])", "order by c.purged_at, m.id limit 50`, [[]])", "barrerRetencion: porTandas sin dejar fuera lo ya visto"],
+  [L2("push/cola.ts"), "  await B.cada(S, (s) => `aviso ${s.id}`, (s) => smsRespaldo(s.id));", "  for (const s of S) await smsRespaldo(s.id);", "barrerPush: bucle por elemento a mano"],
+  [L2("errores/vivo.ts"), "  B.fin();\n  return { alertas, avisados, purgados };", "  return { alertas, avisados, purgados };", "barrerErrores junta sus fallos y nunca llama fin()"],
+  [L2("beta.ts"), "  await (await import(\"./barrido-uno\")).cadaUno(\"beta\", L, (x) => `tester ${x.id}`, (x) => sincronizar(x.id));", "  for (const x of L) await sincronizar(x.id);", "barrerBeta: bucle por elemento a mano"],
+  [L2("tiendas/tuberia.ts"), "order by updated_at, app_builds.id limit 5", "limit 5", "barrerTiendas: una selección con tope sin orden"],
+  [L2("reportes.ts"), " and not (r.id = any($1::bigint[]))", "", "barrerReportes: porTandas sin dejar fuera lo ya visto"],
+  [L2("datos/purgar.ts"), "    const r = await purgarCuenta(x.id);", "    const r = await purgarCuenta(x.id).catch(() => ({ cuenta: x.id, ok: false, filas: 0, tablas: 0, pendientes: 0, negocios: 0, fotos: 0 }));", "purgarVencidas: un .catch que traga el error"],
+  [L2("sistema/salud.ts"), "  filas.push(await disco());", "  try { filas.push(await disco()); } catch { filas.push({ service: \"disco\", ok: false, latency_ms: null, value: null, detail: \"?\" }); }", "medirSalud: un try/catch que traga el error"],
+  [L2("sistema/despliegues.ts"), "where id = $1 and noticed_at is null`, [d.id]);", "where id = $1 and noticed_at is null`, [d.id]).catch(() => undefined);", "avisarDespliegues: un .catch que traga el error"],
+  [L2("sistema/despliegues.ts"), "  n += (await B.uno(\"retirar\", () => retirarAnunciosDeMantenimiento())) ?? 0;\n  B.fin();\n", "  n += (await B.uno(\"retirar\", () => retirarAnunciosDeMantenimiento())) ?? 0;\n", "avisarMantenimiento junta sus fallos y nunca llama fin()"],
+  [L2("crecimiento/campanas.ts"), " and not (id = any($1::bigint[]))", "", "campanasProgramadas: porTandas sin dejar fuera lo ya visto"],
+  [L2("pagos/verificacion.ts"), "        and not (a.pi = any($2::text[]))\n", "", "vencerVerificaciones: porTandas sin dejar fuera lo ya visto"],
+  [L2("pagos/verificacion.ts"), "    if (u.rowCount && x.kind === \"renta\") await sigueRenta(x.pi);\n  });\n  B.fin();\n", "    if (u.rowCount && x.kind === \"renta\") await sigueRenta(x.pi);\n  });\n", "vencerVerificaciones junta sus fallos y nunca llama fin()"],
+  [L2("ciudades/aviso.ts"), "cadaUno(\"avisoApertura\", C,", "cadaUno(\"ciudades\", C,", "avisarAperturas: el ayudante no lleva el nombre de su tarea"],
+  [L2("alertas.ts"), "order by j.published_at, j.id, a.id limit 300", "limit 300", "barrerVacantes: una selección con tope sin orden"],
+  [L2("repartidor-ofertas.ts"), "  await (await import(\"./barrido-uno\")).cadaUno(\"ofertas\", r.rows, (x) => `${x.negocio}:${x.numero}`, async (x) => {", "  await (async (L: typeof r.rows, _i: unknown, f: (x: (typeof r.rows)[number]) => Promise<void>) => { for (const x of L) await f(x); })(r.rows, (x) => `${x.negocio}:${x.numero}`, async (x) => {", "vencerOfertas: bucle por elemento a mano"],
+  [L2("repartidor-barrido.ts"), "    await borrarConVariantes(m.url, m.w, m.var_widths);\n    await db().query(`update media set purged_at = now(), status = 'removed', removed_reason = 'retencion'", "    try { await borrarConVariantes(m.url, m.w, m.var_widths); } catch { return; }\n    await db().query(`update media set purged_at = now(), status = 'removed', removed_reason = 'retencion'", "purgarFotosEntrega: un try/catch que traga el error"],
+  [L2("repartidor-barrido.ts"), "    if (r.rows.length) await c.query(", "    for (const x of r.rows.slice(0, 1)) await c.query(", "soltarTomados ahora recorre elementos"],
+  [L2("mensajes-purga.ts"), "media.id limit 200`, [vistos])", "media.id limit 200`, [[]])", "purgarFotosSinEnviar: porTandas sin dejar fuera lo ya visto"],
+  [L2("fotos-variantes.ts"), "    const maestra = await leerSiHay(clave);", "    const maestra = await leerSiHay(clave).catch(() => null);", "barrerVariantes: un .catch que traga el error"],
+  [L2("fotos-revision.ts"), "    const r = await revisarRetenida(x.id, R);", "    const r = await revisarRetenida(x.id, R).catch(() => \"nada\" as const);", "barrerRevision: un .catch que traga el error"],
+  [L2("fotos-revision.ts"), "having count(*) >= $1 order by min(pr.created_at), pr.media_id limit", "having count(*) >= $1 limit", "barrerRevision: una selección con tope sin orden"],
+  [L2("fotos-privadas.ts"), "    out[(await moverAPrivada(f)) ? \"movidas\" : \"sinArchivo\"]++;", "    try { out[(await moverAPrivada(f)) ? \"movidas\" : \"sinArchivo\"]++; } catch { out.fallos++; }", "barrerPrivadas: un try/catch que traga el error"],
+  [L2("ayuda-cita.ts"), "  B.fin();\n  return L.length;", "  return L.length;", "cerrarDevueltosSinRespuesta junta sus fallos y nunca llama fin()"],
+  [L2("repartidor-auto.ts"), "    const r = await ofrecer(x.biz, x.numero, null, null);", "    const r = await ofrecer(x.biz, x.numero, null, null).catch(() => ({ ok: false as const, msg: { es: \"\", en: \"\" } }));", "asignarSolos: un .catch que traga el error"],
   // La base
   [MG, 'create index if not exists plan_subs_visita_idx on plan_subscriptions (next_visit_on) where status = \'active\';\n', '', 'los índices de lo que toca de los planes'],
 ];

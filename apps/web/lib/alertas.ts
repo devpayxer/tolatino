@@ -43,17 +43,19 @@ export async function barrerVacantes(): Promise<number> {
         and extract(hour from now() at time zone c.timezone) between 9 and 20
         and not exists (select 1 from notif_once o where o.key = 'vacante:' || a.id || ':' || j.id)
         and (select count(*) from notif_once o where o.key like 'vacante:' || a.id || ':%' and o.at > now() - interval '24 hours') < 3
-      order by j.published_at limit 300`)).rows;
+      order by j.published_at, j.id, a.id limit 300`)).rows;
   let n = 0;
   const hoy = new Map<string, number>();
-  for (const x of L) {
-    if ((hoy.get(x.a) ?? 0) >= 3) continue;
+  // 27 nov (9t9, los barridos que no son de dinero, 2ª tanda) · Orden estable y cada aviso por su cuenta (lib/barrido-uno.ts): uno que lanza no deja sin el
+  // suyo a los de detrás; la tarea sale fallida diciendo cuál. El aviso en sí, con su .catch (como antes: ya quedó reclamado una vez).
+  await (await import("./barrido-uno")).cadaUno("vacantes", L, (x) => `${x.a}:${x.job}`, async (x) => {
+    if ((hoy.get(x.a) ?? 0) >= 3) return;
     const r = await db().query(`insert into notif_once (key) values ($1) on conflict do nothing`, [`vacante:${x.a}:${x.job}`]);
-    if (!r.rowCount) continue;
+    if (!r.rowCount) return;
     hoy.set(x.a, (hoy.get(x.a) ?? 0) + 1);
     await avisar(x.uid, "vacante_nueva", { ciudad: x.ciudad, negocio: x.negocio, puesto: String(x.puesto ?? "").slice(0, 60) }, { href: `/n/${x.bid}/empleo/${x.job}`, ref: ["job", x.job] }).catch(() => undefined);
     await db().query(`update search_alerts set notified_at = now() where id = $1::bigint`, [x.a]);
     n++;
-  }
+  });
   return n;
 }

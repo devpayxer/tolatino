@@ -265,16 +265,22 @@ export async function revisarTestflight(lim = 10): Promise<number> {
 
 /* El barrido: TestFlight, Play interno pendiente, pedidos que terminaron y los jti vencidos. */
 export async function barrerTiendas(): Promise<{ testflight: number; play: number; pedidos: number; jti: number }> {
-  const testflight = await revisarTestflight();
+  // 27 nov (9t9, los barridos que no son de dinero, 2ª tanda) · Cada paso y cada build por su cuenta (lib/barrido-uno.ts): uno que lanza (aPlay anota el
+  // error de Google y no lanza: lo que llega aquí es la base) no deja sin subir a los de detrás ni sin cerrar los pedidos y purgar los jti (antes la
+  // tarea se cortaba ahí); la tarea sale fallida diciendo cuál. Orden estable (el que espera desde antes primero).
+  const U = await import("../barrido-uno"), B = new U.Fallos("tiendas");
+  const testflight = (await B.uno("testflight", () => revisarTestflight())) ?? 0;
   let pl = 0;
-  for (const r of (await db().query<{ id: string }>(`select id::text from app_builds where channel = 'play_interno' and status = 'subido' and bundle_key is not null and updated_at < now() - interval '2 minutes' order by updated_at limit 5`)).rows) {
+  const P = (await db().query<{ id: string }>(`select id::text from app_builds where channel = 'play_interno' and status = 'subido' and bundle_key is not null and updated_at < now() - interval '2 minutes' order by updated_at, app_builds.id limit 5`)).rows;
+  await B.cada(P, (r) => `build ${r.id}`, async (r) => {
     if ((await aPlay(r.id)) === "ok") pl++;
     else await db().query(`update app_builds set updated_at = now() where id = $1::bigint and status = 'subido'`, [r.id]);
-  }
-  const pedidos = (await db().query(`update build_requests r set status = 'terminado' where status = 'corriendo'
+  });
+  const pedidos = (await B.uno("pedidos", () => db().query(`update build_requests r set status = 'terminado' where status = 'corriendo'
       and not exists (select 1 from app_builds b where b.request_id = r.id and b.status in ('compilando', 'subido', 'procesando'))
-      and coalesce((select max(b.updated_at) from app_builds b where b.request_id = r.id), r.at) < now() - interval '30 minutes'`)).rowCount ?? 0;
-  const jti = (await db().query<{ n: number }>(`select ci_oidc_purgar() as n`)).rows[0]?.n ?? 0;
+      and coalesce((select max(b.updated_at) from app_builds b where b.request_id = r.id), r.at) < now() - interval '30 minutes'`)))?.rowCount ?? 0;
+  const jti = (await B.uno("jti", async () => (await db().query<{ n: number }>(`select ci_oidc_purgar() as n`)).rows[0]?.n ?? 0)) ?? 0;
+  B.fin();
   return { testflight, play: pl, pedidos, jti };
 }
 

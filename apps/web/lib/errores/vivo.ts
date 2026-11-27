@@ -36,24 +36,28 @@ export async function barrerErrores(lim = 10): Promise<Vivo> {
           and not exists (select 1 from app_error_alerts a where a.group_id = e.group_id and a.kind = 'pico' and a.release = coalesce(e.release, '')))
      select x.id::text, x.kind, x.release, x.n, g.title as titulo, g.app from (select * from nuevos union all select * from regresiones union all select * from picos) x(id, kind, release, n)
        join app_error_groups g on g.id = x.id
-      order by case x.kind when 'pico' then 0 when 'regresion' then 1 else 2 end, x.n desc limit $2`, [pico, lim])).rows;
+      order by case x.kind when 'pico' then 0 when 'regresion' then 1 else 2 end, x.n desc, x.id, x.release limit $2`, [pico, lim])).rows;
   let alertas = 0, avisados = 0;
+  // 27 nov (9t9, los barridos que no son de dinero, 2ª tanda) · Orden estable y cada alerta por su cuenta (lib/barrido-uno.ts): una que lanza no deja sin
+  // avisar a las de detrás ni sin la purga; la tarea sale fallida diciendo cuál. A cada persona del equipo, su aviso con su .catch (como antes).
+  const U = await import("../barrido-uno"), B = new U.Fallos("errores");
   if (C.length) {
     const equipo = (await db().query<{ id: string }>(`select user_id::text as id from staff_members where role = 'admin' and status = 'active'`)).rows;
     const { avisar } = await import("../avisos");
-    for (const x of C) {
+    await B.cada(C, (x) => `${x.id}:${x.kind}:${x.release}`, async (x) => {
       // Primero la alerta (única): si otro barrido ya la anotó, no se avisa otra vez.
       const a = (await db().query(`insert into app_error_alerts (group_id, kind, release, events_n, notified_n) values ($1::bigint, $2, $3, $4, $5) on conflict do nothing`,
         [x.id, x.kind, x.release, x.n, equipo.length])).rowCount;
-      if (!a) continue;
+      if (!a) return;
       alertas++;
       for (const u of equipo) {
         await avisar(u.id, "err_vivo", { que: QUE[x.kind], titulo: x.titulo.slice(0, 90), app: APP[x.app] ?? x.app, build: x.release || "—" },
           { href: `/admin/sistema/apps?v=salud&g=${x.id}`, ref: ["error", `${x.id}:${x.kind}:${x.release}`], sinSms: true }).catch(() => undefined);
         avisados++;
       }
-    }
+    });
   }
-  const purgados = (await db().query<{ n: number }>(`select errores_purgar(5000) as n`)).rows[0]?.n ?? 0;
+  const purgados = (await B.uno("purga", async () => (await db().query<{ n: number }>(`select errores_purgar(5000) as n`)).rows[0]?.n ?? 0)) ?? 0;
+  B.fin();
   return { alertas, avisados, purgados };
 }

@@ -45,7 +45,7 @@ const casos = [
   ['reporteConConsentimiento', SW, 'import WebKit', 'import WebKit\nlet _subir = URLSession.shared'],
   // erroresEnVivo
   ['erroresEnVivo', BA, '        ["errores", async () => (await import("./errores/vivo")).barrerErrores()],\n', ''],
-  ['erroresEnVivo', V, '      if (!a) continue;\n', ''],
+  ['erroresEnVivo', V, '      if (!a) return;\n', ''],
   ['erroresEnVivo', V, "where e.at > now() - interval '10 minutes' and g.status <> 'silenciado'", "where e.at > now() - interval '10 minutes'"],
   ['erroresEnVivo', M, '  unique (group_id, kind, release)\n', '  check (true)\n'],
   ['erroresEnVivo', M, "status = case when g.status = 'resuelto' and error_build_posterior(new.release, g.resolved_in_build) then 'nuevo' else g.status end,", "status = g.status,"],

@@ -36,8 +36,13 @@ export async function contestarAuto(hilo: string | number): Promise<void> {
 export async function contestarPendientes(): Promise<number> {
   // 9n-7 · «Si no contestas en N min»: la espera venció → le toca a El Compa (el turno no hace nada si el negocio ya contestó).
   await db().query(`update chat_threads set compa_pending_until = coalesce(compa_pending_until, now()), compa_wait_until = null where compa_wait_until is not null and compa_wait_until <= now()`);
-  const L = (await db().query<{ id: string }>(`select id::text from chat_threads where compa_pending_until is not null and compa_pending_until <= now() order by compa_pending_until limit 50`)).rows;
-  for (const x of L) await contestarAuto(x.id);
+  // 27 nov (9t9, los barridos que no son de dinero, 2ª tanda) · Orden estable (lo que espera desde antes primero) y cada hilo por su cuenta
+  // (lib/barrido-uno.ts): uno que lanza no deja sin su respuesta a los de detrás; la tarea sale fallida diciendo cuál. El turno reclama el hilo 90 s
+  // (conversacion.ts turnoAuto): uno que falla pasa al final de la fila y no vuelve a ocupar la tajada. Aquí el turno va directo (no por contestarAuto,
+  // que traga la falla para la acción del cliente): en el barrido la falla se ve en Sistema › Tareas.
+  const L = (await db().query<{ id: string }>(`select id::text from chat_threads where compa_pending_until is not null and compa_pending_until <= now() order by compa_pending_until, chat_threads.id limit 50`)).rows;
+  const { turnoAuto } = await import("./conversacion");
+  await (await import("../barrido-uno")).cadaUno("compaRespuestasAuto", L, (x) => `hilo ${x.id}`, (x) => turnoAuto(x.id));
   return L.length;
 }
 

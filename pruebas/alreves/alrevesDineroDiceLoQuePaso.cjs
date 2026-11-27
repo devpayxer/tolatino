@@ -324,7 +324,7 @@ const casos = [
   ['liberarMira', 'el último atascado se manda otra vez', CO, '    if (x.atascado) { await atascadoAgotado(x.op, x.num, x.at); return; }\n', ''],
   ['liberarMira', 'agotado sin mirar que el reclamo sea el suyo', CO, " and details->>'avisoCobroAt' = $2::text and coalesce((details->>'avisoCobroIntentos')::int, 0) >= $3::int", " and coalesce((details->>'avisoCobroIntentos')::int, 0) >= $3::int"],
   // Un barrido vuelve a reintentar en silencio: mira `ok` y sigue (verificaciones, estimados).
-  ['liberarSoloPorLaRegla', 'verificaciones: liberar y mirar ok', 'apps/web/lib/pagos/verificacion.ts', '    if (r.e !== "liberada") continue;', '    if (!(await pasarela.liberar(x.pi)).ok) continue;'],
+  ['liberarSoloPorLaRegla', 'verificaciones: liberar y mirar ok', 'apps/web/lib/pagos/verificacion.ts', '    if (r.e !== "liberada") return;', '    if (!(await pasarela.liberar(x.pi)).ok) return;'],
   ['liberarSoloPorLaRegla', 'estimados: el barrido «sigue» sin su fila de pago', 'apps/web/lib/estimados.ts', 'ciudad: p.city, pago: p.id, luego: "sigue" });', 'ciudad: p.city, luego: "sigue" });'],
   ['liberarSoloPorLaRegla', 'boletos: el barrido «deja» sin su última vuelta', 'apps/web/lib/boletos.ts', 'monto: p.amt, persona: p.uid, negocio: p.biz, ciudad: p.city, luego: "deja", ultimo: p.ultimo });', 'monto: p.amt, persona: p.uid, negocio: p.biz, ciudad: p.city, luego: "deja" });'],
   ['liberarSoloPorLaRegla', 'verificaciones: la que ya tiene su alerta se vuelve a elegir', 'apps/web/lib/pagos/verificacion.ts', "        and not exists (select 1 from money_alerts m where m.kind = 'hold_stuck' and m.subject_id = 'suelta:' || a.pi)\n", ''],

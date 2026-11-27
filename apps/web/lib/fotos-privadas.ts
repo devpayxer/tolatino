@@ -2,7 +2,7 @@ import "server-only";
 import type { PoolClient } from "pg";
 import sharp from "sharp";
 import { db } from "./db";
-import { ANCHOS, cifrasGuardadas, clavesVariantes, variantesDe } from "./fotos-variantes";
+import { ANCHOS, cifrasGuardadas, clavesVariantes, leerSiHay, variantesDe } from "./fotos-variantes";
 import { borrarObjeto, existeObjeto, guardarObjeto, leerObjeto, mediosListos } from "./medios";
 import { Fallos, porTandas } from "./barrido-uno";
 
@@ -181,28 +181,30 @@ export const TANDA_PRIVADAS = 20;
 export async function barrerPrivadas(): Promise<{ movidas: number; sinArchivo: number; variantes: number; fallos: number }> {
   const out = { movidas: 0, sinArchivo: 0, variantes: 0, fallos: 0 };
   if (!mediosListos()) return out;
-  const t0 = Date.now();
-  const V = (await db().query<{ id: string; url: string; status: string; w: number | null; var_widths: number[] | null }>(
-    `select id::text, url, status, w, var_widths from media where rev_sin_c2 and not private and purged_at is null
-      order by created_at limit ${TANDA_PRIVADAS}`)).rows;
-  for (const f of V) {
-    if (Date.now() - t0 > 20_000) break;
-    try { out[(await moverAPrivada(f)) ? "movidas" : "sinArchivo"]++; } catch { out.fallos++; }
-  }
-  const S = (await db().query<{ id: string; w: number | null }>(
+  // 27 nov (9t9, los barridos que no son de dinero, 2ª tanda) · Cada foto por su cuenta (lib/barrido-uno.ts), como barrerVariantesDeRuta: un error del
+  // almacén ya no se cuenta en silencio (la tarea salía bien): la tarea sale fallida diciendo cuál y las de detrás siguen. Por tandas sin repetir en la
+  // corrida lo ya visto (una que falla siempre quedaba primera en la tajada y, con TANDA_PRIVADAS así, ninguna otra pasaba), dentro de los mismos topes de
+  // tiempo. Una maestra ilegible queda sin variantes ('{}', como las públicas) en vez de reintentarse cada minuto para siempre.
+  const t0 = Date.now(), U = await import("./barrido-uno"), B = new U.Fallos("fotosPrivadas");
+  await U.porTandas(B, TANDA_PRIVADAS, async (vistos) => (Date.now() - t0 > 20_000 ? [] : (await db().query<{ id: string; url: string; status: string; w: number | null; var_widths: number[] | null }>(
+    `select id::text, url, status, w, var_widths from media where rev_sin_c2 and not private and purged_at is null and not (id = any($1::uuid[]))
+      order by created_at, media.id limit ${TANDA_PRIVADAS}`, [vistos])).rows), (f) => f.id, async (f) => {
+    if (Date.now() - t0 > 20_000) return;
+    out[(await moverAPrivada(f)) ? "movidas" : "sinArchivo"]++;
+  });
+  const sinVariantes = (id: string) => db().query(`update media set var_widths = '{}', var_bytes = '{}', var_at = now() where id = $1::uuid and var_at is null`, [id]);
+  await U.porTandas(B, TANDA_PRIVADAS, async (vistos) => (Date.now() - t0 > 40_000 ? [] : (await db().query<{ id: string; w: number | null }>(
     `select id::text, w from media where private and var_at is null and status = 'visible' and purged_at is null and url like '/api/medios/privada/%'
-        and created_at < now() - interval '2 minutes' order by created_at limit ${TANDA_PRIVADAS}`)).rows;
-  for (const f of S) {
-    if (Date.now() - t0 > 40_000) break;
-    let maestra: Buffer;
-    try { maestra = await leerObjeto(llavePrivada(f.id)); }
-    catch (e) {
-      if (/^almacenamiento 404\b/.test(String((e as Error)?.message ?? e))) await db().query(`update media set var_widths = '{}', var_bytes = '{}', var_at = now() where id = $1::uuid and var_at is null`, [f.id]);
-      else out.fallos++;
-      continue;
-    }
-    if ((await guardarVariantesPrivadas(f.id, maestra, f.w)) === "ok") out.variantes++; else out.fallos++;
-  }
+        and created_at < now() - interval '2 minutes' and not (id = any($1::uuid[])) order by created_at, media.id limit ${TANDA_PRIVADAS}`, [vistos])).rows), (f) => f.id, async (f) => {
+    if (Date.now() - t0 > 40_000) return;
+    const maestra = await leerSiHay(llavePrivada(f.id));
+    if (!maestra) { await sinVariantes(f.id); return; }
+    const r = await guardarVariantesPrivadas(f.id, maestra, f.w);
+    if (r === "fallo") throw new Error("el almacén no guardó sus variantes");
+    if (r === "ok") out.variantes++; else await sinVariantes(f.id);
+  });
+  out.fallos = B.fallidos;
+  B.fin();
   return out;
 }
 

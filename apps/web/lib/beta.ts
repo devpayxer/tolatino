@@ -142,8 +142,10 @@ export async function barrerBeta(lim = 20): Promise<{ revisados: number }> {
     `select id::text from beta_testers where channel = 'testflight' and (
         (sync in ('pendiente', 'error', 'sin_llave') and coalesce(sync_at, '-infinity') < now() - interval '2 minutes')
      or (status = 'invitado' and sync = 'ok' and coalesce(sync_at, '-infinity') < now() - interval '10 minutes'))
-      order by sync_at nulls first limit $1`, [lim])).rows;
-  for (const x of L) await sincronizar(x.id);
+      order by sync_at nulls first, beta_testers.id limit $1`, [lim])).rows;
+  // 27 nov (9t9, los barridos que no son de dinero, 2ª tanda) · Orden estable y cada tester por su cuenta (lib/barrido-uno.ts): uno que lanza (sincronizar
+  // anota el error de Apple y no lanza: lo que llega aquí es la base) no deja sin revisar a los de detrás; la tarea sale fallida diciendo cuál.
+  await (await import("./barrido-uno")).cadaUno("beta", L, (x) => `tester ${x.id}`, (x) => sincronizar(x.id));
   return { revisados: L.length };
 }
 
