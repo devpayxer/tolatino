@@ -21,7 +21,8 @@ const CODIGO = new Map<string, Fila>((cat.cadenas as Fila[]).map((c) => [c.id, c
 const TTL_MS = 15_000;
 /* Lo editado y vivo. Si la base no responde se sirve el código (y se vuelve a intentar a los 2 s, sin quedarse con un vacío de 15 s). La generación de
    lib/cache-aviso.ts: una lectura que salió antes de un aviso no deja lo viejo. */
-const EDITADAS = cacheConAviso({ ttlMs: TTL_MS, siFalla: () => new Map<string, Par>(),
+// juntar: tras un aviso, las lecturas de un mismo render (1 a 3) comparten UNA consulta (cachegen9t, parte C).
+const EDITADAS = cacheConAviso({ ttlMs: TTL_MS, juntar: true, siFalla: () => new Map<string, Par>(),
   cargar: async () => new Map((await db().query<{ id: string; text: Par }>(`select id, text from cms_strings where edited and status = 'vivo'`)).rows.map((x) => [x.id, x.text])) });
 const editadas = (): Promise<Map<string, Par>> => EDITADAS.leer();
 /* Para las pruebas y el Super Admin: olvidar la copia ya (y volver a leer lo editado de las pantallas, ver edicionesE2). Un aviso de la base (NOTIFY en

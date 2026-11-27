@@ -161,10 +161,25 @@ async function caso(c) {
   ok(H.consultas.filter(es).length === n0 + 1, `a TTL+1 ms (${c.ttl + 1}) vence y se vuelve a leer`);
 }
 
+/* ── C. Lecturas a la vez tras un aviso (27 nov, LAUNCH «Lecturas en paralelo de las cadenas»): N cadena() a la vez = UNA consulta ── */
+async function parteC() {
+  console.log('C. cms.ts · cadena() × 3 a la vez tras un aviso');
+  const H = arnes(); const es = (q) => /from cms_strings where edited and status = 'vivo'$/.test(q.sql.trim());
+  H.filas = (s, f) => (/from cms_strings where edited and status = 'vivo'$/.test(s.trim()) ? [{ id: 'X-Y.z', text: { es: `T${f}`, en: `T${f}` } }] : []);
+  let m; try { m = cargarApp('apps/web/lib/cms.ts', Object.fromEntries(Object.entries(comunes(H)).filter(([k]) => k !== 'apps/web/lib/cms.ts')), O); } catch (e) { ok(false, `cms.ts carga (${String(e.message).slice(0, 160)})`); return; }
+  const frio = [m.cadena('X-Y.z', 'es'), m.cadena('X-Y.z', 'en'), m.cadena('X-Y.z', 'es')]; await tic();
+  ok(H.consultas.filter(es).length === 1, `en frío, 3 lecturas a la vez: una consulta (${H.consultas.filter(es).length})`); await H.soltar(); await Promise.all(frio);
+  H.fase = 1; H.avisar(); const n0 = H.consultas.filter(es).length;
+  const tras = [m.cadena('X-Y.z', 'es'), m.cadena('X-Y.z', 'en'), m.cadena('X-Y.z', 'es')]; await tic();
+  ok(H.consultas.filter(es).length === n0 + 1, `tras el aviso, 3 lecturas a la vez: UNA consulta (${H.consultas.filter(es).length - n0}; 3 = sin juntar)`);
+  await H.soltar(); ok((await Promise.all(tras)).every((r) => r === 'T1'), 'y las tres dan el valor nuevo');
+}
+
 (async () => {
   console.log(REF ? `código de ${REF}` : 'árbol de trabajo');
   await parteA();
   for (const c of CASOS) await caso(c);
+  await parteC();
   console.log(`\n${checks - fallas}/${checks} comprobaciones`);
   if (fallas) { console.log(`✗ ${fallas} fallas`); process.exit(1); }
   console.log('✓ cachegen9t en verde');
