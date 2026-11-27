@@ -106,9 +106,13 @@ async function aplicar(ev: Ev) {
       return;
     // 9k · 3-D Secure: el banco confirmó una verificación (la persona pudo cerrar la app antes de volver): queda verificada; si era la renovación
     // de Pro, el período se completa (una sola vez por cobro).
-    case "payment_intent.amount_capturable_updated":
-      await db().query(`update payment_actions set status = 'verificada' where pi = $1::text and status = 'pendiente' and kind = 'en_sesion'`, [String(o.id)]);
+    // 27 nov (LAUNCH 9q) · También el depósito de una renta al recogerla: la renta sigue sola (una vez: solo quien la pasa a verificada; la hoja que llega
+    // después, u otro evento del mismo intento, la encuentra hecha).
+    case "payment_intent.amount_capturable_updated": {
+      const a = (await db().query<{ kind: string }>(`update payment_actions set status = 'verificada' where pi = $1::text and status = 'pendiente' and kind in ('en_sesion', 'renta') returning kind`, [String(o.id)])).rows[0];
+      if (a?.kind === "renta") await (await import("@/lib/rentas")).trasVerificacionRenta(String(o.id));
       return;
+    }
     default: return;
   }
 }

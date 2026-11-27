@@ -21,7 +21,9 @@ export type Retencion = { ok: true; pi: string; estado: "retenido" | "accion"; s
   | { ok: false; codigo: string; mensaje: { es: string; en: string } };
 /* 9k · 3-D Secure: lo que la hoja necesita para completar la verificación del banco (Stripe.js handleNextAction, o confirmCardPayment con la tarjeta
    guardada en una renovación fuera de sesión; en el sandbox, la verificación simulada). El monto es solo para mostrarlo: lo decidió el servidor. */
-export type Verificar = { pi: string; secreto: string; monto: number; pm: string | null; vence: string; renovacion: boolean };
+export type Verificar = { pi: string; secreto: string; monto: number; pm: string | null; vence: string; renovacion: boolean;
+  /* 27 nov (LAUNCH 9q) · El depósito de una renta al recogerla (fuera de sesión): la hoja vuelve a confirmar con la tarjeta guardada, como la renovación. */
+  renta?: boolean };
 /* Quién paga (para guardar la verificación pendiente a su nombre: solo esa persona la completa). Sin esto, un «requires_action» sigue como antes. */
 export type Quien = { id: string; negocio?: string | null; ciudad?: string | null };
 export type EstadoCuenta = { cargos: boolean; pagos: boolean; pide: string[]; banco: string | null };
@@ -71,21 +73,24 @@ async function accionPrevia(base: string) {
             to_char(expires_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as vence
        from payment_actions where base_idem = $1::text order by created_at desc limit 1`, [base])).rows[0] ?? null;
 }
-async function registrarAccion(x: { pi: string; base: string; idem: string; quien: Quien; kind: "en_sesion" | "renovacion"; monto: number; pm: string | null; secreto: string; minutos?: number }): Promise<Verificar> {
+/* 27 nov (LAUNCH 9q) · kind 'renta' (el depósito de una renta al recogerla, fuera de sesión) lleva su operación (op): al confirmarla la renta sigue sola y,
+   si vence, se aplica el fallo de siempre (lib/pagos/verificacion.ts). */
+async function registrarAccion(x: { pi: string; base: string; idem: string; quien: Quien; kind: "en_sesion" | "renovacion" | "renta"; monto: number; pm: string | null; secreto: string; minutos?: number; op?: string | null }): Promise<Verificar> {
   const r = (await db().query<{ vence: string }>(
-    `insert into payment_actions (pi, base_idem, idem, user_id, business_id, city_id, kind, amount_cents, pm, expires_at)
-     values ($1::text, $2::text, $3::text, $4::uuid, $5::text, $6::text, $7::text, $8::int, $9::text, now() + make_interval(mins => coalesce($10::int, cfg_int('verificacion_min'))))
+    `insert into payment_actions (pi, base_idem, idem, user_id, business_id, city_id, kind, amount_cents, pm, expires_at, operation_id)
+     values ($1::text, $2::text, $3::text, $4::uuid, $5::text, $6::text, $7::text, $8::int, $9::text, now() + make_interval(mins => coalesce($10::int, cfg_int('verificacion_min'))), $11::bigint)
      on conflict (pi) do update set pi = excluded.pi
      returning to_char(expires_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as vence`,
-    [x.pi, x.base, x.idem, x.quien.id, x.quien.negocio ?? null, x.quien.ciudad ?? null, x.kind, x.monto, x.pm && /^pm_[A-Za-z0-9_]{3,200}$/.test(x.pm) ? x.pm : null, x.minutos ?? null])).rows[0]!;
-  return { pi: x.pi, secreto: x.secreto, monto: x.monto, pm: x.pm, vence: r.vence, renovacion: x.kind === "renovacion" };
+    [x.pi, x.base, x.idem, x.quien.id, x.quien.negocio ?? null, x.quien.ciudad ?? null, x.kind, x.monto, x.pm && /^pm_[A-Za-z0-9_]{3,200}$/.test(x.pm) ? x.pm : null, x.minutos ?? null, x.op ?? null])).rows[0]!;
+  return { pi: x.pi, secreto: x.secreto, monto: x.monto, pm: x.pm, vence: r.vence, renovacion: x.kind === "renovacion", ...(x.kind === "renta" ? { renta: true } : {}) };
 }
 export { registrarAccion };
 const VERIFICAR_MSG = { es: "Tu banco pide confirmar que eres tú. Confírmalo para seguir.", en: "Your bank asks you to confirm it is you. Confirm it to continue." };
 const simId = (p: string) => `${p}_sim_${randomBytes(9).toString("hex")}`;
 
 // fuera: la persona no está en la app (renovar una retención de más de 7 días con su tarjeta guardada).
-type InRetener = { centavos: number; comision: number; destino: string; pm: string; cliente?: string | null; idem: string; meta: Record<string, string>; fuera?: boolean; usuario?: Quien };
+// verif: de qué es la verificación si el banco la pide (27 nov, LAUNCH 9q: el depósito de una renta al recogerla, con su operación); sin él, 'en_sesion'.
+type InRetener = { centavos: number; comision: number; destino: string; pm: string; cliente?: string | null; idem: string; meta: Record<string, string>; fuera?: boolean; usuario?: Quien; verif?: { kind: "renta"; op: string } };
 /* La evidencia de una disputa con los nombres de campo de Stripe (la prueba de contrato los compara con el objeto disputa
    de la especificación: stripe-mock no valida los campos dentro de «evidence»). */
 export type ArchivosEvidencia = { recibo?: string; conversacion?: string; entrega?: string; otro?: string };
@@ -120,7 +125,7 @@ export const pasarela = {
       if (x.fuera && m[2] === SIM_COBRA_Y_CALLA) return { ok: false, codigo: "red", mensaje: SIN_RESPUESTA_SIM };
       if (r) return { ok: false, codigo: r, mensaje: traducir(r) };
       if (pide) return { ok: true, pi: id, estado: "accion", secreto: secretoSim(id), marca: m[1]!, ultimos4: m[2]!, huella: h,
-        verificar: x.usuario ? await registrarAccion({ pi: id, base: x.idem, idem, quien: x.usuario, kind: "en_sesion", monto: x.centavos, pm: x.pm, secreto: secretoSim(id) }) : undefined };
+        verificar: x.usuario ? await registrarAccion({ pi: id, base: x.idem, idem, quien: x.usuario, kind: x.verif?.kind ?? "en_sesion", op: x.verif?.op, monto: x.centavos, pm: x.pm, secreto: secretoSim(id) }) : undefined };
       return { ok: true, pi: id, estado: "retenido", marca: m[1]!, ultimos4: m[2]!, huella: h };
     }
     if (modoPago() === "apagado") return { ok: false, codigo: "apagado", mensaje: { es: "El pago con tarjeta no está disponible. Paga en el local.", en: "Card payment is not available. Pay at the store." } };
@@ -133,10 +138,17 @@ export const pasarela = {
       const card = pi.payment_method?.card;
       if (pi.status === "requires_capture") return { ok: true, pi: pi.id, estado: "retenido", marca: card?.brand ?? null, ultimos4: card?.last4 ?? null, huella: card?.fingerprint ?? null };
       if (pi.status === "requires_action") return { ok: true, pi: pi.id, estado: "accion", secreto: pi.client_secret, marca: card?.brand ?? null, ultimos4: card?.last4 ?? null, huella: card?.fingerprint ?? null,
-        verificar: x.usuario ? await registrarAccion({ pi: pi.id, base: x.idem, idem, quien: x.usuario, kind: "en_sesion", monto: x.centavos, pm: x.pm, secreto: pi.client_secret }) : undefined };
+        verificar: x.usuario ? await registrarAccion({ pi: pi.id, base: x.idem, idem, quien: x.usuario, kind: x.verif?.kind ?? "en_sesion", op: x.verif?.op, monto: x.centavos, pm: x.pm, secreto: pi.client_secret }) : undefined };
       return { ok: false, codigo: pi.status, mensaje: traducir(null) };
     } catch (e) {
       const err = e instanceof ErrorStripe ? e : null;
+      // 27 nov (LAUNCH 9q) · Fuera de sesión, el banco que pide autenticar contesta «authentication_required» con el PaymentIntent (como cobrarDirecto): con
+      // quien paga, la verificación queda a su nombre y la hoja la vuelve a confirmar con la tarjeta guardada (nunca se da por un «no» del banco).
+      if (x.fuera && x.usuario && err?.codigo === "authentication_required" && err.intento?.id) {
+        const sec = err.intento.client_secret ?? "";
+        return { ok: true, pi: err.intento.id, estado: "accion", secreto: sec, marca: null, ultimos4: null, huella: null,
+          verificar: await registrarAccion({ pi: err.intento.id, base: x.idem, idem, quien: x.usuario, kind: x.verif?.kind ?? "en_sesion", op: x.verif?.op, monto: x.centavos, pm: x.pm, secreto: sec }) };
+      }
       return { ok: false, codigo: err?.rechazo ?? err?.codigo ?? "error", mensaje: err?.tipo === "red" ? traducir("processing_error") : traducir(err?.rechazo ?? err?.codigo ?? null) };
     }
   },

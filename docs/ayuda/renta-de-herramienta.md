@@ -1,7 +1,8 @@
 # Renta de herramienta · Tool rental
 
 _Pantallas: ficha › pestaña **Tienda** (`/n/{negocio}?tab=shop`), `/n/{negocio}/rentar?a={artículo}`, tu renta `/renta/{T-…}`, Panel › Hoy › «Rentas»
-y su detalle, Panel › Lo que vendes › Tu herramienta › «Renta de herramienta», Super Admin › Colas › «Daños de rentas». Versión: 21 nov 2026.
+y su detalle, Panel › Lo que vendes › Tu herramienta › «Renta de herramienta», la hoja «Tu banco pide confirmar» (`/pago/verificar?pi=…`), Super Admin › Colas ›
+«Daños de rentas» y Super Admin › Transacciones (pestaña Rentas). Versión: 27 nov 2026.
 Audiencia: vecino. Tema: pedidos._
 
 ## Qué hace
@@ -34,6 +35,7 @@ alfombras). En la pestaña **Tienda** ves el precio por día, el depósito y cu�
 | No quedan unidades | La Tienda dice «Rentadas hoy» y no deja apartar. Dos personas a la vez por la última: una se la lleva. |
 | Ya la tienes apartada o rentada | No deja apartar la misma herramienta dos veces. |
 | Tu banco no deja cobrar al recoger | No se cobra ni se retiene nada; sigue apartada. Te avisamos para que cambies la tarjeta en tu renta; al negocio le avisamos cuando lo hagas. |
+| Tu banco pide confirmar el depósito al recogerla (3-D Secure) | No se cobra nada todavía y no se te pide otra tarjeta: te llega el aviso **«Tu banco pide confirmar el depósito»** con el enlace a la hoja (también el botón **Confirmar con mi banco** en tu renta). Confírmalo con tu banco y la renta sigue sola: se retiene el depósito (ese mismo, nunca dos) y se cobra la renta; al negocio le avisamos que ya puede entregarla. Tienes el tiempo de Configuración › Dinero › «Verificación del banco · dura» (hoy 30 minutos). Mientras tanto sigue apartada, no se cancela ni vence, y el negocio ve **«Espera su banco»** con lo que te queda. Si no la confirmas a tiempo o tu banco dice que no, se suelta, no se cobra nada y pasa lo de una tarjeta que no pasa (cambia la tarjeta). Si el negocio toca «La recogió» otra vez o la abres en dos pestañas, es la misma verificación: un solo aviso, un solo depósito. |
 | Stripe no contesta al cobrar (al recoger, un día más o los días tarde) | El cobro queda en camino y se termina solo en unos minutos: la renta no cambia por eso (sigue apartada, o el día de devolver sigue igual) y no se pide otra tarjeta. Quien tocó lee «quedó en camino, no lo repitas»; si toca otra vez, termina ese mismo cobro (nunca dos). Mientras va en camino, el apartado no se cancela ni vence. Al recoger, al negocio le avisamos cuando se cobra. |
 | Tocas «Un día más» y se corta la red (no ves la respuesta) | Vuelve a tocar: si el día ya se cobró, ves «listo» y **no** se cobra otro; si quedó en camino, se termina ese mismo cobro. Cada vez que de verdad pides otro día (después de ver la respuesta), es otro día. |
 | Pasa un día y Stripe sigue sin contestar | To'Latino le pregunta a Stripe qué pasó: si el cobro salió, queda hecho (una vez); si nunca llegó, no se cobró nada, el depósito se suelta y al negocio le avisamos para que vuelva a tocar «La recogió» (o la renta apartada ya se puede cancelar). |
@@ -50,6 +52,9 @@ alfombras). En la pestaña **Tienda** ves el precio por día, el depósito y cu�
 - **¿El depósito es un cobro?** No, es una retención: el dinero no sale de tu cuenta y se libera al devolverla.
 - **¿Puedo quedármela más días?** Sí: «Un día más» en tu renta, o llama al negocio.
 - **¿Quién decide si hubo daño?** Primero tú, viendo la foto. Si no estás de acuerdo, To'Latino lo revisa con los dos.
+- **¿Por qué mi banco me pidió confirmar el depósito al recogerla?** Algunos bancos piden confirmar un cobro aunque no estés pagando en la app (3-D Secure). Ábrelo desde el aviso o desde tu renta y confírmalo; si no lo haces, no se cobra nada.
+- **(Negocio) Dice «Espera su banco»: ¿la entrego?** Todavía no. Cuando el cliente lo confirma, la renta se cobra sola y te avisamos «ya puedes entregarla». Si no lo confirma, te avisamos y queda como tarjeta que no pasó.
+- **(Equipo) ¿Dónde lo veo?** Super Admin › Transacciones › Rentas: la renta dice si el depósito espera que el cliente confirme con su banco, si lo confirmó, si venció o si su banco no lo confirmó; la línea de tiempo de la operación guarda cuándo se pidió.
 
 ## English
 
@@ -81,6 +86,7 @@ price per day, the deposit and how many are left.
 | No units left | The Store says «Rented today» and does not let you reserve. Two people at once for the last one: one of them gets it. |
 | You already have it reserved or rented | It does not let you reserve the same tool twice. |
 | Your bank does not allow the charge at pickup | Nothing is charged or held; it stays reserved. We notify you so you change the card in your rental; we notify the business when you do. |
+| Your bank asks you to confirm the deposit at pickup (3D Secure) | Nothing is charged yet and you are not asked for another card: you get the **«Your bank asks you to confirm the deposit»** notice with the link to the sheet (also the **Confirm with my bank** button in your rental). Confirm it with your bank and the rental continues on its own: the deposit is held (that same one, never two) and the rent is charged; we tell the business it can hand it over. You have the time in Settings › Money › «Bank verification · lasts» (30 minutes today). Meanwhile it stays reserved, cannot be cancelled and does not expire, and the business sees **«Awaiting their bank»** with the time you have left. If you do not confirm in time or your bank says no, it is released, nothing is charged and it works like a card that did not go through (change the card). If the business taps «Picked up» again or you open it in two tabs, it is the same verification: one notice, one deposit. |
 | Stripe does not answer when charging (at pickup, one more day or late days) | The charge is on its way and finishes by itself in a few minutes: the rental does not change because of it (it stays reserved, or the return day stays the same) and no other card is requested. Whoever tapped reads «it is on its way, do not repeat it»; tapping again finishes that same charge (never two). While it is on its way, the reservation cannot be cancelled and does not expire. At pickup, we notify the business once it is charged. |
 | You tap «One more day» and the connection drops (you do not see the answer) | Tap again: if the day was already charged, you see «done» and **no** other day is charged; if it was on its way, that same charge is finished. Each time you really ask for another day (after seeing the answer), it is another day. |
 | A day passes and Stripe still has not answered | To'Latino asks Stripe what happened: if the charge went through, it is done (once); if it never arrived, nothing was charged, the deposit is released and we notify the business to tap «Picked up» again (or the held rental can now be cancelled). |
@@ -97,3 +103,6 @@ price per day, the deposit and how many are left.
 - **Is the deposit a charge?** No, it is a hold: the money does not leave your account and is released when you return it.
 - **Can I keep it more days?** Yes: «One more day» in your rental, or call the business.
 - **Who decides whether there was damage?** First you, looking at the photo. If you disagree, To'Latino reviews it with both of you.
+- **Why did my bank ask me to confirm the deposit at pickup?** Some banks ask to confirm a charge even when you are not paying in the app (3D Secure). Open it from the notice or from your rental and confirm it; if you do not, nothing is charged.
+- **(Business) It says «Awaiting their bank»: do I hand it over?** Not yet. When the customer confirms, the rent is charged on its own and we tell you «you can hand it over now». If they do not confirm, we let you know and it works like a card that did not go through.
+- **(Team) Where do I see it?** Super Admin › Transactions › Rentals: the rental says whether the deposit is waiting for the customer to confirm with their bank, whether they confirmed it, whether it expired or whether their bank did not confirm it; the operation timeline keeps when it was requested.

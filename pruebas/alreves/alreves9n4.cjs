@@ -9,7 +9,8 @@ const R = ENT.RAIZ;
 const W = 'apps/web/', L = W + 'lib/', MIG = 'packages/db/migrations/0148_dinero2.sql';
 const CI = L + 'citas.ts', NO = L + 'noche-reservas.ts', PA = L + 'pagos/pasarela.ts', SU = L + 'suscripcion.ts', ME = L + 'mercado.ts', AY = L + 'ayuda.ts',
   AC = L + 'ayuda-cita.ts', VI = L + 'visitas.ts', RA = L + 'repartidor-auto.ts', CF = L + 'citas-flujo.ts', BA = L + 'barrido.ts',
-  FI = W + 'app/(app)/n/[id]/fiesta/Booking.tsx', VS = W + 'app/(app)/n/[id]/visita/Visita.tsx', ES = W + 'app/(app)/cita/[num]/EstimadoCliente.tsx', PN = W + 'app/panel/Panel.tsx';
+  FI = W + 'app/(app)/n/[id]/fiesta/Booking.tsx', VS = W + 'app/(app)/n/[id]/visita/Visita.tsx', ES = W + 'app/(app)/cita/[num]/EstimadoCliente.tsx', PN = W + 'app/panel/Panel.tsx',
+  RE = L + 'rentas.ts', VE = L + 'pagos/verificacion.ts', WH = W + 'app/api/stripe/webhook/route.ts';
 const casos = [
   // tresDSecureEnTodos: el depósito de la cita sin quien paga (la verificación no queda a su nombre)
   ['tresDSecureEnTodos', CI, 'usuario: { id: userId, negocio: P.x.id, ciudad: P.x.city }, ', ''],
@@ -29,6 +30,23 @@ const casos = [
   ['tresDSecureEnTodos', SU, 'if (!enSesion && pide) await', 'if (pide) await'],
   // … la verificación de «Volver a Pro» desde Free no deja Pro activo (el banco cobra y el plan sigue en Free)
   ['tresDSecureEnTodos', SU, '["past_due", "active", "trial", "canceling", "ended"].includes(s.status)', '["past_due", "active", "trial", "canceling"].includes(s.status)'],
+  // 27 nov (LAUNCH 9q) · Rentas: 3-D Secure al recogerlas. El depósito al recoger sin quien paga (la verificación no queda a nombre del cliente)
+  ['tresDSecureEnTodos', RE, ', fuera: true,\n          usuario: { id: x.uid, negocio: x.biz, ciudad: x.city }, verif: { kind: "renta", op: x.op } })', ', fuera: true })'],
+  // … el banco pide verificar y la renta vuelve a soltar el depósito y pedir otra tarjeta (sin el aviso)
+  ['tresDSecureEnTodos', RE, 'if (pv) return esperaBanco(x, a, pv.verificar, true, desdeBarrido);',
+    'if (pv) { await soltarSuelta(dep.pi, depSuelto(x, d.dep!, { es: "el banco pidió verificar fuera de sesión", en: "the bank asked to verify off-session" })); return falloRecoger(x, { es: "pide verificación", en: "needs verification" }); }'],
+  // … otro toque o el barrido vuelven a la pasarela sin leer la verificación de ESTE depósito (otro depósito, otro aviso)
+  ['tresDSecureEnTodos', RE, 'const V = await verifDeposito(`${a.idem}-dep`);', 'const V = null as Awaited<ReturnType<typeof verifDeposito>>;'],
+  // … el aviso sin el enlace a la hoja
+  ['tresDSecureEnTodos', RE, '{ href: `/pago/verificar?pi=${encodeURIComponent(v.pi)}`, ref: ["renta", x.numero] }', '{ href: `/renta/${x.numero}`, ref: ["renta", x.numero] }'],
+  // … el aviso en cada toque (sin su evento ni su candado)
+  ['tresDSecureEnTodos', RE, "      if ((await c.query(`select 1 from operation_events where operation_id = $1::bigint and kind = 'verify_requested' and note->>'pi' = $2::text`, [x.op, v.pi])).rowCount) return false;\n", ''],
+  // … confirmar la verificación no sigue la renta
+  ['tresDSecureEnTodos', VE, '    if (u.rowCount && a.kind === "renta") await sigueRenta(pi);\n', ''],
+  // … la verificación vencida no aplica el fallo de la renta (se queda apartada esperando para siempre)
+  ['tresDSecureEnTodos', VE, '    if (u.rowCount && x.kind === "renta") await sigueRenta(x.pi);\n', ''],
+  // … el webhook que confirma la verificación no sigue la renta
+  ['tresDSecureEnTodos', WH, '      if (a?.kind === "renta") await (await import("@/lib/rentas")).trasVerificacionRenta(String(o.id));\n', ''],
   // okPorMas: se manda el peso que pasa lo retenido sin pedir el OK
   ['okPorMas', ME, 'if (pide && paso !== "mas") return no(', 'if (false && pide && paso !== "mas") return no('],
   // … se marca listo sin el OK por lo que pasa

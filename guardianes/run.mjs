@@ -10642,6 +10642,24 @@ const guardianes = {
     if (!/V\.pide\(r, \(\) => \{ router\.refresh\(\); \}\)/.test(sinComent(PA))) falla(G, PA, 0, "«Volver a Pro» abre la hoja del banco en Tu plan y, al confirmar, solo vuelve a leer el plan (nunca cobra otra vez)");
     if (!/enSesion \? null : await \(await import\("\.\/avisos"\)\)\.avisarNegocio\(s\.business_id, "pro_verify"/.test(s) && !/if \(!enSesion[^\n]*avisarNegocio\(s\.business_id, "pro_verify"/.test(s)) falla(G, S, 0, "en sesión (Volver a Pro) la hoja se abre ahí: no se manda además el aviso con el enlace");
     if (!/\["past_due", "active", "trial", "canceling", "ended"\]\.includes\(s\.status\)/.test(cuerpoFn(s, "completarRenovacion")) || !/const vuelve = s\.status === "ended" && a\.desde_free;/.test(cuerpoFn(s, "completarRenovacion"))) falla(G, S, 0, "la verificación de «Volver a Pro» (desde Free) deja Pro activo: si no, el banco cobra y el plan sigue en Free");
+    // 27 nov (LAUNCH 9q «Rentas: 3-D Secure al recogerlas») · El depósito de una renta que el banco pide verificar al recogerla (fuera de sesión) no se suelta
+    // ni pide otra tarjeta sin el aviso: va con quien paga y su operación (verif 'renta'); pideVerificar(dep) → esperaBanco (el aviso renta_verify con el
+    // enlace a la hoja, UNA vez por intento: su evento verify_requested con candado) ANTES de cualquier soltar; otro toque, el barrido, la hoja y el webhook
+    // leen la verificación de ESTE depósito antes de volver a la pasarela; y la verificación (hoja, webhook, vencimiento) sigue la renta por su cierre.
+    const RE = "apps/web/lib/rentas.ts", WH = "apps/web/app/api/stripe/webhook/route.ts";
+    if (!existsSync(RE)) falla(G, RE, 0, "falta lib/rentas.ts");
+    else {
+      const re = sinComent(RE), tr = cuerpoFn(re, "terminarCobroRenta"), eb = cuerpoFn(re, "esperaBanco");
+      const ret = (tr.match(/pasarela\.retener\(\{[\s\S]*?\}\)\s*\.catch/) ?? [""])[0];
+      if (!/usuario: \{ id: x\.uid,/.test(ret) || !/verif: \{ kind: "renta", op: x\.op \}/.test(ret)) falla(G, RE, 0, "el depósito de la renta al recoger pasa quien paga y su operación: si el banco pide verificar, la verificación queda a nombre del cliente");
+      const iP = tr.search(/pideVerificar\(dep\)/), iE = tr.search(/if \(pv\) return esperaBanco\(x, a, pv\.verificar, true, desdeBarrido\);/), iS = tr.search(/if \(!\(dep\.ok && dep\.estado === "retenido"\)\)/);
+      if (iP < 0 || iE < iP || iS < iE) falla(G, RE, 0, "cuando el banco pide verificar el depósito de la renta, se espera la verificación del cliente con el aviso (esperaBanco) ANTES de soltarlo o pedir otra tarjeta");
+      if (/pide verificación|pidió verificar|asked to verify|needs verification/.test(tr)) falla(G, RE, 0, "la renta no suelta el depósito por «pide verificar» (va por la verificación del cliente con el aviso)");
+      if (!/const V = await verifDeposito\(`\$\{a\.idem\}-dep`\);/.test(tr) || !/V\.st === "pendiente" \? esperaBanco\(x, a, V, false, desdeBarrido\)/.test(tr)) falla(G, RE, 0, "otro toque, el barrido, la hoja o el webhook leen la verificación de ESTE depósito antes de volver a la pasarela (nunca otro depósito ni otro aviso)");
+      if (!/avisar\(x\.uid, "renta_verify",[^\n]*href: `\/pago\/verificar\?pi=\$\{encodeURIComponent\(v\.pi\)\}`/.test(eb) || !/pg_advisory_xact_lock\(hashtext\('renta-verifica:' \|\| \$1\)\)/.test(eb) || !/kind = 'verify_requested' and note->>'pi' = \$2::text/.test(eb)) falla(G, RE, 0, "el aviso renta_verify con el enlace a la hoja sale una vez por verificación (con su evento en la operación y su candado)");
+    }
+    if (!/if \(u\.rowCount && a\.kind === "renta"\) await sigueRenta\(pi\);/.test(cuerpoFn(v, "confirmarVerificacion")) || !/if \(u\.rowCount && x\.kind === "renta"\) await sigueRenta\(x\.pi\);/.test(cuerpoFn(v, "vencerVerificaciones"))) falla(G, V, 0, "la renta sigue sola al confirmar la verificación del depósito y aplica su fallo (falloRecoger) cuando vence");
+    if (existsSync(WH) && !/if \(a\?\.kind === "renta"\) await \(await import\("@\/lib\/rentas"\)\)\.trasVerificacionRenta\(String\(o\.id\)\);/.test(sinComent(WH))) falla(G, WH, 0, "el webhook que confirma la verificación del depósito de una renta la sigue (una vez: solo quien la pasa a verificada)");
   },
 
   /* 9n-4 · okPorMas (L487, L490): el mercado nunca cobra más de lo retenido sin el OK del cliente. Si el peso real pasa lo retenido, «mandar» no sale

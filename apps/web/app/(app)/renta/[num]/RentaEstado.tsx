@@ -52,7 +52,10 @@ export function RentaEstado({ r, es, pago }: { r: RentaVista; es: boolean; pago:
     return `${lib > 0 ? E2(`Se liberó ${lib === r.dep ? "el depósito de " : ""}${dinero(lib)} a ${card}.`, `${dinero(lib)}${lib === r.dep ? " deposit" : ""} released to ${card}.`) : E2("El depósito se usó completo.", "The whole deposit was used.")}${tarde}${dn}`;
   })();
   const H: Record<RentaVista["st"], [string, string, string, string, string, string]> = {
-    held: ["bag", "bg-action/10", "var(--tl-action)", E2("APARTADA", "ON HOLD"), `${E2("Recógela ", "Pick it up ")}${pickRel}`, r.cardFailed ? E2("Tu banco no dejó cobrar al recoger. Cambia la tarjeta y avísale al negocio.", "Your bank declined at pickup. Change the card and let the business know.") : E2("Te la guardan 48 horas. Hoy no se cobró nada.", "Held 48 hours. Nothing charged today.")],
+    // 27 nov (LAUNCH 9q) · Al recogerla, el banco pide que confirmes el depósito: «Confirmar con mi banco» abre la hoja (/pago/verificar).
+    held: r.banco ? ["card", "bg-action/10", "var(--tl-action)", E2("CONFIRMA CON TU BANCO", "CONFIRM WITH YOUR BANK"), E2("Tu banco pide confirmar el depósito", "Your bank asks you to confirm the deposit"),
+      E2(`Para entregártela, ${r.bname} retiene un depósito de ${dinero(r.dep)}. Confírmalo con tu banco en los próximos ${r.banco.min} min; si no, no se cobra nada y sigue apartada.`, `To hand it to you, ${r.bname} holds a ${dinero(r.dep)} deposit. Confirm it with your bank within the next ${r.banco.min} min; otherwise nothing is charged and it stays on hold.`)]
+      : ["bag", "bg-action/10", "var(--tl-action)", E2("APARTADA", "ON HOLD"), `${E2("Recógela ", "Pick it up ")}${pickRel}`, r.cardFailed ? E2("Tu banco no dejó cobrar al recoger. Cambia la tarjeta y avísale al negocio.", "Your bank declined at pickup. Change the card and let the business know.") : E2("Te la guardan 48 horas. Hoy no se cobró nada.", "Held 48 hours. Nothing charged today.")],
     out: ["wrench", "bg-pro/20", "var(--tl-pro-ink)", r.tardeHoy ? E2("SE PASÓ EL DÍA", "PAST DUE") : E2("LA TIENES", "YOU HAVE IT"), `${E2("Devuélvela el ", "Return it on ")}${fL(r.due)}`,
       r.tardeHoy ? E2(`Se tenía que devolver el ${fL(r.due)}. Cada día tarde se descuentan ${dinero(r.p)} del depósito.`, `It was due on ${fL(r.due)}. Each late day takes ${dinero(r.p)} from the deposit.`)
         : r.dep ? E2(`Cobrado ${dinero(r.rent)} de renta. Depósito de ${dinero(r.dep)} retenido en ${card}.`, `${dinero(r.rent)} rent charged. ${dinero(r.dep)} deposit held on ${card}.`) : E2(`Cobrado ${dinero(r.rent)} de renta.`, `${dinero(r.rent)} rent charged.`)],
@@ -88,7 +91,8 @@ export function RentaEstado({ r, es, pago }: { r: RentaVista; es: boolean; pago:
           <h1 className="m-0 mt-2 font-display text-[22px] font-extrabold leading-[1.15] tracking-[-0.04em]">{cap(h[4])}</h1>
           <p className="m-0 mt-[9px] text-pretty text-[13px] leading-[1.55] text-ink/[.62]">{h[5]}</p>
         </div>
-        {r.cardFailed && (r.st === "held" || r.st === "out") && pago && <div className="grid"><Button block icon="card" onClick={() => setHoja(true)}>{E2("Cambiar la tarjeta", "Change the card")}</Button></div>}
+        {r.st === "held" && r.banco?.pi && <div className="grid"><Button block icon="card" onClick={() => router.push(`/pago/verificar?pi=${encodeURIComponent(r.banco!.pi)}`)}>{E2("Confirmar con mi banco", "Confirm with my bank")}</Button></div>}
+        {r.cardFailed && !r.banco && (r.st === "held" || r.st === "out") && pago &&<div className="grid"><Button block icon="card" onClick={() => setHoja(true)}>{E2("Cambiar la tarjeta", "Change the card")}</Button></div>}
         {r.dmgSt === "asked" && (
           <div data-screen-label="Renta · daño" className="rounded-[18px] border-[1.5px] border-pro bg-white p-4">
             <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-pro-ink">{E2("EL DAÑO · CON FOTO", "THE DAMAGE · WITH PHOTO")}</div>

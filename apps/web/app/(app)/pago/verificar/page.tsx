@@ -20,5 +20,5 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
   const v = await verificacionDe(u.id, pi);
   const modo = pasarela.modo();
   if (!v || modo === "apagado") notFound();
-  return <VerificarCobro es={lang === "es"} v={v} estado={v.estado} negocio={v.negocio} modo={modo} pk={await llave("STRIPE_PUBLISHABLE_KEY")} />;
+  return <VerificarCobro es={lang === "es"} v={v} estado={v.estado} negocio={v.negocio} rentaNum={v.rentaNum} modo={modo} pk={await llave("STRIPE_PUBLISHABLE_KEY")} />;
 }

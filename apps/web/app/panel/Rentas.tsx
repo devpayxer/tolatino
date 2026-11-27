@@ -21,7 +21,8 @@ export function hoyRentas(c: Ctx): Bloque[] {
   const fL = (f: string) => { const d = new Date(`${f}T12:00:00Z`); return es ? `${DIA(es)[d.getUTCDay()]} ${d.getUTCDate()} ${MES(es)[d.getUTCMonth()]}` : `${DIA(es)[d.getUTCDay()]} ${MES(es)[d.getUTCMonth()]} ${d.getUTCDate()}`; };
   const fuera = L.filter((x) => x.st === "out").length;
   return [{ type: "rows", k: `${E2("RENTAS", "RENTALS")} · ${fuera} ${E2("FUERA", "OUT")}`, items: L.map((x: RentaFila): Fila => {
-    const t = x.st === "held" ? [E2(`Recoge el ${fL(x.pick)}`, `Picks up ${fL(x.pick)}`), x.cardFailed ? E2("TARJETA NO PASÓ", "CARD DECLINED") : E2("APARTADA", "ON HOLD"), x.cardFailed ? "danger" : "action"]
+    // 27 nov (LAUNCH 9q) · Esperando que el cliente confirme el depósito con su banco (3-D Secure al recoger).
+    const t = x.st === "held" ? [E2(`Recoge el ${fL(x.pick)}`, `Picks up ${fL(x.pick)}`), x.banco ? E2("ESPERA SU BANCO", "AWAITING THEIR BANK") : x.cardFailed ? E2("TARJETA NO PASÓ", "CARD DECLINED") : E2("APARTADA", "ON HOLD"), x.banco ? "action" : x.cardFailed ? "danger" : "action"]
       : x.st === "out" ? [E2(`Devuelve el ${fL(x.due)}`, `Returns ${fL(x.due)}`), x.tarde ? `${x.tarde} ${x.tarde === 1 ? E2("DÍA TARDE", "DAY LATE") : E2("DÍAS TARDE", "DAYS LATE")}` : E2("LA TIENE", "OUT"), x.tarde ? "danger" : "signal"]
         : [E2("Devuelta", "Returned"), x.dmgSt === "asked" ? E2("DAÑO · ESPERA SU OK", "DAMAGE · AWAITING OK") : x.dmgSt === "disputed" ? E2("DAÑO · LO REVISA TO’LATINO", "DAMAGE · TO’LATINO REVIEWS") : E2("DEVUELTA", "RETURNED"), x.dmgSt ? "action" : "neutral"];
     return { key: x.numero, icon: "wrench", t: `${x.cliente} · ${es ? x.n.es : x.n.en || x.n.es}`, s: `#${x.numero} · ${t[0]}`, tag: t[1], tone: t[2] as Fila["tone"], chev: true, onClick: () => c.det(`renta:${x.numero}`) };
@@ -51,8 +52,10 @@ export function rentaDetalle(c: Ctx): Sec {
   const acc = (a: Parameters<typeof rentaAccionPanel>[2], ok: string, after?: () => void) => c.run(() => rentaAccionPanel(c.d.id, x.numero, a), ok, after);
   const nombre = x.cliente.split(" ")[0];
   if (x.st === "held") {
-    if (x.cardFailed) out.push({ type: "note", tone: "warn", icon: "card", t: E2(`La tarjeta de ${nombre} no pasó al recoger. Ya le pedimos cambiarla; te avisamos cuando lo haga. No la entregues hasta que pase.`, `${nombre}'s card did not go through at pickup. We asked them to change it and will let you know. Do not hand it over until it goes through.`) });
-    out.push({ type: "note", tone: "info", icon: "info", t: x.dep ? E2(`Al tocar «La recogió» se cobran ${money(x.rent)} de renta y se retiene el depósito de ${money(x.dep)} en su tarjeta. Si el banco no deja, no se cobra nada.`, `Tapping “Picked up” charges ${money(x.rent)} rent and holds the ${money(x.dep)} deposit on their card. If the bank declines, nothing is charged.`)
+    // 27 nov (LAUNCH 9q) · El banco pidió que el cliente confirme el depósito: espera (con lo que le queda); al confirmarlo, la renta se cobra sola.
+    if (x.banco) out.push({ type: "note", tone: "warn", icon: "clock", t: E2(`El banco de ${nombre} pide que confirme el depósito de ${money(x.dep)}. Le mandamos el aviso con el enlace; le quedan ${x.banco.min} min. Cuando lo confirme, se cobra la renta sola y te avisamos. No la entregues todavía.`, `${nombre}'s bank asks them to confirm the ${money(x.dep)} deposit. We sent them the notice with the link; they have ${x.banco.min} min left. Once they confirm, the rent is charged by itself and we let you know. Do not hand it over yet.`) });
+    else if (x.cardFailed) out.push({ type: "note", tone: "warn", icon: "card", t: E2(`La tarjeta de ${nombre} no pasó al recoger. Ya le pedimos cambiarla; te avisamos cuando lo haga. No la entregues hasta que pase.`, `${nombre}'s card did not go through at pickup. We asked them to change it and will let you know. Do not hand it over until it goes through.`) });
+    if (!x.banco) out.push({ type: "note", tone: "info", icon: "info", t: x.dep ? E2(`Al tocar «La recogió» se cobran ${money(x.rent)} de renta y se retiene el depósito de ${money(x.dep)} en su tarjeta. Si el banco no deja, no se cobra nada.`, `Tapping “Picked up” charges ${money(x.rent)} rent and holds the ${money(x.dep)} deposit on their card. If the bank declines, nothing is charged.`)
       : E2(`Al tocar «La recogió» se cobran ${money(x.rent)} de renta en su tarjeta.`, `Tapping “Picked up” charges ${money(x.rent)} rent on their card.`) });
     // 4y-4 · Vehículo: la licencia y la edad (21+) se revisan en persona y se anotan las millas al salir.
     const lic = !!c.ui.rnL, odoS = String(c.ui.rnO ?? ""), faltaV = x.vehiculo && (!lic || (!!x.mpd && !/^\d{1,7}$/.test(odoS)));
@@ -61,7 +64,7 @@ export function rentaDetalle(c: Ctx): Sec {
       if (x.mpd) out.push({ type: "field", k: E2("MILLAS AL SALIR (ODÓMETRO)", "MILES AT PICKUP (ODOMETER)"), val: odoS, im: "numeric", max: 7, ph: "48210", onChange: (v) => c.setUi({ rnO: v.replace(/\D/g, "").slice(0, 7) }) });
     }
     out.push({ type: "acts", items: [
-      { l: E2("La recogió", "Picked up"), v: "primary", icon: "check", off: c.pending || faltaV, onClick: () => acc({ que: "recogio", lic, odo: x.mpd ? Number(odoS) : undefined }, E2(`Listo: ${nombre} la tiene. Renta cobrada.`, `Done: ${nombre} has it. Rent charged.`), () => c.setUi({ rnL: false, rnO: "" })) },
+      { l: E2("La recogió", "Picked up"), v: "primary", icon: "check", off: c.pending || faltaV || !!x.banco, onClick: () => acc({ que: "recogio", lic, odo: x.mpd ? Number(odoS) : undefined }, E2(`Listo: ${nombre} la tiene. Renta cobrada.`, `Done: ${nombre} has it. Rent charged.`), () => c.setUi({ rnL: false, rnO: "" })) },
       { l: E2("Cancelar el apartado", "Cancel the hold"), v: "secondary", icon: "close", off: c.pending, onClick: () => acc({ que: "cancelar" }, E2("Apartado cancelado: volvió a la tienda.", "Hold cancelled: back on the shelf.")) }] });
   } else if (x.st === "out") {
     const ui = c.ui, dano = !!ui.rnD, max = Math.max(0, x.dep - Math.min(x.tardeHoy * x.p, x.dep));
