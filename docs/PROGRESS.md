@@ -1,6 +1,6 @@
 # To'Latino v2 — Dónde estamos / cómo retomar
 
-_Actualizado: 26 nov 2026 (09:40 UTC: ver el primer punto de «Estado»). Antes: 24 nov 2026 (tarde). Antes: 21 nov 2026 (media mañana). Antes: 20 nov 2026 (tarde). Antes: 14 nov 2026 (9o hecho en su rama: producción como código y ensayada —el ensayo en máquinas no corrió—; ver «Fase 9 · 9o» al final. Antes: 9g). Plan de la Fase 9: `docs/diseno/plan/fase9-apertura.md`._
+_Actualizado: 27 nov 2026 (05:00 UTC: ver el primer punto de «Estado»). Antes: 26 nov 2026 (09:40 UTC). Antes: 24 nov 2026 (tarde). Antes: 21 nov 2026 (media mañana). Antes: 20 nov 2026 (tarde). Antes: 14 nov 2026 (9o hecho en su rama: producción como código y ensayada —el ensayo en máquinas no corrió—; ver «Fase 9 · 9o» al final. Antes: 9g). Plan de la Fase 9: `docs/diseno/plan/fase9-apertura.md`._
 
 ## Ramas (léelo antes de nada)
 - **`main`** = la rama de trabajo de la v2 y la que debe ser **rama por defecto** del
@@ -20,6 +20,16 @@ _Actualizado: 26 nov 2026 (09:40 UTC: ver el primer punto de «Estado»). Antes:
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **27 nov (05:00 UTC) · `main` = `pruebas` = 13ec285 (CI de `main` en verde); el sandbox sigue sirviendo 87e7dc2** (trabado desde el 26 nov 09:30 UTC:
+  decisión del fundador en REVISION, «abrir el 22 para el rescate»). Hecho desde el 26 nov a mediodía (cada paquete con su revisión rápida del CI):
+  fechas «hoy» con la zona de la ciudad (`hoyEnLaBaseConZona`); producción migra antes de la app nueva y con topes (`migracionConTope`,
+  `produccionMigraAntes`); `tolatino-sync` de producción se arregla solo (`produccionSeArreglaSola`); «Exportar sus datos» del equipo en flujo
+  (0227, `expeq9t`); restos de idiomas y de herramientas del CI; cadenas editadas con `juntar`; medida de 10 fotos; rentas con 3-D Secure al
+  recogerlas (0228); barridos que no son de dinero uno por uno + TOCA_PLAN medido con 1 M; El Compa «ya quedó cancelada» solo con el número de
+  una cancelada; `migracionReversible` caza constraints y cuerpos de función (desde 0228, marca `-- compatible:`); reparto regenerado.
+  **Cómo se reparte ahora:** antes de encargar, un agente de solo lectura lee las líneas de LAUNCH ENTERAS y comprueba en el código qué sigue
+  pendiente (el 27 nov un encargo salió repetido por leer solo el arranque de una línea). En curso: consultas de dinero que ninguna prueba
+  ejecuta (boletos, revisión de pasarela, suscripción, cobros), barridos 2ª tanda y avisos en un solo idioma.
 - **26 nov (09:40 UTC) · `main` = `pruebas` = 87e7dc2, servido.** Hecho hoy (cada paquete con su revisión rápida del CI y `main` en verde
   después): el dinero en pantalla con una sola regla (`usd`) y su guardián `dineroConUsd`; M1–M5 de la cancelación tarde; ninguna retención se
   suelta en silencio (`cobros › soltarSuelta`, guardián `liberarSoloPorLaRegla`, e2e `din9z`) y la renovada / la que se suelta dicen lo que pasó
