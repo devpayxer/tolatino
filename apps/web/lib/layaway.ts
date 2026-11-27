@@ -233,7 +233,7 @@ export async function cancelarPlan(f: { numero: string; userId?: string; negocio
   const dev = await reembolsarPlan(x.op);
   // Lo abonado menos el cargo: por la tarjeta vuelve lo cobrado en la app menos el cargo; el resto lo devuelve la tienda.
   const v = (await planDe(x.op))!, tienda = Math.max(0, v.pagado - r.cargo - dev.objetivo);
-  const av = await import("./avisos"), msg = `Te devuelven ${money(dev.objetivo)} a tu tarjeta${tienda ? ` y la tienda te devuelve ${money(tienda)}` : ""} (lo abonado menos ${v.cargo} %).`;
+  const av = await import("./avisos"), msg: Bi = { es: `Te devuelven ${money(dev.objetivo)} a tu tarjeta${tienda ? ` y la tienda te devuelve ${money(tienda)}` : ""} (lo abonado menos ${v.cargo} %).`, en: `You get back what you paid minus ${v.cargo}%: ${money(dev.objetivo)} to your card${tienda ? ` and ${money(tienda)} from the store` : ""}.` };
   await av.avisar(x.uid, "lay_cancelado", { negocio: x.bname, devuelto: msg }, hrefC(x));
   await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente ?? { es: "Cliente", en: "Customer" }, que: por === "user" ? { es: `canceló su plan · ${tienda ? `devuélvele ${money(tienda)} de lo que pagó en la tienda` : "vuelve al estante"}`, en: `canceled their plan · ${tienda ? `give them back the ${money(tienda)} they paid at the store` : "it goes back on the shelf"}` } : { es: "plan cancelado · vuelve al estante", en: "plan canceled · it goes back on the shelf" } }, hrefN(x));
   return { ok: true, devuelto: dev.objetivo, tienda };

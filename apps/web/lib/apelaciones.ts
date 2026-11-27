@@ -247,9 +247,9 @@ export async function avisarDecision(a: { numero: string; k: Apelable; tid: stri
   if (accion === "lifted") await (await import("./puntos")).recalcularRango(a.uid).catch(() => undefined);
   // AJ · Una foto de la revisión que se publicó: sus variantes y la copia privada fuera (después de guardar; nunca lanza).
   if (accion === "lifted" && a.k === "media") await (await import("./fotos-revision")).despuesDePersona(a.tid).catch(() => undefined);
-  const en = (await db().query<{ lang: string }>(`select coalesce(lang, 'es') as lang from users where id = $1`, [a.uid])).rows[0]?.lang === "en";
-  const que = a.k === "sanction" ? (en ? "the sanction was lifted" : "levantamos la sanción") : a.k === "evt_org" ? (en ? "you can publish events again" : "puedes publicar eventos otra vez")
-    : en ? `your ${APELABLE[a.k].en} is visible again` : `tu ${APELABLE[a.k].es} se ve otra vez`;
+  // Los dos idiomas: avisos › avisar pone el de quien lo recibe (antes se leía su idioma aquí y se armaba solo uno).
+  const que: { es: string; en: string } = a.k === "sanction" ? { es: "levantamos la sanción", en: "the sanction was lifted" } : a.k === "evt_org" ? { es: "puedes publicar eventos otra vez", en: "you can publish events again" }
+    : { es: `tu ${APELABLE[a.k].es} se ve otra vez`, en: `your ${APELABLE[a.k].en} is visible again` };
   // 9n-7 · La respuesta a la apelación de una suspensión o un baneo también sale por SMS (sin push): esa persona no puede abrir la app (0152).
   const fuera = a.k === "sanction" && !!(await db().query(`select 1 from sanctions where id = $1::bigint and kind in ('susp14', 'ban')`, [a.tid])).rowCount;
   await avisar(a.uid, accion === "lifted" ? "apel_lifted" : "apel_upheld", { numero: a.numero, que, motivo: motivo.slice(0, 160) }, { href: fuera ? "/entrar" : RUTA_AVISO(a.k, a.tid), ref: ["appeal", a.numero], sinSms: !fuera }).catch(() => undefined);

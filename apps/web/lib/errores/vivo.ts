@@ -13,7 +13,7 @@ import { db } from "../db";
    Y la purga: los eventos de más de errores_retener_dias se borran (errores_purgar, 0127; la base solo deja borrar lo vencido). */
 export type Vivo = { alertas: number; avisados: number; purgados: number };
 const APP: Record<string, string> = { cliente: "To'Latino", negocio: "Negocios", delivery: "Repartidor", checkin: "Puerta", web: "Web" };
-const QUE = { nuevo: "error nuevo", pico: "pico de errores", regresion: "volvió un error resuelto" } as const;
+const QUE = { nuevo: { es: "error nuevo", en: "new error" }, pico: { es: "pico de errores", en: "error spike" }, regresion: { es: "volvió un error resuelto", en: "a resolved error is back" } } as const;
 
 export async function barrerErrores(lim = 10): Promise<Vivo> {
   const pico = await valor("errores_pico_n");

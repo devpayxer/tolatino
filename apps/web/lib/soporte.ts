@@ -328,7 +328,7 @@ export async function avisarCaso(numero: string, tpl: "sop_recibido" | "sop_resp
        from support_cases c join users u on u.id = c.user_id left join cities ci on ci.id = c.city_id where c.number = $1`, [numero])).rows[0];
   if (!k) return;
   const href = `/soporte?caso=${encodeURIComponent(numero)}${k.neg ? `&negocio=${encodeURIComponent(k.neg)}` : ""}`;
-  if (tpl === "sop_recibido" || tpl === "compa_caso" || tpl === "compa_caso_negocio") await avisar(k.uid, tpl, { num: numero, cuando: prometido(k.due, k.tz, k.lang !== "en") }, { href, ref: ["support", numero] });
+  if (tpl === "sop_recibido" || tpl === "compa_caso" || tpl === "compa_caso_negocio") await avisar(k.uid, tpl, { num: numero, cuando: { es: prometido(k.due, k.tz, true), en: prometido(k.due, k.tz, false) } }, { href, ref: ["support", numero] });
   else if (tpl === "sop_respuesta") await avisar(k.uid, tpl, { num: numero, quien: quien || { es: "Una persona", en: "Someone" } }, { href, ref: ["support", numero] });
   else await avisar(k.uid, tpl, { num: numero }, { href, ref: ["support", numero] });
 }

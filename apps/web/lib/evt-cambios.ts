@@ -372,7 +372,7 @@ export async function avisarCancelacion(cxId: string): Promise<number> {
   // 9v · Lo que pasa con el dinero de CADA quien pagó, leído de la base (nunca «te devolvemos todo» a ciegas): lo devuelto, lo que va en camino (pendiente, o
   // la orden que el lote todavía no tocó: el barrido la sigue), lo que no salió, el cobro en disputa con el banco (no se devuelve aquí) y la orden sin nada que devolver.
   const D = new Map((await db().query<DineroCx & { u: string }>(`select o.user_id::text as u, ${DINERO_CX} from operations o where o.kind = 'tickets' and ${ORDENES_PAGADAS} group by o.user_id`, [fechas])).rows.map((x) => [x.u, x]));
-  const motivo = `${MOTIVOS_CX[cx.reason].es}${cx.note && cx.reason !== "admin" ? ` (${cx.note.slice(0, 80)})` : ""}`;
+  const nota = cx.note && cx.reason !== "admin" ? ` (${cx.note.slice(0, 80)})` : "", motivo: Bi = { es: `${MOTIVOS_CX[cx.reason].es}${nota}`, en: `${MOTIVOS_CX[cx.reason].en}${nota}` };   // los dos idiomas: avisos › avisar pone el de quien lo recibe
   const { avisar } = await import("./avisos");
   let n = 0;
   for (const u of new Set([...pago.keys(), ...H, ...R])) {

@@ -147,7 +147,7 @@ export async function decidirFotoCom(id: string, accion: "mantener" | "quitar", 
   // 9t · Aprobada (estaba en revisión): la otra parte recibe el aviso de la foto, como si acabara de llegar (antes solo la veía al abrir la conversación).
   if (r.aprobada && r.owner === "chat") await (await import("@/lib/mensajes")).avisarFotoAprobada(r.tid).catch(() => undefined);
   if (r.aprobada && r.owner === "dm") await (await import("@/lib/mensajes-vecinos")).avisarFotoDmAprobada(r.tid).catch(() => undefined);
-  if (accion === "quitar" && r.deChat) await (await import("@/lib/avisos")).avisar(r.deChat, "mod_hide", { tipo: { es: "foto", en: "photo" }, motivo: m }).catch(() => undefined);
+  if (accion === "quitar" && r.deChat) await (await import("@/lib/avisos")).avisar(r.deChat, "mod_hide", { tipo: { es: "foto", en: "photo" }, motivo: motivoOk(motivo) }).catch(() => undefined);
   if (accion === "quitar" && r.autor) await avisarOculto(r.autor, "media", r.tid, m);
   listo();
   return { ok: true, mensaje: r.chat ? (accion === "quitar" ? "Foto quitada. Quien la mandó ve el motivo." : "Aprobada: ya se ve en la conversación.") : accion === "quitar" ? "Foto quitada. Su autor ve el motivo y puede apelar." : "Aprobada: ya se ve en la publicación." };

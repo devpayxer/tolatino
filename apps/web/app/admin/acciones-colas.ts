@@ -214,7 +214,7 @@ export async function decidirSello(id: string, accion: "aprobar" | "info" | "no"
   listo();
   // 9l · El sello decidido (L143, L345): al dueño, con su motivo cuando falta un dato o no se aprobó (push y SMS de respaldo). Después del commit.
   const nb = (await db().query<{ b: string; n: string }>(`select q.business_id as b, b.name as n from queue_items q join businesses b on b.id = q.business_id where q.id = $1::bigint`, [id]).catch(() => ({ rows: [] }))).rows[0];
-  if (nb) await avisarNegocio(nb.b, accion === "aprobar" ? "sello_ok" : accion === "info" ? "sello_info" : "sello_no", { negocio: nb.n, motivo: m }, { href: `/panel/${nb.b}` }).catch(() => undefined);
+  if (nb) await avisarNegocio(nb.b, accion === "aprobar" ? "sello_ok" : accion === "info" ? "sello_info" : "sello_no", { negocio: nb.n, motivo: accion === "aprobar" ? "" : m }, { href: `/panel/${nb.b}` }).catch(() => undefined);
   return { ok: true, mensaje: accion === "aprobar" ? "Sello otorgado. El negocio lo ve en su panel y en su ficha." : "Listo. Quedó en la auditoría." };
 }
 
@@ -327,7 +327,7 @@ export async function decidirVideo(id: string, accion: "aprobar" | "rechazar", m
   listo();
   if (negocio) {
     const nombre = (await db().query<{ n: string }>(`select name as n from businesses where id = $1`, [negocio]).catch(() => ({ rows: [] }))).rows[0]?.n ?? "";
-    await avisarNegocio(negocio, accion === "aprobar" ? "biz_video_ok" : "biz_video_no", { negocio: nombre, motivo: m }, { href: `/panel/${negocio}/pagina/fotos`, ref: ["business_video", id] }).catch(() => undefined);
+    await avisarNegocio(negocio, accion === "aprobar" ? "biz_video_ok" : "biz_video_no", { negocio: nombre, motivo: accion === "aprobar" ? "" : m }, { href: `/panel/${negocio}/pagina/fotos`, ref: ["business_video", id] }).catch(() => undefined);
   }
   return { ok: true, mensaje: accion === "aprobar" ? "Video aprobado. Ya sale en su tarjeta y en su página." : "No aprobado. El dueño ve el motivo en su panel." };
 }

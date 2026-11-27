@@ -19574,6 +19574,14 @@ const guardianes = {
     // esVars: el objeto es el de VARIABLES de un aviso (cada propiedad es una variable de la plantilla, también una que se llame «href» o «tpl»); si no (las opciones de la
     // llamada, el aviso guardado), «tpl», «href», «ref»… son claves técnicas, no texto que se lea.
     const OPCIONES = /^(?:tpl|href|ref|sinSms|actor|unaVez)$/;
+    // 27 nov (LAUNCH «promete antes de actuar» e) · Una VARIABLE de texto de un idioma pasada como dato de plantilla: «devuelto: msg» con «const msg = `Te devuelven…`», «que: QUE[x.kind]» con
+    // «const QUE = { nuevo: "error nuevo" }», «que» con «en ? "…" : "…"»: el valor es un nombre y el texto está en otro sitio del archivo. Se busca su declaración (const/let o «, x =»)
+    // y, si lo que la inicializa lleva palabras sin su par en inglés (en:), falla; y el ayudante al que se le pasa el idioma de quien lo recibe (k.lang !== "en"): va { es, en }.
+    let TXT = "";
+    const inicial = (nom, ln) => { const re = new RegExp(`(?:\\b(?:const|let|var)\\s+|,\\s*)${nom}\\s*(?::[^=\\n,;()]+?)?=\\s*(?![=>])`, "g"); const out = []; for (const m of TXT.matchAll(re)) { const r = TXT.slice(m.index + m[0].length), fin = r.search(/;\s*(?:\n|$)/); out.push({ l: TXT.slice(0, m.index).split("\n").length, s: r.slice(0, fin < 0 ? 900 : Math.min(fin, 900)) }); } const antes = out.filter((x) => x.l <= ln); return (antes.length ? [antes[antes.length - 1]] : out).map((x) => x.s); };   // la declaración más cercana ANTES de la llamada (el mismo nombre se reusa en otras funciones del archivo)
+    // Lo que inicializa la variable ES un texto: empieza con comillas o ` («`Te devuelven…`»), con una tabla de textos («{ nuevo: "error nuevo" }») o con un ternario de textos («en ? "…" : "…"»); no una consulta
+    // SQL, ni una llamada (String(…), await…, un ayudante: lo que devuelve se vigila donde se arma).
+    const esTexto = (ini) => { const x = ini.trim(); if (/\b(?:select|insert|update|delete|from|where)\b|\bawait\b/i.test(x.slice(0, 120))) return false; if (/^["'`][^"'`]*\S \u00b7 \S[^"'`]*["'`]$/.test(x)) return false;  /* «Foto · Photo»: un texto con sus dos idiomas juntos */ return /^[`"']/.test(x) || /^\{\s*\w+\s*:\s*[`"']/.test(x) || /^[^`"'(){}?]{0,80}\s\?\s+\(?\s*[`"']/.test(x) || /\s\?\s+\(?\s*[`"']/.test(x.slice(0, 160)); };
     const revisar = (f, ln, que, obj, claves = [], esVars = true) => {
       const ps = props(obj), nombres = new Set(ps.map((p) => /^(\w+)\s*:/.exec(p)?.[1]).filter(Boolean));
       for (const p of ps) {
@@ -19587,7 +19595,10 @@ const guardianes = {
           continue;
         }
         if (/en:/.test(v)) continue;
-        if (/\b(?!rows\b)[A-Za-z_]\w*\[0\]/.test(v)) falla(G, f, ln, `${que}: {${k}} toma el [0] de un par (el español): va { es, en }`);
+        const ident = /^([A-Za-z_]\w*)(?:\[[^\]]*\])?$/.exec(v.trim());
+        if (ident && TXT && inicial(ident[1], ln).some((ini) => esTexto(ini) && !/\ben:/.test(ini) && conPalabras(ini))) falla(G, f, ln, `${que}: {${k}} es la variable ${ident[1]}, armada con texto en un solo idioma (su declaración): va { es, en }`);
+        else if (/\.lang\b|\blang\s*[!=]==?\s*["']/.test(v)) falla(G, f, ln, `${que}: {${k}} se arma con el idioma de quien lo recibe (lang): va { es: …, en: … } (avisos › avisar pone el suyo)`);
+        else if (/\b(?!rows\b)[A-Za-z_]\w*\[0\]/.test(v)) falla(G, f, ln, `${que}: {${k}} toma el [0] de un par (el español): va { es, en }`);
         else if (/\.es\b/.test(v)) falla(G, f, ln, `${que}: {${k}} toma solo el español (.es): va { es, en } (avisos › avisar pone el del que lo recibe)`);
         else if (/\b[A-Za-z]\w*\([^()]*,\s*true\)/.test(v)) falla(G, f, ln, `${que}: {${k}} usa un ayudante con el idioma fijo en español (…, true): va { es: …(…, true), en: …(…, false) }`);
         else if (conPalabras(v)) falla(G, f, ln, `${que}: {${k}} lleva texto en un solo idioma: va { es, en }`);
@@ -19597,7 +19608,7 @@ const guardianes = {
     const esVarsDe = (ob) => { const ks = props(ob).map((p) => /^(\w+)\s*:?/.exec(p)?.[1]).filter(Boolean); return !(ks.some((k) => /^(?:tpl|ref|sinSms|actor|unaVez)$/.test(k)) || (ks.length === 1 && ks[0] === "href")); };
     const defs = { avisarNeg: 0, avisarCliente: 0 };
     for (const f of archivos.filter((x) => /^apps\/web\/lib\/.+\.ts$/.test(x))) {
-      const t = sinComent(f);
+      const t = sinComent(f); TXT = t;
       for (const [nom, interna] of [["avisarNeg", "avisarNegocio("], ["avisarCliente", "avisar("]]) {
         const d = new RegExp(`\\nasync function ${nom}\\(([^)]*)\\) \\{`).exec(t);
         if (!d) continue;
@@ -19615,7 +19626,7 @@ const guardianes = {
     // en la misma consulta. Cada consulta con falla se cuenta UNA vez, aunque el archivo tenga varios ayudantes. Una consulta de PANTALLA (devuelve la fecha ISO «as ymd», p. ej. citas › miaCita)
     // no es un aviso: no se mira.
     for (const f of archivos.filter((x) => /^apps\/web\/lib\/.+\.ts$/.test(x) || /^apps\/web\/app\/.*\/acciones[^/]*\.ts$/.test(x))) {
-      const t = sinComent(f);
+      const t = sinComent(f); TXT = t;
       if (!/\bavisar(Negocio|Telefono)?\(/.test(t)) continue;
       // « con Ana» armado en español (un valor que EMPIEZA con « con ${…}») sin SU « with ${…}» (cada aparición, no solo la primera): al dueño en inglés le llega «Cita con …».
       for (const conEs of t.matchAll(/`\s*con \$\{/g)) {
