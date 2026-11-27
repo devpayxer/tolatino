@@ -903,7 +903,7 @@ export async function cerrarDevolucionPago(id: string, stripeId: string | null, 
     const st = (await db().query<{ st: string; mano: boolean }>(`select status as st, manual_at is not null as mano from refunds where id = $1::bigint`, [id])).rows[0];
     return st && (st.st === "done" || st.mano) ? { ok: true } : { ok: false, msg: STRIPE_NO };
   }
-  const tarjeta = h.brand && h.l4 ? `${({ visa: "Visa", mastercard: "Mastercard", mc: "Mastercard", amex: "Amex", discover: "Discover", disc: "Discover" } as Record<string, string>)[h.brand] ?? h.brand} ·· ${h.l4}` : "tarjeta";
+  const tarjeta = h.brand && h.l4 ? `${({ visa: "Visa", mastercard: "Mastercard", mc: "Mastercard", amex: "Amex", discover: "Discover", disc: "Discover" } as Record<string, string>)[h.brand] ?? h.brand} ·· ${h.l4}` : { es: "tarjeta", en: "card" };
   const R = refDe(h.kind, h.num);
   await (await import("./avisos")).avisar(h.uid, "pay_refund", { monto: money(h.amt), num: R.num, tarjeta }, { href: R.href, ref: R.ref }).catch(() => undefined);
   if (h.caso) await (await import("./soporte")).avisarCaso(h.caso, "sop_resuelto").catch(() => undefined);
