@@ -8,6 +8,7 @@
 --     que nunca cambia de una verificación (el disparador, con la misma firma).
 -- (2) La plantilla renta_verify (cliente, como renta_tarjeta: SMS si no hay push).
 -- Compatible con la versión anterior de la app: no escribe 'renta' ni operation_id (nula). Idempotente; nada se borra.
+-- compatible: el check de kind solo amplía lo permitido (la app anterior escribe en_sesion y renovacion, que siguen valiendo) y el disparador solo suma operation_id a lo que no cambia (la app anterior nunca lo escribe: queda nulo).
 begin;
 set local lock_timeout = '5s';
 set local statement_timeout = '60s';
