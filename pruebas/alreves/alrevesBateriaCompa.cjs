@@ -6,7 +6,7 @@
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync, spawnSync } = require('child_process');
 const R = ENT.RAIZ, G = 'bateriaCompaFija';
-const D = 'scripts/compa/bateria', C = D + '/correr.mjs', M = D + '/motor.mjs', REV = D + '/revision.mjs', K = D + '/casos.mjs', E = D + '/casos/escenarios.json', V = D + '/casos/vecino.json', CV = 'apps/web/lib/compa/conversacion.ts';
+const D = 'scripts/compa/bateria', C = D + '/correr.mjs', M = D + '/motor.mjs', SV = D + '/servidor.mjs', CM = D + '/camino.mjs', REV = D + '/revision.mjs', K = D + '/casos.mjs', E = D + '/casos/escenarios.json', V = D + '/casos/vecino.json', CV = 'apps/web/lib/compa/conversacion.ts';
 const soloTextos = !!process.env.ALREVES_SOLO_TEXTOS;
 // Nombres que el repo no deja escritos de corrido (la llave del proveedor y un identificador de modelo): se arman aquí.
 const LLAVE = ['ANTHROPIC', 'API', 'KEY'].join('_'), MODELO = ['claude', 'haiku', '5-5'].join('-');
@@ -26,6 +26,36 @@ if (!soloTextos) {
   caso(!!j && (q.status === 0 || q.status === 1) && j.resultados.length >= 300 && j.sin_correr === 0 && Object.keys(j.por_audiencia).length === 4, 'la corrida contra las reglas corre cada caso en español y en inglés, por audiencia', j ? `${j.resultados.length} preguntas · ${j.porcentaje} %` : String(q.stderr).slice(0, 200));
   const sim = spawnSync(process.execPath, [path.join(R, C), '--json', salida], { cwd: R, encoding: 'utf8', timeout: 300000, env: { ...env, TOLATINO_BATERIA_MOTOR: 'simulador' } });
   caso(sim.status === 0 || sim.status === 1, 'la corrida contra el simulador termina con 0 o 1', `salió ${sim.status}`);
+}
+
+// (1b) El orden de los pasos de conversacion.ts (9q, 28 nov): la batería LLAMA al servidor real, así que cambiar el orden allí tiene que caer con «orden_de_pasos»
+//      (revisarOrden de camino.mjs) sin tocar la batería. Se cambia conversacion.ts, se corre la batería de vecino con el simulador y se restaura siempre.
+if (!soloTextos) {
+  const env = { ...process.env }; for (const k of [LLAVE, 'TOLATINO_BATERIA_MOTOR', 'TOLATINO_ENTORNO']) delete env[k];
+  const rutaCV = path.join(R, CV), origCV = fs.readFileSync(rutaCV, 'utf8');
+  const salidaO = path.join(ENT.S, 'bateria-compa-orden.json');
+  const corrida = () => {
+    try { fs.unlinkSync(salidaO); } catch { /* no estaba */ }
+    const p = spawnSync(process.execPath, [path.join(R, C), '--audiencia', 'vecino', '--json', salidaO], { cwd: R, encoding: 'utf8', timeout: 300000, env: { ...env, TOLATINO_BATERIA_MOTOR: 'simulador' } });
+    let j = null; try { j = JSON.parse(fs.readFileSync(salidaO, 'utf8')); } catch { /* abajo */ }
+    const orden = j ? j.resultados.flatMap((r) => (r.fallos ?? []).filter((f) => f.regla === 'orden_de_pasos').map((f) => f.porque)) : null;
+    return { status: p.status, orden, n: j ? j.resultados.length : 0, err: String(p.stderr).slice(0, 200) };
+  };
+  const base = corrida();
+  caso(base.orden !== null && base.n >= 150 && base.orden.length === 0, 'el camino real de conversacion.ts, sin tocar, no tiene ningún fallo de orden de pasos', base.orden === null ? `no corrió (${base.status}) ${base.err}` : `${base.n} preguntas, ${base.orden.length} fallos de orden`);
+  const cambios = [
+    ['detectar(t.texto);\n  if (det?.tipo === "emergencia") return responder(', 'detectar(crudo);\n  if (det?.tipo === "emergencia") return responder(', 'SIN tapar'],
+    ['const det = detectar(t.texto);\n  if (det?.tipo === "emergencia") return responder(', 'await trozosCompa(t.texto, lang, ["vecino"], 3, 0);\n  const det = detectar(t.texto);\n  if (det?.tipo === "emergencia") return responder(', 'va antes de lo que decide el servidor'],
+    ['  const reserva = await gastar({', '  await m.responder(entrada);\n  const reserva = await gastar({', 'sin reservar antes en el tope'],
+  ];
+  for (const [a, b, msg] of cambios) {
+    const a2 = a.replace(/\\n/g, '\n'), b2 = b.replace(/\\n/g, '\n');
+    if (origCV.split(a2).length !== 2) { total++; console.log(`  ✗ conversacion.ts: el texto a cambiar no está una sola vez: ${a2.slice(0, 70)}`); continue; }
+    fs.writeFileSync(rutaCV, origCV.replace(a2, () => b2));
+    let r; try { r = corrida(); } finally { fs.writeFileSync(rutaCV, origCV); }
+    const l = r.orden && r.orden.find((x) => x.includes(msg));
+    caso(!!l, `batería al revés (conversacion.ts cambia el orden: «${msg}»)`, l ? l.slice(0, 160) : r.orden === null ? `no corrió (${r.status}) ${r.err}` : `la batería no lo notó (${r.orden.length} fallos de orden)`);
+  }
 }
 
 // (2) Al revés.
@@ -49,9 +79,19 @@ const casos = [
   [C, 'texto: taparParaImprimir(s.texto)', 'texto: s.texto', 'pasa por taparParaImprimir'],
   [C, 'export const META = 95;', 'export const META = 95;\nconst volcar = (s) => console.log(s.crudo);', 'nunca imprime ni guarda la respuesta cruda'],
   [C, 'parar = e.message;', 'parar = null;', 'al llegar al tope la corrida para'],
-  // El motor: el tope de llamadas y ningún reintento.
-  [M, 'if (nombre === "claude" && o.llamadas >= o.max) throw new TopeDeLlamadas(`tope de ${o.max} llamadas al modelo`);', '', 'cada llamada al modelo real cuenta y no pasa del tope'],
-  [M, 'const s = await base.responder({ ...entrada, esperaMs: o.esperaMs });', 'let s; for (let i = 0; i < 2; i++) s = await base.responder({ ...entrada, esperaMs: o.esperaMs });', 'sin reintentos silenciosos'],
+  // El modelo envuelto (servidor.mjs, el que usa conversacion.ts): el tope de llamadas y ningún reintento.
+  [SV, 'if (eng.llamadas >= eng.max) { if (s) s.tope = `tope de ${eng.max} llamadas al modelo`; throw new TopeDeLlamadas(`tope de ${eng.max} llamadas al modelo`); }', '', 'cada llamada al modelo real cuenta y no pasa del tope'],
+  [SV, 'const sal = await base.responder(e2);', 'let sal; for (let i = 0; i < 2; i++) sal = await base.responder(e2);', 'sin reintentos silenciosos'],
+  [SV, 'if (s.tope) throw new TopeDeLlamadas(s.tope);', '', 'el tope de llamadas de la batería tiene que salir por conContexto'],
+  // El camino es el real (9q, 28 nov): se llama a conversacion.ts y lo único que se cambia por un doble es la lista cerrada.
+  [CM, 'S.conv.turnoPanel(', 'S.conv.turnoPanelX(', 'la batería no llama a conversacion.turnoPanel'],
+  [CM, 'S.conv.respuestaAuto(', 'S.conv.respuestaAutoX(', 'la batería no llama a conversacion.respuestaAuto'],
+  [CM, 'const NADA = ', 'const zz = (x) => verificarAuto(x);\nconst NADA = ', 'camino.mjs reproduce lo que decide el servidor'],
+  [SV, '[`${LIB}/tapar.ts`]: { ...T,', '[`${LIB}/tapar.ts`]: {', 'el doble de «tapar» tiene que ser el módulo real'],
+  [SV, '[`${LIB}/verificar.ts`]: { ...V,', '[`${LIB}/verificar.ts`]: {', 'el doble de «verificar» tiene que ser el módulo real'],
+  [SV, '[`${LIB}/persona.ts`]:', '[`${LIB}/interruptores.ts`]:', 'servidor.mjs cambia «interruptores» por un doble'],
+  [SV, 'const r = await AY.trozosCompa(...a);', 'const r = [];', 'la búsqueda de ayuda de la batería es la de Postgres'],
+  [SV, 'process.env.TOLATINO_COMPA_MOTOR = motor;', 'process.env.TOLATINO_COMPA_MOTOR = "reglas";', 'el motor lo elige la variable que modelo.ts ya lee'],
   // La revisión: deja de cazar lo malo, o de dejar pasar lo bueno (sus casos propios lo notan).
   [REV, 'const EMOJI = /\\p{Extended_Pictographic}|\\p{Regional_Indicator}/u;', 'const EMOJI = /zzzzzz/u;', 'los casos de la revisión no pasan'],
   [REV, 'no_se_hace_pasar: (s) => (HACE_PASAR.test(sa(s.texto)) ?', 'no_se_hace_pasar: (s) => (true ?', 'los casos de la revisión no pasan'],

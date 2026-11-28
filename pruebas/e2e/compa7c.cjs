@@ -80,7 +80,7 @@ const gastado = () => +sql(`select coalesce(spent_microusd, 0) from compa_spend_
   ok(!slugs.some((x) => /^(admin|panel|puerta)-/.test(x)), 'ningún admin-*, panel-* ni puerta-* llega al modelo del vecino');
   r = await turno(pm, 'simular-cita-ajena ¿cómo reservo una mesa?');
   ok(r.ok && r.motor === 'reglas' && /verificador:sin_fuente/.test(r.porque ?? '') && r.fuente?.slug !== 'admin-equipo', `cita a admin-equipo → se quita → sin fuente → reglas (${r.porque})`);
-  ok(sql(`select count(*) from compa_messages where source_slug like 'admin-%'`) === '0', 'ninguna respuesta guardada cita un artículo del equipo');
+  ok(sql(`select count(*) from compa_messages m join compa_conversations c on c.id = m.conversation_id where m.source_slug like 'admin-%' and c.use <> 'copilot'`) === '0', 'ninguna respuesta guardada a un vecino cita un artículo del equipo (el borrador del copiloto, que es del equipo, sí puede; la batería de El Compa lo escribe en la base de pruebas)');
 
   console.log('3 · Tapado: lo que escribe la persona se tapa antes de guardar y antes de mandarlo (lo que recibe el simulador)');
   await compa(pm, { op: 'olvidar' });

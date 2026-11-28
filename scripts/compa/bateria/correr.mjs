@@ -22,11 +22,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { cargarIndice } from "./ayuda.mjs";
 import { AUDIENCIAS, cargarCasos, preparar, USO_DE, validar } from "./casos.mjs";
-import { crearMotor, modulos, PIPELINES, RAIZ, TopeDeLlamadas } from "./motor.mjs";
+import { PIPELINES } from "./camino.mjs";
+import { crearMotor, modulos, RAIZ, TopeDeLlamadas } from "./motor.mjs";
+import { cerrarBase, fixtures } from "./servidor.mjs";
 import { revisar, taparParaImprimir } from "./revision.mjs";
 
 export const META = 95;
-export const SALIDA = { OK: 0, BAJO_META: 1, MAL_USO: 2, SIN_CLAVE: 3, PRODUCCION: 4, SIN_MODELO: 5, TOPE: 6, NO_CARGA: 7 };
+export const SALIDA = { OK: 0, BAJO_META: 1, MAL_USO: 2, SIN_CLAVE: 3, PRODUCCION: 4, SIN_MODELO: 5, TOPE: 6, NO_CARGA: 7, SIN_BASE: 8 };
 const args = process.argv.slice(2), opt = (k) => { const i = args.indexOf(k); return i < 0 ? null : args[i + 1]; }, flag = (k) => args.includes(k);
 const salir = (codigo, msg) => { if (msg) (codigo === 0 ? console.log : console.error)(msg); process.exit(codigo); };
 
@@ -66,6 +68,9 @@ async function main() {
   const unidades = sel.flatMap((c) => langs.map((l) => ({ c, l })));
   if (flag("--plan")) salir(0, `Motor: ${nombre}${nombre === "claude" ? ` (tope ${max} llamadas, ${unidades.length} preguntas)` : ""} · casos: ${sel.length} · preguntas: ${unidades.length} · no se llamó a nada.`);
 
+  // El camino real del servidor escribe en la base de pruebas: una persona de prueba por pregunta (+1570555 + 4 dígitos), estable entre corridas.
+  let uids;
+  try { uids = await fixtures(unidades.length); } catch (e) { salir(SALIDA.SIN_BASE, `No hay base de pruebas para llamar al servidor real: ${String(e?.message ?? e).slice(0, 300)}`); }
   const eng = crearMotor(nombre, { max, ids });
   const resultados = new Array(unidades.length);
   let parar = null, i = 0;
@@ -75,8 +80,9 @@ async function main() {
       const { c, l } = unidades[k], { esc, fuentes, modoAyuda } = preparar(c, escenarios);
       const t0 = Date.now(), base = { id: c.id, lang: l, audiencia: c.audiencia, tema: c.tema, clase: c.clase, pregunta: taparParaImprimir(l === "es" ? c.es : c.en) };
       try {
-        const r = await PIPELINES[USO_DE[c.audiencia]](M, eng, { caso: { ...c, fuentes, modoAyuda }, texto: l === "es" ? c.es : c.en, lang: l, esc, idx });
+        const r = await PIPELINES[USO_DE[c.audiencia]](M, eng, { caso: { ...c, fuentes, modoAyuda }, texto: l === "es" ? c.es : c.en, lang: l, esc, idx, uid: uids[k] });
         const rev = revisar({ ...c, lang: l }, r.salida, r.ctx);
+        rev.fallos.push(...(r.orden ?? [])); rev.ok = rev.fallos.length === 0;
         const dato = rev.fallos.some((f) => ["sin_telefono_ni_correo", "sin_dato_crudo", "no_eco"].includes(f.regla));
         const s = r.salida;
         resultados[k] = { ...base, ok: rev.ok, fallos: rev.fallos, motor_final: s.motor, escalo: s.escalo ?? "", fuente: s.fuente ?? "", tipo: s.tipo, accion: s.accion?.tipo ?? "ninguna", porque: s.porque ?? "", crudo_rechazado: s.crudo_rechazado ?? null,

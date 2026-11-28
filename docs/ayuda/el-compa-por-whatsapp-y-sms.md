@@ -29,6 +29,9 @@ Audiencia: vecino. Tema: cuenta._
 - **No lo encendiste o no tienes cuenta:** te contesta con cómo entrar a To'Latino y encenderlo. Nada más.
 - **Pides algo que se hace en la app** (cancelar una solicitud gratis, abrir tu pedido o Mi cuenta): te manda el enlace de un uso. Sin sesión,
   el enlace te lleva a **Entrar**; después vuelves a la confirmación. Con otra cuenta abierta, dice que el enlace es de otra cuenta.
+- **Tienes varias que encajan** (por ejemplo dos reservaciones iguales): El Compa pregunta **«¿Cuál quieres cancelar?»** (o abrir) y dice el número de
+  cada una. Contesta **solo con el número** («R-1042»), sin volver a escribir «cancela»: elige esa y sigue lo que pedías, con su enlace de un uso.
+  Si el número no es de ninguna tuya, te lo dice y vuelve a preguntar. El número solo, sin que El Compa te haya preguntado antes, no prepara nada.
 - **El enlace ya se usó o venció (30 minutos):** lo dice y no hace nada. Pídeselo otra vez a El Compa.
 - **Dinero, tu cuenta o algo de seguridad:** pasa tu caso a una persona del equipo (te dice el número TK-…). Si es una emergencia, llama al 911.
 - **STOP:** deja de mandarte mensajes por ese número al instante (también los avisos por SMS de To'Latino) y queda anotado. Con **START**
@@ -74,6 +77,10 @@ Audiencia: vecino. Tema: cuenta._
 - **You ask for something that is done in the app** (cancel a free request, open your order or My account): it sends you the one-use link.
   Without a session, the link takes you to **Sign in**; afterward you return to the confirmation. With another account open, it says the link
   belongs to another account.
+- **Several match** (for example two identical reservations): El Compa asks **«Which one do you want to cancel?»** (or open) and gives the number
+  of each. Reply with **just the number** («R-1042»), without typing «cancel» again: it picks that one and carries on with what you asked, with
+  its one-use link. If the number is not one of yours, it tells you and asks again. A number on its own, when El Compa has not asked you first,
+  prepares nothing.
 - **The link was already used or expired (30 minutes):** it says so and does nothing. Ask El Compa for it again.
 - **Money, your account or something about safety:** it passes your case to a person on the team (it tells you the number TK-…). If it is an
   emergency, call 911.

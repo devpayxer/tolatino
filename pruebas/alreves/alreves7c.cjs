@@ -84,7 +84,7 @@ const casos = [
   ['compaSalidaLimpia', V, '  if (fuente && fuente !== "cuenta" && !c.fuentes.includes(fuente)) fuente = "";\n', ''],
   ['compaSalidaLimpia', V, '  for (const m of r.respuesta.match(MONTO) ?? []) if', '  for (const m of [] as string[]) if'],
   ['compaSalidaLimpia', C, '  const ms = Date.now() - t0, v = ver(sal.json);', '  const ms = Date.now() - t0, v = { ok: true as const, r: sal.json as Respuesta };'],
-  ['compaSalidaLimpia', C, '    const v = verificar(responderConReglas({ texto: t.texto, lang, ops, trozos }), vctx);', '    const v = { ok: true as const, r: responderConReglas({ texto: t.texto, lang, ops, trozos }) as Respuesta };'],
+  ['compaSalidaLimpia', C, '    const v = verificar(responderConReglas({ texto: textoReglas, lang, ops, trozos }), vctx);', '    const v = { ok: true as const, r: responderConReglas({ texto: textoReglas, lang, ops, trozos }) as Respuesta };'],
   // compaInterruptores
   ['compaInterruptores', I, '  if (candadoProduccion()) return { ok: false, por: "produccion" };\n', ''],
   ['compaInterruptores', I, '  if (!r?.nivel) return { ok: false, por: "nivel" };', '  if (r?.nivel === false) return { ok: false, por: "nivel" };'],

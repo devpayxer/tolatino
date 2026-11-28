@@ -6,7 +6,7 @@
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ, G = 'compaEligeLaOperacion';
-const RG = 'apps/web/lib/compa/modelo-reglas.ts', SM = 'apps/web/lib/compa/modelo-simulador.ts';
+const CV = 'apps/web/lib/compa/conversacion.ts', RG = 'apps/web/lib/compa/modelo-reglas.ts', SM = 'apps/web/lib/compa/modelo-simulador.ts';
 let bien = 0, total = 0;
 const caso = (ok, que, extra = '') => { total++; if (ok) bien++; console.log(`  ${ok ? '✓' : '✗'} ${que}${extra ? ' → ' + extra : ''}`); };
 const casos = [
@@ -36,6 +36,12 @@ const casos = [
   // El texto que ve la persona y los chips.
   [RG, '"No encontré esa operación entre las tuyas."', '"Listo, no encontré esa operación entre las tuyas."', 'el verificador rechaza su respuesta'],
   [RG, '(es ? "Cancela mi" : "Cancel my")', '(es ? "Quitar" : "Remove")', 'no vuelve a elegir UNA operación'],
+  // 28 nov · El número solo («R-1042») tras «¿Cuál quieres cancelar?» sigue la pregunta (conversacion.ts, antes del modelo) y elige esa candidata con el mismo verbo.
+  [RG, 'export const soloReferencia = (t: string) => SOLO_REF.test(', 'export const soloReferencia = (t: string) => !SOLO_REF.test(', 'soloReferencia debe aceptar'],
+  [RG, '(?:¿Cuál quieres (cancelar|abrir)\\?|Which one', '(?:¿Qué quieres (cancelar|abrir)\\?|Which one', 'verboPreguntado no reconoce la pregunta'],
+  [RG, '`${verbo === "cancelar" ? (lang === "es" ? "Cancela" : "Cancel") : lang === "es" ? "Abre mi" : "Open my"} ${ref}`', '`${lang === "es" ? "Cancela" : "Cancel"} ${ref}`', 'el mismo verbo'],
+  [CV, 'if (soloReferencia(t.texto)) {', 'if (soloReferencia(crudo + "x")) {', 'turno no sigue la pregunta de El Compa'],
+  [CV, 'if (verbo) return desdeReglas("seguimiento", ordenConReferencia(verbo, t.texto, lang));', 'if (verbo) return desdeReglas("seguimiento", t.texto);', 'turno no sigue la pregunta de El Compa'],
   // Las marcas y la tabla.
   [RG, '// ◆ elegir:inicio', '// elegir', 'faltan las marcas'],
   [RG, 'export const CASOS_ELEGIR: CasoElegir[] = [', 'export const CASOS_ELEGIR: CasoElegir[] = [].concat([] as never) as CasoElegir[]; const OTROS: CasoElegir[] = [', 'CASOS_ELEGIR'],

@@ -328,6 +328,20 @@ export const CASOS_ELEGIR: CasoElegir[] = [
 ];
 // ◆ elegir:fin
 
+/* 28 nov · «R-1042» a secas. Por SMS y WhatsApp no hay botones: tras «¿Cuál quieres cancelar? Tienes … R-1042 y R-1043», la persona contesta solo con el
+   número. Eso NO es un mensaje nuevo sin rumbo: elige a esa candidata y sigue lo que se estaba pidiendo (el servidor lo decide, no el modelo). Aquí: (1) ¿el
+   mensaje es SOLO una referencia? (2) ¿qué verbo preguntó El Compa en su último mensaje? Cualquier otra cosa, o una pregunta que no fue de El Compa, sigue
+   lo de siempre. La acción que sale pasa por la misma validación contra la sesión y se confirma con el enlace de un solo uso. */
+const SOLO_REF = new RegExp(`^(?:(?:(?:es|it is|it's|la|el|esa|ese|the|numero|number|no)${LD}|#)\\.?\\s*)*(?:[a-z]{1,2}[\\s-]?)?\\d{3,}\\.?$`, "u");
+export const soloReferencia = (t: string) => SOLO_REF.test(plano(t).replace(/^[¿¡"'“]+|[.!?"'”]+$/g, "")) && !/^(?:19|20)\d{2}$/.test(plano(t));
+export function verboPreguntado(ultimaDeCompa: string): "cancelar" | "abrir" | null {
+  const m = /^(?:(?:No encontré esa operación entre las tuyas\.|I couldn't find that one among yours\.) )?(?:¿Cuál quieres (cancelar|abrir)\?|Which one do you want to (cancel|open)\?)/.exec(ultimaDeCompa.trim());
+  const v = m?.[1] ?? m?.[2];
+  return v === "cancelar" || v === "cancel" ? "cancelar" : v === "abrir" || v === "open" ? "abrir" : null;
+}
+/* El texto con que las reglas leen la respuesta: la orden de antes más la referencia que la persona acaba de dar. */
+export const ordenConReferencia = (verbo: "cancelar" | "abrir", ref: string, lang: Lang) => `${verbo === "cancelar" ? (lang === "es" ? "Cancela" : "Cancel") : lang === "es" ? "Abre mi" : "Open my"} ${ref}`;
+
 export function responderConReglas(x: { texto: string; lang: Lang; ops: OpCtx[]; trozos: TrozoModelo[] }): SalidaReglas {
   const es = x.lang === "es", t = x.texto.toLowerCase(), nada = { tipo: "ninguna", ref: "", pantalla: "" };
   // «Cancela…» y «abre mi…»: la operación de la que habla la persona (elegirOperacion); nunca la primera de la lista.

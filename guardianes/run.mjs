@@ -42,7 +42,7 @@ if (!solo || solo === "subidaConHerramienta") { try { SUBIR = await import("../s
 import { spawnSync as lanzar } from "node:child_process";
 import { tmpdir as carpetaTemporal } from "node:os";
 let BATERIA = null;
-if (!solo || solo === "bateriaCompaFija") { try { BATERIA = { K: await import("../scripts/compa/bateria/casos.mjs"), A: await import("../scripts/compa/bateria/ayuda.mjs"), M: await import("../scripts/compa/bateria/motor.mjs"), C: await import("../scripts/compa/bateria/correr.mjs") }; } catch (e) { BATERIA = { error: String(e?.message ?? e) }; } }
+if (!solo || solo === "bateriaCompaFija") { try { BATERIA = { K: await import("../scripts/compa/bateria/casos.mjs"), A: await import("../scripts/compa/bateria/ayuda.mjs"), M: await import("../scripts/compa/bateria/motor.mjs"), C: await import("../scripts/compa/bateria/correr.mjs"), P: await import("../scripts/compa/bateria/camino.mjs") }; } catch (e) { BATERIA = { error: String(e?.message ?? e) }; } }
 import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 // Incluye los archivos nuevos que todavía no están en git (5 nov, 1l: corrían limpios en local y la CI los cazó).
@@ -5555,6 +5555,23 @@ const guardianes = {
         if (e2.k !== "una" || !quiere) falla(G, R, 0, `${q}: el chip «${chip}» no vuelve a elegir UNA operación (${fmt(e2)}${quiere ? "" : ", y no se reconoce como la acción"})`);
       }
     }
+    // (4) 28 nov · Contestar SOLO con el número («R-1042») a un «¿Cuál quieres cancelar?» elige a esa candidata y sigue lo que se pedía. Lo decide el servidor (conversacion.ts,
+    //     antes del modelo, con las reglas fijas); aquí se prueba la función real de punta a punta con las dos preguntas que El Compa hace (cancelar y abrir) y la estructura.
+    if (typeof M.soloReferencia !== "function" || typeof M.verboPreguntado !== "function" || typeof M.ordenConReferencia !== "function") falla(G, R, 0, "faltan soloReferencia / verboPreguntado / ordenConReferencia (el número solo sigue la pregunta de El Compa)");
+    else for (const lang of ["es", "en"]) for (const verbo of ["cancelar", "abrir"]) {
+      const ops = M.opsDeTabla(verbo === "cancelar" ? "dos_pendientes" : "dos_citas", lang), pide = (verbo === "cancelar" ? M.respuestaCancelar : M.respuestaAbrir)({ texto: verbo === "cancelar" ? (lang === "es" ? "Cancela mi reserva" : "Cancel my booking") : (lang === "es" ? "Abre mi cita" : "Open my appointment"), lang, ops });
+      const q = `el número solo tras «${verbo}» (${lang})`;
+      if (!pide || pide.tipo !== "pregunta") { falla(G, R, 0, `${q}: la pregunta de «cuál» ya no sale (la tabla de la prueba cambió)`); continue; }
+      if (M.verboPreguntado(pide.respuesta) !== verbo) falla(G, R, 0, `${q}: verboPreguntado no reconoce la pregunta de El Compa («${pide.respuesta.slice(0, 50)}»)`);
+      const num = ops[1].numero;
+      if (!M.soloReferencia(num) || !M.soloReferencia(`la ${num}.`) || M.soloReferencia(`cancela ${num}`) || M.soloReferencia("2026") || M.soloReferencia("hola")) falla(G, R, 0, `${q}: soloReferencia debe aceptar «${num}» a secas y nada más`);
+      const r = M.responderConReglas({ texto: M.ordenConReferencia(verbo, num, lang), lang, ops, trozos: [] });   // por donde pasa de verdad: «cancela…» y «abre mi…» se leen en responderConReglas
+      const esperado = verbo === "cancelar" ? "cancel_request:op2" : "open_screen:op2";
+      if (`${r.accion.tipo}:${r.accion.ref}` !== esperado) falla(G, R, 0, `${q}: elige «${r.accion.tipo}:${r.accion.ref}» y tenía que ser «${esperado}» (esa candidata, el mismo verbo)`);
+    }
+    if (M.verboPreguntado && (M.verboPreguntado("Te preparé la cancelación de tu solicitud en X.") !== null || M.verboPreguntado("Reservar mesa: primero cuántos son.") !== null)) falla(G, R, 0, "verboPreguntado toma por pregunta lo que no lo es");
+    { const CV = "apps/web/lib/compa/conversacion.ts", cv = existsSync(CV) ? limpio(bruto(CV)) : "", t = cuerpoFn(cv, "turno"), i = t.indexOf("soloReferencia(t.texto)"), j = t.indexOf("await consultar(");
+      if (i < 0 || j < 0 || i > j || !/verboPreguntado\(/.test(t) || !/desdeReglas\("seguimiento", ordenConReferencia\(/.test(t) || !/sender = 'compa' order by at desc, id desc limit 1/.test(t)) falla(G, CV, 0, "turno no sigue la pregunta de El Compa cuando la persona contesta solo con el número (soloReferencia → último mensaje de El Compa → verboPreguntado → reglas, ANTES del modelo)"); }
   },
 
   /* 7c. Los interruptores se leen en UN lugar (lib/compa/interruptores.ts: feature_flags compa.* y compa_pauses), en cada turno y otra vez en gastar();
@@ -18151,8 +18168,8 @@ const guardianes = {
      código real de lib/compa (los sistemas fijos, el verificador, tapar), y que la revisión deje de cazar lo malo o de dejar pasar lo bueno (sus
      casos propios). Al revés: alrevesBateriaCompa. */
   bateriaCompaFija() {
-    const G = "bateriaCompaFija", D = "scripts/compa/bateria", C = `${D}/correr.mjs`, R = `${D}/revision.mjs`, RC = `${D}/revision-casos.mjs`, K = `${D}/casos.mjs`, M = `${D}/motor.mjs`, A = `${D}/ayuda.mjs`, E = `${D}/casos/escenarios.json`;
-    for (const f of [C, R, RC, K, M, A, E]) if (!existsSync(f)) return falla(G, f, 0, "falta (la batería del modelo real de El Compa)");
+    const G = "bateriaCompaFija", D = "scripts/compa/bateria", C = `${D}/correr.mjs`, R = `${D}/revision.mjs`, RC = `${D}/revision-casos.mjs`, K = `${D}/casos.mjs`, M = `${D}/motor.mjs`, A = `${D}/ayuda.mjs`, E = `${D}/casos/escenarios.json`, SV = `${D}/servidor.mjs`, CM = `${D}/camino.mjs`;
+    for (const f of [C, R, RC, K, M, A, E, SV, CM]) if (!existsSync(f)) return falla(G, f, 0, "falta (la batería del modelo real de El Compa)");
     if (!BATERIA || BATERIA.error) return falla(G, K, 0, `no carga: ${String(BATERIA?.error ?? "sin cargar").slice(0, 200)}`);
     const aqui = process.cwd();
     // 1. Los casos: cuántos, cuántos por audiencia, ES y EN, fichas que existen y que su audiencia lee, nada personal real, acciones de la lista.
@@ -18184,11 +18201,13 @@ const guardianes = {
     if (p2.status !== 5) falla(G, C, 0, `el motor real sin los identificadores de los modelos sale con 5 antes de llamar a nada (salió ${p2.status})`);
     const p3 = lanzar(process.execPath, [C, "--plan"], { env: { ...sano, TOLATINO_BATERIA_MOTOR: "claude" }, encoding: "utf8", timeout: 120_000 });
     if (p3.status !== 3 || /no-es-una-llave/.test(`${p3.stdout}${p3.stderr}`)) falla(G, C, 0, `el motor real sin llave sale con 3 y lo dice, sin fallar a medias (salió ${p3.status})`);
-    // 5. Tope de llamadas y ningún reintento: una sola llamada al proveedor por pregunta, dentro de crearMotor, después del tope.
-    const cuerpo = /o\.responder = async \(entrada\) => \{([\s\S]*?)\n  \};/.exec(m)?.[1] ?? "";
-    if (!/if \(nombre === "claude" && o\.llamadas >= o\.max\) throw new TopeDeLlamadas\(/.test(cuerpo) || !/o\.llamadas\+\+;/.test(cuerpo)) falla(G, M, 0, "cada llamada al modelo real cuenta y no pasa del tope (--max-llamadas / TOLATINO_BATERIA_TOPE_LLAMADAS)");
-    if (/\b(for|while)\b|\bretry\b|catch/.test(cuerpo) || (cuerpo.match(/base\.responder\(/g) ?? []).length !== 1) falla(G, M, 0, "sin reintentos silenciosos: una sola llamada al proveedor por pregunta y ningún bucle ni captura alrededor");
+    // 5. Tope de llamadas y ningún reintento: una sola llamada al proveedor por pregunta, dentro del envoltorio del modelo de servidor.mjs (el que usa conversacion.ts), después del tope.
+    const sv = sinComent(SV), cm = sinComent(CM);
+    const cuerpo = /responder: async \(entrada\) => \{([\s\S]*?)\n  \} \} : base;/.exec(sv)?.[1] ?? "";
+    if (!/if \(nombre === "claude" && eng\) \{\s*if \(eng\.llamadas >= eng\.max\) \{[\s\S]*?throw new TopeDeLlamadas\(/.test(cuerpo) || !/eng\.llamadas\+\+;/.test(cuerpo)) falla(G, SV, 0, "cada llamada al modelo real cuenta y no pasa del tope (--max-llamadas / TOLATINO_BATERIA_TOPE_LLAMADAS)");
+    if (/\b(for|while)\b|\bretry\b|catch/.test(cuerpo) || (cuerpo.match(/base\.responder\(/g) ?? []).length !== 1) falla(G, SV, 0, "sin reintentos silenciosos: una sola llamada al proveedor por pregunta y ningún bucle ni captura alrededor");
     if (!/TOLATINO_BATERIA_TOPE_LLAMADAS/.test(c) || !/--max-llamadas/.test(c) || !/parar = e\.message/.test(c) || !/SALIDA\.TOPE/.test(c)) falla(G, C, 0, "al llegar al tope la corrida para, lo dice y sale con 6 (lo que no corrió no cuenta como acierto)");
+    if (!/if \(s\.tope\) throw new TopeDeLlamadas\(s\.tope\);/.test(sv)) falla(G, SV, 0, "conversacion.ts atrapa el error del modelo (cae a las reglas): el tope de llamadas de la batería tiene que salir por conContexto, no por esa captura");
     // 6. Nunca imprime una respuesta con un dato personal sin tapar.
     if (!/texto: taparParaImprimir\(s\.texto\)/.test(c) || !/taparParaImprimir\(String\(r\.pregunta/.test(c)) falla(G, C, 0, "lo que se imprime y se guarda de una respuesta y de una pregunta pasa por taparParaImprimir");
     if (/console\.(log|error)\([^)]*\b(salida|s)\.crudo\b|crudo:/.test(c)) falla(G, C, 0, "el corredor nunca imprime ni guarda la respuesta cruda del modelo");
@@ -18198,14 +18217,29 @@ const guardianes = {
       for (const n of ["SISTEMA_VECINO", "SISTEMA_PANEL", "SISTEMA_AUTO", "SISTEMA_BORRADOR", "SISTEMA_COPILOTO"]) if (typeof mod.conv?.[n] !== "string" || mod.conv[n].length < 300) falla(G, M, 0, `no cargo ${n} de lib/compa/conversacion.ts: la batería tiene que usar el sistema fijo de verdad`);
       if (typeof mod.v?.verificar !== "function" || typeof mod.t?.tapar !== "function" || typeof mod.r?.detectar !== "function" || typeof mod.acc?.validarAccion !== "function") falla(G, M, 0, "la batería usa verificar, tapar, detectar y validarAccion de lib/compa (no una copia)");
     } catch (e) { falla(G, M, 0, `el motor de la batería no carga el código de lib/compa: ${String(e?.message ?? e).slice(0, 200)}`); }
+    // 7b. El CAMINO es el real: camino.mjs LLAMA a turno, turnoPanel, respuestaAuto y borradorCopiloto de conversacion.ts (cargado por servidor.mjs con ts-servidor.cjs) y no
+    //     reproduce lo que decide el servidor; lo único que se cambia por un doble en servidor.mjs es la lista cerrada de abajo (los lectores del escenario, la persona, las
+    //     acciones guardadas, los avisos y el modelo envuelto), y lo demás —tapar, reglas, verificador, tope, la búsqueda de ayuda— es el real (se envuelve para anotar el orden).
+    for (const f of ["S.conv.turno(", "S.conv.turnoPanel(", "S.conv.respuestaAuto(", "S.conv.borradorCopiloto("]) if (!cm.includes(f)) falla(G, CM, 0, `la batería no llama a ${f.replace("S.conv.", "conversacion.")}): el camino de ese uso tiene que ser el real, no una copia`);
+    if (/\b(?:verificar|verificarAuto|verificarCopiloto|responderConReglas|responderPanelConReglas|responderAutoConReglas|borradorCopilotoConReglas|validarAccion|trozosDelCaso)\(/.test(cm)) falla(G, CM, 0, "camino.mjs reproduce lo que decide el servidor (verificar, reglas o validar la acción): solo se llama a conversacion.ts");
+    if (/\bS\.R\.detectar(?:Panel|Auto)?\([^)]*\)\s*(?:\?|&&|\|\|)[^;]*\bresponder\b/.test(cm)) falla(G, CM, 0, "camino.mjs decide con detectar: eso lo hace conversacion.ts (aquí solo se usa para saber qué orden se espera)");
+    if (!/TS\.cargarApp\(`\$\{LIB\}\/conversacion\.ts`, stubs\)/.test(sv)) falla(G, SV, 0, "servidor.mjs tiene que cargar lib/compa/conversacion.ts de verdad con cargarApp (pruebas/lib/ts-servidor.cjs)");
+    const PERMITIDOS = new Set(["tapar", "reglas", "verificar", "modelo-claude", "modelo-simulador", "tope", "ayuda-indice", "contexto-vecino", "contexto-panel", "contexto-copiloto", "persona", "acciones"]);
+    for (const m of sv.matchAll(/\[`\$\{LIB\}\/([a-z-]+)\.ts`\]:/g)) if (!PERMITIDOS.has(m[1])) falla(G, SV, 0, `servidor.mjs cambia «${m[1]}» por un doble: lo único que se puede es lo de la lista (los lectores del escenario, la persona, las acciones, el modelo); lo demás de lib/compa es el real`);
+    for (const [n, v] of [["tapar", "T"], ["reglas", "R"], ["verificar", "V"], ["tope", "TO"], ["ayuda-indice", "AY"], ["acciones", "A"], ["contexto-panel", "CP"]]) if (!new RegExp(`\\[\`\\$\\{LIB\\}\\/${n}\\.ts\`\\]: \\{ \\.\\.\\.${v},`).test(sv)) falla(G, SV, 0, `el doble de «${n}» tiene que ser el módulo real con sus funciones envueltas ({ ...${v}, … }), no uno inventado`);
+    if (!/trozosCompa: async \(\.\.\.a\) => \{ const r = await AY\.trozosCompa\(\.\.\.a\)/.test(sv)) falla(G, SV, 0, "la búsqueda de ayuda de la batería es la de Postgres (ayuda-indice.ts trozosCompa), no una aproximación");
+    if (!/process\.env\.TOLATINO_COMPA_MOTOR = motor/.test(sv)) falla(G, SV, 0, "el motor lo elige la variable que modelo.ts ya lee (TOLATINO_COMPA_MOTOR), no un doble de motorActivo");
     // 8. La revisión: sus casos propios (buenas y malas) en verde.
     const p4 = lanzar(process.execPath, [C, "--casos"], { env: sano, encoding: "utf8", timeout: 120_000 });
     const fin = /(\d+)\/(\d+) casos de la revisión/.exec(p4.stdout ?? "");
     if (p4.status !== 0 || !fin || fin[1] !== fin[2] || Number(fin[2]) < 90) falla(G, RC, 0, `los casos de la revisión no pasan: ${String(p4.stdout ?? "").split("\n").filter((l) => /✗/.test(l)).slice(0, 4).map((l) => l.trim()).join(" · ").slice(0, 400) || `salió ${p4.status} ${String(p4.stderr).slice(0, 160)}`}`);
-    // 9. El corredor corre de verdad contra las reglas (sin red, sin clave): toda pregunta corre, nada personal sale en el JSON.
+    // 9. El corredor corre de verdad contra las reglas (sin red, sin clave) POR EL SERVIDOR REAL: toda pregunta corre, nada personal sale en el JSON. Llama a conversacion.ts contra la
+    //    base de pruebas, así que solo corre donde hay base (DATABASE_URL: el sandbox y el carril de punta a punta); en la señal rápida del CI (sin base) corren las comprobaciones de
+    //    arriba y la corrida la hacen las pruebas al revés alrevesBateriaCompa, que sí la tienen (y fallan si no hay base).
     const json = `${carpetaTemporal()}/guardian-bateria-${process.pid}.json`;
-    const p5 = lanzar(process.execPath, [C, "--json", json], { env: { ...sano, TOLATINO_BATERIA_MOTOR: "reglas" }, encoding: "utf8", timeout: 300_000 });
-    if (p5.status !== 0 && p5.status !== 1) falla(G, C, 0, `el corredor contra las reglas sale con 0 o 1 (salió ${p5.status}): ${String(p5.stderr || p5.stdout).slice(0, 200)}`);
+    const p5 = process.env.DATABASE_URL ? lanzar(process.execPath, [C, "--json", json], { env: { ...sano, TOLATINO_BATERIA_MOTOR: "reglas" }, encoding: "utf8", timeout: 300_000 }) : { status: 0, sinBase: true };
+    if (p5.sinBase) { /* sin base de pruebas: ver arriba */ }
+    else if (p5.status !== 0 && p5.status !== 1) falla(G, C, 0, `el corredor contra las reglas sale con 0 o 1 (salió ${p5.status}): ${String(p5.stderr || p5.stdout).slice(0, 200)}`);
     else {
       let j = null; try { j = JSON.parse(readFileSync(json, "utf8")); } catch { /* abajo */ }
       if (!j) falla(G, C, 0, "el corredor escribe su JSON con todo");

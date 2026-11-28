@@ -270,6 +270,8 @@ const HOY = sql(`select extract(dow from now() at time zone 'America/New_York'):
   ok(w1.res === 'respuesta' && w1.out[0].s === 'simulado' && /Más: http\S+\/ayuda\/reservar-mesa/.test(w1.out[0].b), 'WhatsApp de su cuenta → respuesta con la ayuda (simulada)');
   ok(sql(`select c.channel from compa_inbound i join compa_conversations c on c.id = i.conversation_id where i.id = ${w1.id}`) === 'whatsapp', 'en una conversación de WhatsApp');
   const [opW, numW] = reservaPendiente(MU);
+  // 28 nov · «Se describen igual» tiene que ser cierto de verdad: cada reservación se creó con now() + 1 día y, si caían en minutos distintos (la prueba tarda), la hora de la descripción difería y El Compa no decía el número (la prueba fallaba según el minuto). Misma hora a propósito.
+  sql(`update operations set scheduled_at = (select scheduled_at from operations where id = ${opD}) where id = ${opW}`);
   // 23 nov · Marisol tiene DOS reservaciones de mesa pendientes en el mismo negocio (la de arriba, cuyo enlace descartó, y esta): El Compa ya no elige
   // la primera; pregunta cuál y las nombra con su número (por WhatsApp no hay botones). Con el número, prepara ESA y manda el enlace.
   const pendientesW = sql(`select string_agg(number, ',' order by id) from operations where user_id = '${MU}' and kind = 'table' and status = 'pending'`).split(',');
@@ -281,6 +283,34 @@ const HOY = sql(`select extract(dow from now() at time zone 'America/New_York'):
   const w2 = await wa(MARI, `cancela mi reservación ${numW}`);
   ok(sql(`select a.operation_id from compa_actions a join compa_links l on l.action_id = a.id order by l.created_at desc limit 1`) === opW, 'con el número, el enlace es de ESA reservación');
   ok(w2.res === 'enlace' && w2.out[0].k === 'enlace' && sql(`select status from operations where id = ${opW}`) === 'pending', 'una acción por WhatsApp → enlace de un uso; nada cambia por mensaje');
+  // 28 nov · Contestar SOLO con el número («R-1042»), sin «cancela»: por WhatsApp y SMS no hay botones, y esa respuesta elige a ESA candidata y sigue lo que se pedía.
+  // El enlace de un solo uso sigue siendo lo que confirma (nada cambia por mensaje). Sin pregunta de El Compa antes, o con un número que no es suyo, no se prepara nada.
+  console.log('11b · Solo el número elige a la candidata (WhatsApp y SMS)');
+  const numOtra = pendientesW.find((n) => n !== numW), opOtra = sql(`select id from operations where number = '${numOtra}'`);
+  const acciones0 = sql(`select count(*) from compa_actions where user_id = '${MU}'`);
+  const sinPregunta = await wa(MARI, numOtra);
+  ok(sinPregunta.res !== 'enlace' && sinPregunta.out.every((x) => x.k !== 'enlace') && sql(`select count(*) from compa_actions where user_id = '${MU}'`) === acciones0,
+    'el número solo, SIN una pregunta de El Compa antes («¿Cuál quieres cancelar?»), no prepara nada');
+  const wq = await wa(MARI, 'cancela mi reservación');
+  ok(/¿Cuál quieres cancelar\?/.test(wq.out[0]?.b ?? '') && pendientesW.every((n) => (wq.out[0]?.b ?? '').includes(n)), 'WhatsApp: pregunta cuál y dice el número de cada una');
+  const wx = await wa(MARI, 'R-9999');
+  ok(wx.res !== 'enlace' && wx.out.every((x) => x.k !== 'enlace') && /No encontré esa operación/.test(wx.out[0]?.b ?? '') && /¿Cuál quieres cancelar\?/.test(wx.out[0]?.b ?? ''), 'un número que no es suyo: no hay enlace, dice que no lo encontró y vuelve a preguntar cuál');
+  const wn1 = await wa(MARI, numOtra);
+  ok(wn1.res === 'enlace' && wn1.out[0].k === 'enlace' && /^Te preparé la cancelación/.test(wn1.out[0].b), `WhatsApp: «${numOtra}» solo, sin «cancela» → prepara la cancelación y manda el enlace`);
+  ok(sql(`select a.operation_id from compa_actions a join compa_links l on l.action_id = a.id order by l.created_at desc limit 1`) === opOtra && sql(`select a.type from compa_actions a join compa_links l on l.action_id = a.id order by l.created_at desc limit 1`) === 'cancel_request',
+    'el enlace es de ESA reservación (la que dijo con el número) y de la acción que se pedía');
+  ok(sql(`select count(*) from operations where id in (${opD}, ${opW}) and status = 'pending'`) === '2', 'el número solo no cancela nada: la reservación sigue pendiente hasta confirmar con el enlace');
+  const sq = await sms(MARI, 'cancela mi reservación');
+  ok(/¿Cuál quieres cancelar\?/.test(sq.out[0]?.b ?? ''), 'SMS: pregunta cuál');
+  const sn1 = await sms(MARI, `la ${numW}`);
+  ok(sn1.res === 'enlace' && sql(`select a.operation_id from compa_actions a join compa_links l on l.action_id = a.id order by l.created_at desc limit 1`) === opW, `SMS: «la ${numW}» → el enlace es de esa reservación`);
+  const sq2 = await sms(MARI, 'abre mi reservación');
+  ok(/¿Cuál quieres abrir\?/.test(sq2.out[0]?.b ?? ''), 'SMS: «abre mi reservación» con dos iguales también pregunta cuál');
+  const sn2 = await sms(MARI, numOtra);
+  ok(sn2.res === 'enlace' && sql(`select a.type from compa_actions a join compa_links l on l.action_id = a.id order by l.created_at desc limit 1`) === 'open_screen' && sql(`select a.operation_id from compa_actions a join compa_links l on l.action_id = a.id order by l.created_at desc limit 1`) === opOtra,
+    'SMS: después de «abrir», el número solo abre ESA (no cancela)');
+  ok(sql(`select count(*) from operations where id in (${opD}, ${opW}) and status = 'pending'`) === '2', 'y nada cambió por mensaje');
+
   const wn = await wa(NADIE, 'hola'); ok(wn.res === 'fija', 'WhatsApp sin cuenta → la fija');
   const v1 = await interno({ op: 'canal_enviar', numero: nWA, telefono: YARI, texto: 'Hola' });
   ok(v1.estado === 'ventana', 'a un teléfono que no escribió por WhatsApp en 24 h: no sale («ventana»)');

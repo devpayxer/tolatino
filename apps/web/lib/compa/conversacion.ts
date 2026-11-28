@@ -12,7 +12,7 @@ import { contextoVecino, type ContextoVecino, type OpRef } from "./contexto-veci
 import { opVecino, razonesDe, type RazonK } from "./hoja";
 import { disponible, hiloApagado } from "./interruptores";
 import { ErrorModelo, ESQUEMA_COPILOTO, modelo, motorActivo, type Canal, type Lang, type MensajeModelo, type Motor, type Salida, type TrozoModelo, type Uso } from "./modelo";
-import { borradorCopilotoConReglas, responderAutoConReglas, responderConReglas, responderPanelConReglas, type OpCtx } from "./modelo-reglas";
+import { borradorCopilotoConReglas, ordenConReferencia, responderAutoConReglas, responderConReglas, responderPanelConReglas, soloReferencia, verboPreguntado, type OpCtx } from "./modelo-reglas";
 import { pasarAPersona, type Motivo } from "./persona";
 import { detectar, detectarAuto, detectarPanel, LINEAS, LINEAS_AUTO } from "./reglas";
 import { AVISO_TAPADO, tapar } from "./tapar";
@@ -180,14 +180,22 @@ export async function turno(q: { userId: string }, x: { conversacion?: string | 
   const vctx: Contexto = { fuentes: trozos.map((z) => z.fuente), conCuenta: ctx.refs.size > 0, confirmadas: ctx.confirmadas, canceladasNum: ctx.canceladasNum, activasNum: ctx.activasNum, permitidos: [], maxFrases: 3,
     texto: [ctx.texto, ...trozos.map((z) => `${z.titulo} ${z.seccion} ${z.texto}`), t.texto].join("\n") };
 
-  const desdeReglas = async (porque: string): Promise<TurnoOk> => {
+  const desdeReglas = async (porque: string, textoReglas: string = t.texto): Promise<TurnoOk> => {
     // Las mismas operaciones que ve el modelo (tipo, número, negocio ya tapado, cuándo): las reglas eligen de cuál se habla (elegirOperacion).
     const ops = ctx.datos.operaciones as OpCtx[];
-    const v = verificar(responderConReglas({ texto: t.texto, lang, ops, trozos }), vctx);
+    const v = verificar(responderConReglas({ texto: textoReglas, lang, ops, trozos }), vctx);
     if (!v.ok) return responder({ texto: LINEAS.noSe[lang], tipo: "no_se", fuente: "", chips: [], motor: "reglas", porque: `${porque}+reglas:${v.motivo}` });
     return responder({ texto: v.r.respuesta, tipo: v.r.tipo, fuente: v.r.fuente, titulo: titulos.get(v.r.fuente), chips: v.r.chips, motor: "reglas",
       p: validarAccion({ uso: x.uso, accion: v.r.accion, refs: ctx.refs }), porque });
   };
+
+  // 28 nov · Quien contesta SOLO con el número («R-1042») a un «¿Cuál quieres cancelar?» de El Compa elige a esa candidata: el servidor sigue lo que se pedía
+  // (sin el modelo, que no puede equivocarse de verbo ni de operación) y la acción sale por el mismo camino: validada contra la sesión y con enlace de un uso.
+  if (soloReferencia(t.texto)) {
+    const antes = (await db().query<{ text: string }>(`select text from compa_messages where conversation_id = $1 and sender = 'compa' order by at desc, id desc limit 1`, [conv.id])).rows[0]?.text ?? "";
+    const verbo = verboPreguntado(antes);
+    if (verbo) return desdeReglas("seguimiento", ordenConReferencia(verbo, t.texto, lang));
+  }
 
   // ── El modelo: por el tope, con tiempo máximo y verificado (consultar) ──
   const q2 = await consultar({ uso: x.uso, canal: x.canal, ciudad, userId: q.userId, convId: conv.id, lang, sistema: SISTEMA_VECINO, datos: ctx.datos, trozos, vctx });
@@ -646,7 +654,8 @@ export async function debeContestarAuto(negocio: string, hilo: string | null, us
   return d.ok && !tope && !off && r.hoy < lim.compa_auto_dia_negocio && (n.rows[0]?.h ?? 0) < lim.compa_msgs_hora && (n.rows[0]?.d ?? 0) < lim.compa_msgs_dia;
 }
 
-async function respuestaAuto(q: { userId: string | null }, x: { borrador: boolean; convId: number; ciudad: string; negocio: { id: string; nombre: string }; lang: Lang; ultimo: string;
+// Exportada para la batería de El Compa (scripts/compa/bateria/servidor.mjs): es el camino de las respuestas automáticas y de «Sugerir respuesta».
+export async function respuestaAuto(q: { userId: string | null }, x: { borrador: boolean; convId: number; ciudad: string; negocio: { id: string; nombre: string }; lang: Lang; ultimo: string;
   historial: MensajeModelo[] | null; ctx: ContextoNegocio; canal?: Canal }): Promise<Auto | { off: true; porque: string }> {
   const lang = x.lang, N = x.negocio.nombre;
   const pasar = (l: Bi, porque: string): Auto => (x.borrador ? { texto: LINEAS_AUTO.borradorRevisar[lang], pasar: false, motor: "reglas", fuente: null, porque: `borrador:${porque}` }

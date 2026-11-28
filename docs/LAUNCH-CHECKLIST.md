@@ -2944,8 +2944,18 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [x] **→ 9b** · **(Hecho el 23 nov: `elegirOperacion` —referencia, negocio, tipo, fecha; varias → pregunta cuál; de otra persona → nada—, guardián
       `compaEligeLaOperacion`, al revés `alrevesEligeOperacion` 24; batería con reglas 70,1 → 72,5 %.)** Reglas y simulador de El Compa: con «cancela» preparaban la primera operación cancelable sin mirar de cuál habla la persona
       (`modelo-reglas.ts`, `modelo-simulador.ts`; casos `vec-036` y `vec-042` de la batería). La acción pide confirmación, pero propone la equivocada.
-- [ ] **→ 9q** · **La batería reproduce el camino de `conversacion.ts`, no lo llama** (`scripts/compa/bateria/motor.mjs`): un cambio en el orden de pasos
+- [x] **→ 9q** · **La batería reproduce el camino de `conversacion.ts`, no lo llama** (`scripts/compa/bateria/motor.mjs`): un cambio en el orden de pasos
       del servidor no se vería solo. Y la búsqueda de ayuda de Postgres no corre en la batería (mide al modelo, no a la búsqueda).
+      _hecho (28 nov, Sonnet):_ la batería LLAMA a `conversacion.ts` (`turno`, `turnoPanel`, `respuestaAuto`, `borradorCopiloto`; `respuestaAuto` se exporta
+      para eso), cargado con `ts-servidor.cjs` en `scripts/compa/bateria/servidor.mjs` + `camino.mjs`, contra la base de pruebas (`DATABASE_URL`; sin ella el
+      corredor sale con 8) y con la búsqueda de ayuda REAL de Postgres (`trozosCompa` con sus sinónimos). Lo único cambiado por un doble está en una lista
+      cerrada que el guardián `bateriaCompaFija` vigila (los lectores de contexto del escenario, la persona, las acciones guardadas, los avisos y el modelo
+      envuelto para contar y poner tope); `tapar`, `reglas`, `verificar`, `tope` son los reales, solo envueltos para anotar el ORDEN, y `revisarOrden`
+      falla la pregunta si el servidor lee sin tapar, busca ayuda o llama al modelo antes de decidir, llama sin reservar en el tope, no verifica o no anota el uso.
+      Sigue el simulador de modelo por defecto (sin llamadas ni dinero). Al revés: `alrevesBateriaCompa` 39/39 (cambia `conversacion.ts` y la batería cae con
+      «orden_de_pasos»). **Cambia lo que mide:** con la búsqueda real el simulador pasa de 69 % a 59 % (más fuentes «sin ficha» citadas por la búsqueda real
+      en preguntas que el caso no esperaba): es lo que vería el vecino, y afinar la búsqueda o los casos queda para quien mida con el modelo real. La batería
+      deja filas en la base de pruebas (personas +1570555 7000-9999, conversaciones y borradores del copiloto): `compa7c` ya no cuenta las del copiloto.
 - [ ] **→ 9s** · **Lo que sigue [pendiente] en Privacidad, IA y Cookies (23 nov):** cuánto conserva Anthropic lo que recibe y si se contrata retención cero
       (el guardián prohíbe afirmarla mientras `terceros.json` diga «pendiente»), las cookies de Stripe en la pantalla de pagar, Cloudflare y el proveedor
       de servidores. Preguntas A-04 y A-11.
@@ -2994,8 +3004,16 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       migración fuera de hora pico. Sin probar: aplicada → revertida → aplicada, y dos Admin a la vez (hay `for update`, no prueba de carrera).
 - [ ] **→ 9u** · **Portada de categoría en el teléfono: la sección queda al final de la ficha**, después de toda la lista de subcategorías (decisión del
       fundador en REVISION si se sube). El inglés del Catálogo no se vio servido; los mensajes del servidor de Catálogo son solo en español, como los demás.
-- [ ] **→ 9q** · **El Compa por SMS/WhatsApp con varias candidatas:** pregunta cuál y, si se describen igual, dice el número de cada una; quien contesta
+- [x] **→ 9q** · **El Compa por SMS/WhatsApp con varias candidatas:** pregunta cuál y, si se describen igual, dice el número de cada una; quien contesta
       solo con el número («R-1042») sin «cancela» no se probó.
+      _hecho (28 nov, Sonnet):_ no funcionaba: el número solo caía en la ayuda o en «no estoy seguro de entenderte». Ahora `conversacion.ts` (`turno`), antes del
+      modelo, ve que el mensaje es SOLO una referencia (`soloReferencia`), mira el último mensaje de El Compa en la conversación (`verboPreguntado`: «¿Cuál quieres
+      cancelar/abrir?», con o sin el «No encontré esa operación…» delante) y sigue ese verbo con esa candidata por las reglas fijas; la acción pasa por la misma
+      validación contra la sesión y se confirma con el enlace de un solo uso (nada cambia por mensaje). Un número que no es suyo no prepara nada y vuelve a
+      preguntar; el número solo sin pregunta previa no hace nada. `compa7h` 257 (11b: WhatsApp y SMS, cancelar y abrir); guardián `compaEligeLaOperacion` (4)
+      y sus 5 casos al revés. De paso: la prueba de «dos iguales» (23 nov) dependía del minuto (cada reservación nace con `now() + 1 día` y la hora entra en la
+      descripción): ahora fija la misma hora. Con el modelo REAL (no simulado) la pregunta la formula el modelo con sus palabras; solo se sigue por servidor si
+      la hizo El Compa con la frase fija, y si no, el modelo ve el historial como siempre (sin medir con el modelo real).
 - [x] **→ 9q** · **(Hecho el 23 nov: `SES_API_BASE` y `ANTHROPIC_API_BASE`, solo con `TOLATINO_ENTORNO=pruebas` y solo a 127.0.0.1/localhost; el simulador
       de SES recalcula la firma SigV4; `prov9v` 123 ✓, `alrevesllaves` 64.)** «Probar» de SES y Anthropic sin contraparte en pruebas: `ses.ts` y `modelo-claude.ts` tienen la dirección fija; hace falta una variable
       de dirección solo fuera de producción (en la lista «prohibida», con guardián) y sus rutas en `scripts/proveedores-sim`.
