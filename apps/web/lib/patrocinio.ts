@@ -652,7 +652,10 @@ export async function patPanel(negocio: string, userId: string, lang: "es" | "en
   const P = await preciosNegocio();
   const [lw, lm, filas, rec, esp, tj, hoy, previa] = await Promise.all([
     consultarPuestos(negocio, "week", "hoy"), consultarPuestos(negocio, "month", "hoy"),
-    db().query<FilaPat>(`select ${FILA} from sponsorships s left join sponsorship_stats st on st.kind = 'negocio' and st.ref_id = s.id where s.business_id = $1 order by s.starts_at desc, s.id desc limit 20`, [negocio]),
+    // Cada pedazo con su propia consulta (el vivo, el siguiente, los 10 últimos que ya pasaron): una lista con tope dejaba fuera al activo si había 20 o más a futuro.
+    db().query<FilaPat>(`(select ${FILA} from sponsorships s left join sponsorship_stats st on st.kind = 'negocio' and st.ref_id = s.id where s.business_id = $1 and s.status = 'activo' order by s.starts_at desc, s.id desc limit 1)
+      union all (select ${FILA} from sponsorships s left join sponsorship_stats st on st.kind = 'negocio' and st.ref_id = s.id where s.business_id = $1 and s.status = 'reservado' order by s.starts_at, s.id limit 1)
+      union all (select ${FILA} from sponsorships s left join sponsorship_stats st on st.kind = 'negocio' and st.ref_id = s.id where s.business_id = $1 and s.status in ('terminado', 'cancelado') order by s.starts_at desc, s.id desc limit 10)`, [negocio]),
     db().query<Recibo>(
       `select to_char(created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, amount_cents as monto, coalesce(upper(card_brand) || ' ·· ' || card_last4, '—') as tarjeta, reason as razon, refund_days as dias
          from sponsorship_payments where kind = 'negocio' and business_id = $1 order by created_at desc limit 24`, [negocio]),

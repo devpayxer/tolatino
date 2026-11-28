@@ -159,6 +159,13 @@ let OP = null;
     ok(sql(`select orders from sponsorship_stats where kind = 'negocio' and ref_id = ${SID}`) === '1', 'su pedido después de entrar: «pedidos» 1 (lo cuenta el barrido)');
     await pd.reload();
     ok(await espera(async () => /1\s*ENTRARON/.test(await texto(pd)) || (await texto(pd)).includes('ENTRARON')), 'el panel muestra las cifras');
+    // 28 nov · patPanel busca el activo con su propia consulta: con 25 cancelados a futuro (más que la lista de 20 de antes) el panel sigue mostrando el activo
+    // y no ofrece comprar (esos cancelados se quedan: nada se borra; terminarVivos de la próxima corrida no los toca).
+    sql(`insert into sponsorships (business_id, category_id, city_id, starts_at, ends_at, duration, status, price_cents, payer_user_id, end_kind, ended_at)
+         select '${BIZ}', 'NEG-FOOD', 'hzl', ${DIA('30 + g * 8')}, ${DIA('30 + g * 8 + 7')}, 'week', 'cancelado', 1700, '${D0}', 'dueno', now() from generate_series(1, 25) g`);
+    ok(Number(sql(`select count(*) from sponsorships where business_id = '${BIZ}' and status = 'cancelado' and starts_at > now()`)) >= 25, 'sembrados 25 patrocinios cancelados a futuro (más de los 20 que leía patPanel)');
+    await pd.reload();
+    ok(await espera(async () => (await texto(pd)).includes('ENTRARON')) && !(await texto(pd)).includes('puestos libres'), 'con 25 cancelados a futuro el panel sigue mostrando el patrocinio activo (cifras) y no ofrece comprar');
 
     console.log('3 · Belleza con los 6 puestos ocupados: una barbería Free ve «Sin puestos», pide «Avísame» y reserva');
     const OTROS = sql(`select string_agg(id, ',' order by id) from (select b.id from businesses b join business_stats_cache c on c.business_id = b.id where b.category_id = 'NEG-BELL' and b.city_id = 'hzl' and b.status = 'active' and b.id not like '%-reclamo-%' order by (c.plan = 'free') desc, b.created_at, b.id limit 6) x`).split(',');

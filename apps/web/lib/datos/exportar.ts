@@ -75,6 +75,22 @@ function* csvPorFilas(filas: Fila[]): Generator<string> {
   for (const f of filas) yield "\r\n" + cab.map((k) => celda(f[k])).join(",");
 }
 
+/* 28 nov · Cada parte sale en un orden fijo: sin «order by», Postgres da las filas en el orden de su plan (por el índice o leyendo la tabla, según cuándo
+   analizó la tabla) y dos archivos de los mismos datos no salían idénticos byte a byte. Aquí, la llave primaria de la tabla; si una tabla no la tuviera,
+   la fila entera como texto (siempre el mismo orden). Guardián exportacionEnFlujo: una parte sin «order by» no pasa. */
+let llaves: Map<string, string[]> | null = null;
+async function ordenDe(tabla: string, c?: PoolClient): Promise<string> {
+  if (!llaves) {
+    const q = `select i.indrelid::regclass::text as t, array_agg(a.attname::text order by k.ord) as c from pg_index i
+                 cross join lateral unnest(i.indkey::int2[]) with ordinality as k(n, ord) join pg_attribute a on a.attrelid = i.indrelid and a.attnum = k.n
+                where i.indisprimary group by i.indrelid`;
+    const r = (c ? await c.query<{ t: string; c: string[] }>(q) : await db().query<{ t: string; c: string[] }>(q)).rows;
+    llaves = new Map(r.map((x) => [x.t.replace(/^public\./, "").replace(/"/g, ""), x.c]));
+  }
+  const k = llaves.get(tabla);
+  return k?.length ? k.map((x) => `${ident(tabla)}.${ident(x)}`).join(", ") : `${ident(tabla)}::text`;
+}
+
 /* El archivo de una persona, por el mapa: las consultas (nombre → SQL). Solo sus filas; sin las columnas de otra persona. */
 export async function datosDeCuenta(cuenta: string, c?: PoolClient): Promise<Consulta[]> {
   const M = await mapa(c), refs = await columnasDePersona(c);
@@ -84,10 +100,10 @@ export async function datosDeCuenta(cuenta: string, c?: PoolClient): Promise<Con
     // Solo sus filas: la columna de la persona es su id. De OTRA persona no sale nada (sus columnas se quitan).
     const fuera = new Set([...(refs.get(f.tabla) ?? [])].filter((x) => x !== f.columna));
     if (f.tabla === "users") fuera.add("merged_into");
-    out.push({ nombre: f.exporta, sql: `select *${banderasDeNotas(f.tabla)} from ${ident(f.tabla)} where ${ident(f.columna)} = $1::uuid`, args: [cuenta], fuera, tabla: f.tabla });
+    out.push({ nombre: f.exporta, sql: `select *${banderasDeNotas(f.tabla)} from ${ident(f.tabla)} where ${ident(f.columna)} = $1::uuid order by ${await ordenDe(f.tabla, c)}`, args: [cuenta], fuera, tabla: f.tabla });
   }
   // Sus sanciones (el equipo las pone con target = su cuenta): qué, por qué y hasta cuándo; nunca quién del equipo ni sus notas.
-  out.push({ nombre: "sanciones", sql: `select kind as tipo, reason as motivo, starts_at as desde, ends_at as hasta, lifted_at as levantada from sanctions where target_kind = 'user' and target_id = $1::text order by starts_at`, args: [cuenta], fuera: new Set() });
+  out.push({ nombre: "sanciones", sql: `select kind as tipo, reason as motivo, starts_at as desde, ends_at as hasta, lifted_at as levantada from sanctions where target_kind = 'user' and target_id = $1::text order by starts_at, id`, args: [cuenta], fuera: new Set() });
   return out;
 }
 
@@ -98,7 +114,7 @@ export function datosDeNegocio(negocio: string): Consulta[] {
   return [
     L("negocio", `select id, name, category_id, subcategory_ids, city_id, status, operation, address, phone, whatsapp, email, instagram, facebook, languages, about, founded_year,
                          amenities, payment_modes, modules_on, created_at from businesses where id = $1`),
-    L("equipo", `select display_name as nombre, kind as tipo, role as puesto, status as estado, languages as idiomas, since_year as desde, invited_at as invitado from business_members where business_id = $1 order by sort`),
+    L("equipo", `select display_name as nombre, kind as tipo, role as puesto, status as estado, languages as idiomas, since_year as desde, invited_at as invitado from business_members where business_id = $1 order by sort, id`),
     // 9u-2 · items: sus notas según NOTAS (el motivo de un plato oculto sale solo mientras está oculto: lo que el panel le muestra). 22 nov · Sin
     // hidden_by: quién del equipo lo ocultó (una cuenta del equipo) no sale; el Panel tampoco lo dice.
     L("catalogo", `select i.*${banderasDeNotas("items")} from items i where i.business_id = $1 order by i.id`, "items", ["hidden_by"]),
@@ -109,7 +125,7 @@ export function datosDeNegocio(negocio: string): Consulta[] {
     L("cobros", `select p.kind as tipo, p.method as forma, p.amount_cents, p.fee_cents, p.refunded_cents, p.status as estado, p.created_at as fecha, p.captured_at as cobrado,
                         o.number as operacion from payments p left join operations o on o.id = p.operation_id where p.business_id = $1 order by p.created_at desc, p.id`),
     L("clientes", `select ${cliente} as cliente, o.kind as tipo, count(*)::int as operaciones, max(o.sent_at) as ultima, sum(o.total_cents)::int as total_cents
-                     from operations o join users u on u.id = o.user_id where o.business_id = $1 group by u.id, u.first_name, u.last_name, o.kind order by max(o.sent_at) desc`),
+                     from operations o join users u on u.id = o.user_id where o.business_id = $1 group by u.id, u.first_name, u.last_name, o.kind order by max(o.sent_at) desc, u.id, o.kind`),
     L("resenas", `select r.stars as estrellas, case when r.status = 'visible' then r.body end as texto, r.reply as respuesta, r.created_at as fecha, r.status as estado, ${cliente} as cliente
                     from reviews r join users u on u.id = r.user_id where r.business_id = $1 order by r.created_at desc, r.id`),
   ];

@@ -46,6 +46,13 @@ const casos = [
   [G, Z, '      for (const b of enBuffers(trozos())) {\n        crc = crc32(b, crc); largo += b.length;', '      for (const b of [Buffer.concat([...enBuffers(trozos())])]) {\n        crc = crc32(b, crc); largo += b.length;'],
   [G, 'pruebas/e2e/datos9d.cjs', 'idéntico byte a byte al guardado', 'parecido al guardado'],
   [G, 'pruebas/e2e/exp9t.cjs', "select sha256 from data_exports", "select media_key from data_exports"],
+  // 28 nov · Una parte del archivo sin «order by» (el orden lo elige el plan de Postgres y dos archivos no salen iguales).
+  [G, X, ' order by ${await ordenDe(f.tabla, c)}`', '`'],
+  [G, X, 'target_id = $1::text order by starts_at, id`', 'target_id = $1::text`'],
+  [G, X, 'where i.business_id = $1 order by i.id`', 'where i.business_id = $1`'],
+  [G, X, 'where business_id = $1 order by sort, id`', 'where business_id = $1`'],
+  // expeq9t vuelve a comparar sin el orden.
+  [G, 'pruebas/e2e/expeq9t.cjs', 'sha(zp[k]) === sha(z[k])', 'filasDe(k, zp[k]) === filasDe(k, z[k])'],
   // 26 nov · «Exportar sus datos» del equipo: la acción vuelve a armar el ZIP en memoria y a devolverlo en base64.
   [G, AU, 'ap = { enlace: await apartarParaEquipo(c, u.id, s.id), s, u, m };', 'ap = { enlace: (await (await import("@/lib/datos/exportar")).armarZip([], false, c)).zip.toString("base64"), s, u, m };'],
   // La acción ya no deja la auditoría al quedar listo.

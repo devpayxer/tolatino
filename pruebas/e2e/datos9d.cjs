@@ -129,7 +129,7 @@ const enRollback = (cuerpo) => { try { sql(`do $$ declare r text; begin ${cuerpo
     sql(`delete from otp_codes where phone = '+1${DUENO}'`);
     await t(pd, 'Pedir el archivo').click(); const cod2 = await codigo(pd);
     await pd.locator('input[aria-label="CÓDIGO QUE TE MANDAMOS POR SMS"]').fill(cod2); await t(pd, 'Pedir el archivo').click();
-    await pd.getByText('Estamos armando tu archivo').first().waitFor(); barrido(); await pd.reload(); await pd.getByText('Tu archivo está listo').first().waitFor(); await shot(pd, 'negocio-listo-390');
+    await pd.getByText('Estamos armando tu archivo').first().waitFor(); for (let i = 0; i < 8 && sql(`select status from data_exports where business_id = '${BIZ}' order by requested_at desc limit 1`) !== 'listo'; i++) barrido(); await pd.reload(); await pd.getByText('Tu archivo está listo').first().waitFor(); await shot(pd, 'negocio-listo-390');
     const dl2 = pd.waitForEvent('download'); await t(pd, 'Bajar').click(); const z2 = leerZip(fs.readFileSync(await (await dl2).path())), J2 = (k) => JSON.parse(z2[`${k}.json`].toString('utf8'));
     ok(J2('negocio')[0]?.id === BIZ && J2('operaciones').some((o) => o.numero === NUM && o.cliente === 'Vecina D.'), 'el negocio: su página y sus operaciones, el cliente con su nombre e inicial');
     const todo2 = Object.values(z2).map((x) => x.toString('utf8')).join('\n');

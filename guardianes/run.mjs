@@ -12863,6 +12863,17 @@ const guardianes = {
     if (!/if \(salida\) \{ salida\(l\); salida\(nb\); salida\(cuerpo\); \} else locales\.push\(l, nb, cuerpo\);/.test(zp) || !/if \(salida\) \{ salida\(cd\); salida\(fin\); return Buffer\.alloc\(0\); \}/.test(zp)) falla(G, Z, 0, "zipPorPartes con salida no guarda los trozos (los entrega en orden) y cierra escribiendo el índice");
     for (const t of ["pruebas/e2e/datos9d.cjs", "pruebas/e2e/exp9t.cjs"]) if (!existsSync(t) || !/idéntico byte a byte al guardado/.test(readFileSync(t, "utf8")) || !/select sha256 from data_exports/.test(readFileSync(t, "utf8"))) falla(G, t, 0, "la prueba compara el archivo bajado con el guardado (sha256 y tamaño de data_exports)");
     if (!existsSync("pruebas/alreves/alreves9texpflujo.cjs")) falla(G, "pruebas/alreves/alreves9texpflujo.cjs", 0, "falta su prueba al revés");
+    // 28 nov · Cada parte del archivo sale en orden fijo (LAUNCH «filas en el orden que elige Postgres»): sin «order by», dos archivos de los mismos datos
+    // no salen idénticos byte a byte. Toda consulta de datosDeCuenta y de datosDeNegocio lleva «order by» (la de una sola fila, «negocio», no).
+    const dc = cuerpoFn(x, "datosDeCuenta"), dn = cuerpoFn(x, "datosDeNegocio");
+    if (!dc || !dn) falla(G, X, 0, "faltan datosDeCuenta o datosDeNegocio");
+    else {
+      if (!/order by \$\{await ordenDe\(f\.tabla, c\)\}/.test(dc)) falla(G, X, 0, "datosDeCuenta: la consulta de cada tabla del mapa lleva «order by» por su llave (ordenDe): sin él el archivo sale en el orden del plan de Postgres");
+      for (const q of dc.match(/sql: `[^`]*`/g) ?? []) if (!/\border by\b/.test(q)) falla(G, X, 0, "datosDeCuenta: una parte sin «order by» (el archivo no sale siempre igual): " + q.slice(0, 60));
+      for (const q of dn.split(/\bL\("/).slice(1)) if (!/^negocio"/.test(q) && !/\border by\b/.test(q)) falla(G, X, 0, "datosDeNegocio: la parte «" + q.slice(0, q.indexOf('"')) + "» sin «order by» (el archivo no sale siempre igual)");
+    }
+    if (!/async function ordenDe\(/.test(x)) falla(G, X, 0, "falta ordenDe (el orden por llave de cada parte)");
+    { const te = existsSync("pruebas/e2e/expeq9t.cjs") ? readFileSync("pruebas/e2e/expeq9t.cjs", "utf8") : ""; if (!/sha\(zp\[k\]\) === sha\(z\[k\]\)/.test(te)) falla(G, "pruebas/e2e/expeq9t.cjs", 0, "expeq9t compara el archivo del equipo y el de la persona byte a byte (sha256 de cada parte), no sin el orden"); }
     // 26 nov · «Exportar sus datos» del equipo, por el mismo camino.
     const AU = "apps/web/app/admin/acciones-usuarios.ts", RE = "apps/web/app/api/admin/usuarios/archivo/[id]/route.ts", UI = "apps/web/app/admin/U360.tsx", MG = "packages/db/migrations/0227_exportar_del_equipo_en_flujo.sql";
     for (const f of [AU, RE, UI, MG]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza de «Exportar sus datos» del equipo en flujo");

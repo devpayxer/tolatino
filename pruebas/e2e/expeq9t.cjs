@@ -87,17 +87,13 @@ async function armarSinBajar(p, U, motivo) {
     ok(!/token_hash|code_hash|phone_enc/.test(Object.values(z).map((x) => x.toString('utf8')).join('\n')), 'sin huellas ni cifrados (igual que siempre)');
     const au = sql(`select count(*) || '|' || max(reason) || '|' || max(after->>'archivo') from audit_entries where actor_id = '${UA}' and action = 'usuario.exportar' and target_id = '${UP}'`).split('|');
     ok(au[0] === '1' && au[1] === `Pedido de privacidad por Soporte ${TAG}` && /^ZIP por el mapa de datos \(\d+ partes\)$/.test(au[2]), `auditoría como antes: «usuario.exportar» con su motivo y «${au[2]}»`);
-    // El mismo archivo que la persona pide en Mi cuenta (lo arma el barrido): las mismas partes con las mismas filas. 28 nov · Ya no byte a byte: la
-    // consulta de cada parte no lleva orden y Postgres da las filas en el orden de su plan, que cambia cuando analiza la tabla. Con los 3 000 avisos
-    // recién puestos, el autoanalyze cayó entre los dos armados (iPhone SE, 28 nov): el del equipo salió por el índice (id de mayor a menor) y el de
-    // la persona leyendo la tabla (de menor a mayor). Mismas filas, otro orden, otra huella. El orden del archivo queda anotado en LAUNCH.
+    // El mismo archivo que la persona pide en Mi cuenta (lo arma el barrido): BYTE A BYTE igual, parte por parte (28 nov: cada parte sale en el orden de
+    // su llave; antes el plan de Postgres cambiaba el orden entre los dos armados y la huella con él).
     for (let i = 0; i < 8 && sql(`select status from data_exports where id = '${EP}'`) !== 'listo'; i++) barrido();
     const zp = leerZip((await delAlmacen(`/privado/exportes/${EP}.zip`)).b);
-    const filasDe = (k, b) => (k.endsWith('.json') ? JSON.parse(b.toString('utf8')).map((x) => JSON.stringify(x)).sort()
-      : k.endsWith('.csv') ? (([cab, ...r]) => [cab, ...r.sort()])(b.toString('utf8').split('\r\n')) : [b.toString('utf8')]);
-    const iguales = Object.keys(z).sort().join() === Object.keys(zp).sort().join() && Object.keys(z).every((k) => JSON.stringify(filasDe(k, z[k])) === JSON.stringify(filasDe(k, zp[k])));
+    const iguales = Object.keys(z).sort().join() === Object.keys(zp).sort().join() && Object.keys(z).every((k) => sha(zp[k]) === sha(z[k]));
     ok(iguales && sql(`select sections - '_ms' = (select sections - '_ms' from data_exports where id = '${E1}') from data_exports where id = '${EP}'`) === 't',
-      `es el MISMO archivo que el que la persona arma en Mi cuenta: las mismas ${Object.keys(z).length} partes con las mismas filas, y las mismas cuentas por parte`);
+      `es el MISMO archivo que el que la persona arma en Mi cuenta: las mismas ${Object.keys(z).length} partes, cada una idéntica byte a byte (sha256), y las mismas cuentas por parte`);
     // Ese mismo barrido ya sacó del almacén el del equipo bajado (como el de la persona).
     ok(sql(`select status || '|' || (file_gone_at is not null) from data_exports where id = '${E1}'`) === 'bajado|true' && (await delAlmacen(`/privado/exportes/${E1}.zip`)).s === 404, 'el barrido saca del almacén el archivo del equipo ya bajado');
     ok(!fs.existsSync(require('path').join(require('os').tmpdir(), 'tl-exportes', `${E1}.zip`)), 'y el temporal de disco no quedó (el servidor corre en esta máquina)');
