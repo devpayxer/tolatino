@@ -1,6 +1,6 @@
 # To'Latino v2 — Dónde estamos / cómo retomar
 
-_Actualizado: 27 nov 2026 (05:00 UTC: ver el primer punto de «Estado»). Antes: 26 nov 2026 (09:40 UTC). Antes: 24 nov 2026 (tarde). Antes: 21 nov 2026 (media mañana). Antes: 20 nov 2026 (tarde). Antes: 14 nov 2026 (9o hecho en su rama: producción como código y ensayada —el ensayo en máquinas no corrió—; ver «Fase 9 · 9o» al final. Antes: 9g). Plan de la Fase 9: `docs/diseno/plan/fase9-apertura.md`._
+_Actualizado: 28 nov 2026 (tarde: ver el primer punto de «Estado»). Antes: 27 nov 2026 (05:00 UTC). Antes: 26 nov 2026 (09:40 UTC). Antes: 24 nov 2026 (tarde). Antes: 21 nov 2026 (media mañana). Antes: 20 nov 2026 (tarde). Antes: 14 nov 2026 (9o hecho en su rama: producción como código y ensayada —el ensayo en máquinas no corrió—; ver «Fase 9 · 9o» al final. Antes: 9g). Plan de la Fase 9: `docs/diseno/plan/fase9-apertura.md`._
 
 ## Ramas (léelo antes de nada)
 - **`main`** = la rama de trabajo de la v2 y la que debe ser **rama por defecto** del
@@ -20,6 +20,17 @@ _Actualizado: 27 nov 2026 (05:00 UTC: ver el primer punto de «Estado»). Antes:
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **28 nov (tarde) · `main` = `pruebas` = b418f3e, servido: el sandbox volvió a actualizarse solo.** La causa de los 2 días trabado no eran
+  candados de git: el añadido del temporizador de `tolatino-sync` dejaba `OnUnitActiveSec=` vacío, que en systemd borra TODOS los disparadores
+  (también `OnBootSec`), y tras un reinicio no volvía a arrancar nunca (`docs/incidentes/sandbox-no-se-actualiza.md`; guardianes
+  `despliegueCorto` y `sandboxSeArreglaSolo`; rescate por el 22 con la decisión AW). Subido hoy: barridos 2ª tanda, 3-D Secure en el cobro de la
+  renta (0229), las consultas de dinero que ninguna prueba ejecutaba (0 en dinero), y el CI que sale a la vez que las pruebas locales (AY, con la
+  base local que se levanta sola). Página de decisiones para el fundador (AX, en el tablero). **En la rama de trabajo, subiendo:** Safari ya no
+  corta las descargas (`bajarPorPost`, guardián `bajarSinCarrera`), la batería de El Compa por el camino real del servidor (59 % hoy, meta 95 %)
+  y el número solo por SMS/WhatsApp, avisos al vencer «otra salida / otra hora» en Viajes, Noche, Fiestas, clases y visitas (0230). En curso
+  (encargos): rentas 3DS B/C (0231), exportaciones en orden + patPanel, pruebas inestables del iPad. **Base local:** si `migrar.sh` dice «ya
+  estaba aplicada y su contenido cambió» por una migración que en el repo solo cambió en comentarios (0218, 0228: un encargo aplicó su borrador),
+  se compara con `git diff` y se corrige solo la huella de la base LOCAL; nunca se edita el archivo.
 - **27 nov (05:00 UTC) · `main` = `pruebas` = 13ec285 (CI de `main` en verde); el sandbox sigue sirviendo 87e7dc2** (trabado desde el 26 nov 09:30 UTC:
   decisión del fundador en REVISION, «abrir el 22 para el rescate»). Hecho desde el 26 nov a mediodía (cada paquete con su revisión rápida del CI):
   fechas «hoy» con la zona de la ciudad (`hoyEnLaBaseConZona`); producción migra antes de la app nueva y con topes (`migracionConTope`,

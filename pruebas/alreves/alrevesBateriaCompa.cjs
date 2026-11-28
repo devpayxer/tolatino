@@ -99,8 +99,11 @@ const casos = [
   // Lo que la batería reutiliza de lib/compa: el sistema fijo de verdad, no una copia.
   [CV, 'export const SISTEMA_VECINO = [', 'export const SISTEMA_VECINO_X = [', 'no cargo SISTEMA_VECINO'],
 ];
+// Cada caso de abajo rompe una comprobación que no necesita la base (casos, corredor, servidor.mjs, camino.mjs, revisión): el guardián corre como en la
+// señal rápida del CI, sin base (DATABASE_URL vacía: pruebas/lib/entorno.cjs no la rellena), y se ahorra su paso 9 (la batería entera por el servidor real,
+// ~6 s cada vez). Ese paso lo corren la mitad (1) de arriba, directa, y las dos pasadas completas de guardianes del carril (inicio y final), con base.
 const correr = () => {
-  try { execSync(`node guardianes/run.mjs --solo ${G}`, { cwd: R, stdio: 'pipe' }); return []; }
+  try { execSync(`node guardianes/run.mjs --solo ${G}`, { cwd: R, stdio: 'pipe', env: { ...process.env, DATABASE_URL: '' } }); return []; }
   catch (e) { return String(e.stderr).split('\n').filter((x) => x.trim().startsWith(`[${G}]`)); }
 };
 for (const [f, a, b, msg] of casos) {
