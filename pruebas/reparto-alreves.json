@@ -1,6 +1,6 @@
 {
  "nota": "Generado por scripts/ci/repartir.mjs --alreves (no se edita a mano). Duraciones del carril «al revés» (s): pruebas/correr.mjs --grupo alreves --parte i/n reparte por tiempo con ellas; guardián dirigidaEnPartes.",
- "fuente": "media de 3 corridas en verde del 24 nov (45422260550, 45448250803, 45453498666), leída del registro de cada parte de «al revés»; todas las suites medidas; alrevesCobradoSoloSiQuedo, alrevesDevueltoSoloSiSalio y alrevesPierdeParcial medidas aquí (25 nov, corredor local, carril «al revés»: 2, 28 y 0 s); alrevesDineroDiceLoQuePaso medida el 25 nov (revisión de 621f214, corredor local, carril «al revés»: 21 s)",
+ "fuente": "media de 3 corridas en verde del 24 nov (45422260550, 45448250803, 45453498666), leída del registro de cada parte de «al revés»; todas las suites medidas; alrevesCobradoSoloSiQuedo, alrevesDevueltoSoloSiSalio y alrevesPierdeParcial medidas aquí (25 nov, corredor local, carril «al revés»: 2, 28 y 0 s); alrevesDineroDiceLoQuePaso medida el 25 nov (revisión de 621f214, corredor local, carril «al revés»: 21 s); alrevesAltFin (nueva) y alrevesBateriaCompa (acortada) medidas el 28 nov (dirigida de b7d2566, corredor local, carril «al revés»: 28 y 283 s)",
  "seg": {
   "alreves19caben": 2,
   "alreves5a": 2,
@@ -118,11 +118,12 @@
   "alreves9vd": 42,
   "alrevesAK": 5,
   "alrevesAlmacenPrivado": 3,
+  "alrevesAltFin": 28,
   "alrevesAnchos": 2,
   "alrevesAnfitriones": 4,
   "alrevesArbol": 2,
   "alrevesArrastre": 1,
-  "alrevesBateriaCompa": 194,
+  "alrevesBateriaCompa": 283,
   "alrevesBuscarAlMomento": 3,
   "alrevesBuscarCumple": 1,
   "alrevesC001": 1,
