@@ -93,3 +93,8 @@ SMS · WhatsApp API · envío de correo (SES) · Stripe · tiendas Apple ($99/a�
   aquí tipos, **build de la web**, guardianes y textos, empuja sin esperar la dirigida y al final dice dónde corren DESPUÉS la punta a punta y
   «al revés» (la corrida del push a main), con la lista de pruebas que la dirigida habría propuesto. `--sin-via-rapida` fuerza el camino normal.
   No cambia producción ni la confirmación completa.
+  **A la vez, no en fila (decisión AY, 28 nov):** `--dirigida` y `--repaso` despachan la corrida del CI al momento y corren las pruebas de lo tocado
+  aquí en paralelo; una roja local (o no poder correrlas) la cancela con `gh run cancel` y lo dice (nada más se lanza); en verde se espera al CI y
+  solo se declara éxito cuando terminaron las dos cosas. Ctrl-C/SIGTERM mientras corren las dos también la cancela; si la cancelación falla, se dice a
+  gritos con la orden a mano. Antes de correr pruebas locales comprueba la base (`pg_isready` en `tlprueba-db-1`): si Docker o los contenedores estaban
+  caídos arranca `dockerd` y hace `docker start` (nunca para ni recrea), y si no contesta para con «la base local de pruebas no contesta: …».

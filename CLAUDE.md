@@ -92,7 +92,7 @@ condiciones» al fundador → confirmación completa + OK → `produccion` avanz
   avance y al siguiente bloque (AB).
 - **Lo sensible sube con la revisión rápida del CI (AF, AV):** lo que toca dinero, permisos, datos personales, migraciones, el despliegue o el CI
   (herramientas de prueba y guardianes incluidos) sube con la **revisión rápida** en verde: tipos, build, guardianes, al revés y sus pruebas de
-  punta a punta, por CI dirigido. Antes de lanzarla, las pruebas de lo tocado corren aquí; tras una roja, `--repaso` corre solo las rojas y lo
+  punta a punta, por CI dirigido. La revisión del CI sale ya, a la vez que las pruebas de lo tocado corren aquí (AY): una roja aquí cancela esa corrida y solo se espera al CI si lo local salió en verde; antes de correrlas la herramienta levanta la base local si estaba caída. Tras una roja, `--repaso` corre solo las rojas y lo
   tocado desde esa corrida (AU). Nada espera la confirmación completa; lo que esta cace después se arregla antes que nada y se anota en REVISION.
 - **Vía rápida (diseño y código no sensible; AL, AN, AR, AV):** todo lo demás sube con `node scripts/ci/subir.mjs --subir` sin corrida previa del
   CI: la herramienta decide (lista blanca + señales, con su lista y la de `main`; cualquier duda = camino normal), corre a la vez tipos + guardianes

@@ -17658,7 +17658,7 @@ const guardianes = {
         falla(G, S, 0, "--subir enseña aparte los motivos de la cadena cuando no hay evidencia (detrás de los de las corridas verdes no se veían)");
     }
     const rep = /async function cmdRepaso\([\s\S]*?\n\}/.exec(s)?.[0] ?? "", lan = /async function lanzarYEsperar\([\s\S]*?\n\}/.exec(s)?.[0] ?? "";
-    if (!rep || !lan || !rep.includes("const o = ordenDirigida({ rama, nombres, repo });") || !rep.includes("return lanzarYEsperar({ repo, rama, head, o });") || /partes/.test(rep) || /partes/.test(lan)
+    if (!rep || !lan || !rep.includes("const o = ordenDirigida({ rama, nombres, repo });") || !rep.includes("return conLocalYCI({ repo, rama, head, o, local: (ci) => antesDeLanzar({") || !/async function conLocalYCI\([\s\S]*?\n\}/.exec(s)?.[0].includes("return lanzarYEsperar({ repo, rama, head, o, ci });") || /partes/.test(rep) || /partes/.test(lan)
       || !lan.includes('correrYBuscar({ repo, wf: "ci.yml", rama, args: o, coincide:'))
       falla(G, S, 0, "el repaso va siempre en partes: su orden sale de ordenDirigida y se lanza sin tocar (lanzarYEsperar, como la dirigida)");
     const cr = sinComent(CR), pr = readFileSync(PR, "utf8");
@@ -17812,9 +17812,30 @@ const guardianes = {
       || !["    servidor: (url) => servidorEn(url),\n", "    salud: (url) => saludDe(url),\n", "    correr: (o) => correrCorredor(o),\n", "    calentar: (url, rutas) => calentar(url, rutas),\n", '    migraciones: (cabeza) => contarMigraciones(git("ls-tree", "--name-only", "-z", cabeza, "packages/db/migrations/").split("\\0").filter(Boolean)),\n'].every((l) => iop.includes(l)))
       falla(G, S, 0, "las pruebas de lo tocado: el servidor de este árbol y su base al día (con alguna de punta a punta), calentar, correr con --reintentar dentro del tope y RESULTADOS completa sin rojas");
     const dg = /async function cmdDirigida\([\s\S]*?\n\}/.exec(s)?.[0] ?? "", rp = /async function cmdRepaso\([\s\S]*?\n\}/.exec(s)?.[0] ?? "", adl = /async function antesDeLanzar\([\s\S]*?\n\}/.exec(s)?.[0] ?? "";
-    for (const [n, c] of [["--dirigida", dg], ["--repaso", rp]]) { const i = c.indexOf("await antesDeLanzar("), j = c.indexOf("lanzarYEsperar("); if (i < 0 || j < 0 || i > j) falla(G, S, 0, `${n} corre aquí las pruebas de lo tocado antes de lanzar nada (antesDeLanzar antes de lanzarYEsperar)`); }
-    if (!adl.includes('if (sinLocal) { io.decir("SALTADO: pruebas locales (--sin-local)"); return true; }') || !adl.includes("const ok = await pruebasAqui({ pruebas: correr, cabeza: head, archivos, decir: (x) => io.decir(x.linea), io: io.pruebas });")
-      || !/if \(!ok\) \{ io\.decir\("no se lanzó nada[^\n]*return false; \}/.test(adl) || !/if \(!io\.limpio\(\)\) \{ io\.decir\("FALTA: las pruebas locales dejaron el árbol cambiado[^\n]*return false; \}/.test(adl))
+    // AY (28 nov) · --dirigida y --repaso corren las locales Y el CI a la vez (conLocalYCI): las locales, con el CI ya lanzado y cancelable, van antes de
+    // esperar al CI; solo --ensayo del repaso corre las locales sin CI. Sin esto, un rojo local dejaba una corrida del CI de 30+ min corriendo para nada.
+    const cly = /async function conLocalYCI\([\s\S]*?\n\}/.exec(s)?.[0] ?? "";
+    for (const [n, c] of [["--dirigida", dg], ["--repaso", rp]]) if (!c.includes("return conLocalYCI({ repo, rama, head, o, local: (ci) => antesDeLanzar({") || !/antesDeLanzar\(\{[^\n]*, ci \}\) \}\);/.test(c) || /\blanzarYEsperar\(/.test(c)) falla(G, S, 0, `${n} corre aquí las pruebas de lo tocado a la vez que el CI (conLocalYCI con antesDeLanzar y ci), nunca lanzando el CI por otro camino (AY)`);
+    if (!rp.includes("if (!(await antesDeLanzar({ archivos: r.difAHead, head, primero: a.rojas, sinLocal }))) return 1;\n    console.log(`ensayo: lanzaría") || !/ensayo\) \{/.test(rp)) falla(G, S, 0, "--repaso --ensayo corre las locales sin lanzar nada (sin ci)");
+    const iLoc2 = cly.indexOf("ok = await local(ci)"), iEsp = cly.indexOf("return lanzarYEsperar({ repo, rama, head, o, ci });");
+    if (iLoc2 < 0 || iEsp < iLoc2 || !cly.includes("ciParalelo({ io: ioCI({ repo, rama, head, o }) })") || !cly.includes("cancelarSiAbortan(ci)") || !cly.includes("if (!ok) return 1;") || !/finally \{ quita\(\); \}/.test(cly))
+      falla(G, S, 0, "AY: conLocalYCI espera a las pruebas locales ANTES de dar por buena la corrida del CI (aunque el CI termine antes), cancela con Ctrl-C (cancelarSiAbortan) y un rojo local no sigue");
+    const iLanza = adl.indexOf("if (ci) ci.lanzar();"), iCorre = adl.indexOf("ok = await pruebasAqui({ pruebas: correr, cabeza: head, archivos, decir: (x) => io.decir(x.linea), io: io.pruebas });");
+    if (iLanza < 0 || iCorre < iLanza || !/if \(!ok\) \{\n\s+const cancelada = ci \? await ci\.cancelar\("una prueba local en rojo, o sin poder correrlas"\) : null;\n\s+io\.decir\(ci \? `no se lanzó nada: la corrida del CI \$\{cancelada === false/.test(adl)
+      || !adl.includes('catch (e) { if (ci) await ci.cancelar("las pruebas locales fallaron por un error"); throw e; }') || !adl.includes('if (!io.limpio()) { if (ci) await ci.cancelar("las pruebas locales dejaron el árbol cambiado");'))
+      falla(G, S, 0, "AY: el CI sale a la vez que las pruebas locales (ci.lanzar() antes de correrlas) y una roja aquí, un error o el árbol cambiado CANCELA esa corrida (ci.cancelar)");
+    const cp = /export function ciParalelo\([\s\S]*?\n\}/.exec(s)?.[0] ?? "", ici = /function ioCI\([\s\S]*?\n\}/.exec(s)?.[0] ?? "";
+    if (!cp.includes("NO PUDE CANCELAR la corrida ${id} del CI") || !cp.includes("cancélala a mano: gh run cancel ${id} --repo ${io.repo}") || !cp.includes("CANCELADA: la corrida ${id} del CI") || !cp.includes("try { await c.promesa; } catch (e) {")
+      || !ici.includes('cancelar: (id) => { gh("run", "cancel", String(id), "--repo", repo); },') || !ici.includes('lanzar: (estado) => correrYBuscar({ repo, wf: "ci.yml", rama, args: o, coincide: (r) => r.head_sha === head, estado }),'))
+      falla(G, S, 0, "AY: cancelar la corrida del CI con «gh run cancel <id> --repo», y si falla se dice a gritos («NO PUDE CANCELAR … cancélala a mano»); la orden de lanzar sigue siendo la de ordenDirigida");
+    // AY · La base local de las pruebas, antes de correr nada aquí: pg_isready dentro del contenedor, dockerd y docker start si hace falta, y NUNCA parar ni recrear.
+    const ab = /export async function asegurarBase\([\s\S]*?\n\}/.exec(s)?.[0] ?? "", ib = /export function ioBase\([\s\S]*?\n\}/.exec(s)?.[0] ?? "";
+    if (!pa.includes("  const base = await io.base();\n  if (!base?.ok) return di(false, `FALTA: la base local de pruebas no contesta: ${base?.motivo") || !iop.includes("    base: () => asegurarBase(),\n")
+      || !ab.includes("  if (await contesta()) return { ok: true, hizo };\n  let vivo = false;") || !ab.includes("await io.arrancarDocker()") || !ab.includes("await io.iniciar(c.nombre)") || !ab.includes("pg_isready no contesta")
+      || !ib.includes('"pg_isready"') || !ib.includes('spawn("dockerd", []') || !ib.includes('dk(["start", n]') || /\["(stop|rm|kill|restart|down|run|create|compose)"/.test(ib) || /\b(stop|rm|kill|restart)\b/.test(ab.replace(/\/\/[^\n]*/g, "")))
+      falla(G, S, 0, "AY: antes de correr pruebas aquí la base local contesta (pg_isready), o se levanta (dockerd, docker start) o se dice «la base local de pruebas no contesta: …» y no corre nada; nunca para ni recrea contenedores");
+    if (!adl.includes('if (sinLocal) { io.decir("SALTADO: pruebas locales (--sin-local)"); return true; }') || !adl.includes("pruebasAqui({ pruebas: correr, cabeza: head, archivos, decir: (x) => io.decir(x.linea), io: io.pruebas });")
+      || !/if \(!io\.limpio\(\)\) \{ if \(ci\) await ci\.cancelar\([^\n]*io\.decir\("FALTA: las pruebas locales dejaron el árbol cambiado[^\n]*return false; \}/.test(adl))
       falla(G, S, 0, "--sin-local se dice («SALTADO: pruebas locales (--sin-local)»), y con una roja aquí no se lanza");
     // Sin servidor de este árbol, las de punta a punta se saltan (dicho) y se lanza; las al revés corren igual. ioLanzar: lo de verdad.
     const iol = /export function ioLanzar\([\s\S]*?\n\}/.exec(s)?.[0] ?? "";

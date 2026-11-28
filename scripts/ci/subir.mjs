@@ -64,6 +64,11 @@
                                    lo dice: «SALTADO: pruebas locales (--sin-local)». Las de punta a punta solo con un servidor de desarrollo de
                                    ESTE árbol con su base al día; sin él, «SALTADO: pruebas locales (sin servidor de desarrollo de este árbol)» y
                                    se lanza igual (las al revés corren: no usan el servidor).
+                                   28 nov (AY) · la corrida del CI sale YA, a la vez que esas pruebas locales (no después): una roja aquí, o no poder
+                                   correrlas, la CANCELA (gh run cancel; si no puede, «NO PUDE CANCELAR … cancélala a mano») y se reporta como siempre;
+                                   en verde se espera al CI, y el éxito solo se declara con las dos terminadas. Ctrl-C/SIGTERM mientras corren las dos
+                                   la cancela también. Antes de correr nada local, la base de pruebas contesta (pg_isready) o se levanta (dockerd,
+                                   docker start); si no, «la base local de pruebas no contesta: …» y no corre ninguna.
      --repaso <id> [--mas "a b"] [--ensayo]
                                    24 nov (decisión AU, «repaso corto tras una roja»): tras una dirigida roja R1 (commit A) y con el arreglo en HEAD,
                                    lanza SOLO rojas(R1) ∪ inestables(R1) ∪ rojas e inestables de las corridas no verdes posteriores a R1 en la rama
@@ -100,7 +105,7 @@
    sola no vale: la conclusión de la corrida y de ese trabajo se leen de la API (como scripts/ci/corrida.mjs). Guardián subidaConHerramienta;
    al revés: alrevesSubir. */
 import { execFileSync, spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, rmSync, writeFileSync, mkdirSync, readFileSync, readdirSync, readlinkSync, realpathSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync, mkdirSync, openSync, readFileSync, readdirSync, readlinkSync, realpathSync } from "node:fs";
 import { EventEmitter } from "node:events";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
@@ -1358,8 +1363,65 @@ export function ioPruebas() {
     texto: (archivo) => { try { return readFileSync(join(RAIZ, archivo), "utf8"); } catch { return ""; } },
     calentar: (url, rutas) => calentar(url, rutas),
     correr: (o) => correrCorredor(o),
+    base: () => asegurarBase(),
     eco: (l) => console.log(l),
     ahora: () => Date.now(),
+  };
+}
+
+/* ── La base local de las pruebas, siempre al día antes de correrlas (decisión AY, 28 nov) ────────────────────────────────────────────────── */
+/* Al reiniciarse el contenedor, Docker y los de la base (tlprueba-db-1, tlprueba-medios-1) quedan caídos y las pruebas fallaban en rojo por una razón
+   equivocada (alreves9usql: «ASSERT psql recorrió el guion entero» con la base apagada). Antes de correr nada aquí: ¿contesta la base (pg_isready dentro
+   del contenedor)? Si no: ¿corre Docker? (si no, dockerd en segundo plano y se espera); ¿existe el contenedor? (si está parado, docker start de la base
+   y de Garage y se espera a pg_isready); si no se logra, «la base local de pruebas no contesta: …» y NO corre ninguna prueba. Nunca para ni recrea
+   un contenedor, y no crea uno que no existe (una base nueva está vacía: bash pruebas/servir/base.sh, una vez). io inyectable (los casos). */
+export const ESPERA_BASE_MS = 90_000;
+export async function asegurarBase({ io = ioBase() } = {}) {
+  const hizo = [], contesta = async () => { try { return (await io.listo()) === true; } catch { return false; } };
+  if (await contesta()) return { ok: true, hizo };
+  let vivo = false;
+  try { vivo = (await io.dockerVivo()) === true; } catch { vivo = false; }
+  if (!vivo) {
+    const a = await io.arrancarDocker();
+    if (!a?.ok) return no(`Docker no está corriendo y no pude arrancarlo (${a?.motivo ?? "sin motivo"})`);
+    hizo.push("arranqué dockerd");
+    if (!(await io.esperarHasta(async () => { try { return (await io.dockerVivo()) === true; } catch { return false; } }, ESPERA_BASE_MS))) return no(`arranqué dockerd y no contestó en ${ESPERA_BASE_MS / 1000} s (${io.registro ?? "su registro"})`);
+    if (await contesta()) return { ok: true, hizo }; // con política de reinicio, los contenedores suben solos
+  }
+  let lista = [];
+  try { lista = await io.contenedores(); } catch (e) { return no(`Docker corre pero no pude listar los contenedores (${String(e?.message ?? e).split("\n")[0].slice(0, 120)})`); }
+  const db = lista.find((c) => c.nombre === io.dbCont);
+  if (!db) return no(`el contenedor ${io.dbCont} no existe (se crea una vez con: bash pruebas/servir/base.sh --sin-datos)`);
+  for (const c of [db, lista.find((x) => x.nombre === io.mediosCont)].filter(Boolean)) {
+    if (c.corriendo) continue;
+    const r = await io.iniciar(c.nombre);
+    if (!r?.ok) return no(`docker start ${c.nombre} falló (${r?.motivo ?? "sin motivo"})`);
+    hizo.push(`docker start ${c.nombre}`);
+  }
+  if (!(await io.esperarHasta(contesta, ESPERA_BASE_MS))) return no(`${io.dbCont} está arrancado pero pg_isready no contesta en ${ESPERA_BASE_MS / 1000} s`);
+  return { ok: true, hizo };
+}
+
+/** Lo que asegurarBase lee y lanza de verdad (docker, pg_isready, dockerd). */
+export function ioBase(env = process.env) {
+  const dbCont = env.PRUEBAS_DB_CONT || "tlprueba-db-1", mediosCont = env.PRUEBAS_MEDIOS_CONT || "tlprueba-medios-1";
+  const salida = resolve(env.PRUEBAS_SALIDA || join(tmpdir(), "tolatino-pruebas")), registro = join(salida, "dockerd.log");
+  const dk = (args, ms = 20_000) => execFileSync("docker", args, { encoding: "utf8", timeout: ms, stdio: ["ignore", "pipe", "pipe"] });
+  return {
+    dbCont, mediosCont, registro,
+    listo: () => { try { dk(["exec", dbCont, "pg_isready", "-h", "127.0.0.1", "-U", "tolatino", "-d", "tolatino"], 15_000); return true; } catch { return false; } },
+    dockerVivo: () => { try { dk(["info", "--format", "{{.ServerVersion}}"], 15_000); return true; } catch { return false; } },
+    arrancarDocker: () => new Promise((listo) => {
+      try {
+        mkdirSync(salida, { recursive: true });
+        const fd = openSync(registro, "a"), ch = spawn("dockerd", [], { detached: true, stdio: ["ignore", fd, fd] });
+        ch.once("error", (e) => listo({ ok: false, motivo: String(e?.message ?? e).slice(0, 160) }));
+        ch.once("spawn", () => { ch.unref(); listo({ ok: true }); });
+      } catch (e) { listo({ ok: false, motivo: String(e?.message ?? e).slice(0, 160) }); }
+    }),
+    contenedores: () => dk(["ps", "-a", "--format", "{{.Names}}\t{{.State}}"]).split("\n").filter(Boolean).map((l) => { const [nombre, estado] = l.split("\t"); return { nombre, corriendo: estado === "running" }; }),
+    iniciar: (n) => { try { dk(["start", n], 60_000); return { ok: true }; } catch (e) { return { ok: false, motivo: String(e?.stderr ?? e?.message ?? e).split("\n")[0].slice(0, 160) }; } },
+    esperarHasta: async (f, ms) => { const fin = Date.now() + ms; while (Date.now() < fin) { if (await f()) return true; await esperar(1000); } return false; },
   };
 }
 
@@ -1385,6 +1447,10 @@ export async function pruebasAqui({ pruebas, cabeza = "HEAD", archivos = [], dec
   const url = io.url(), t0 = io.ahora(), di = (ok, linea) => { decir({ ok, linea }); return ok; };
   const e2e = (pruebas ?? []).filter((t) => t.carril === "e2e"), nombres = [...e2e, ...(pruebas ?? []).filter((t) => t.carril !== "e2e")].map((t) => t.nombre);
   if (!nombres.length || nombres.some((n) => !NOMBRE_PRUEBA.test(String(n ?? "")))) return di(false, "FALTA: pruebas de lo tocado: ninguna que correr (o un nombre vacío)");
+  // AY · La base local contesta, o se levanta; si no, ninguna prueba corre (saldrían rojas por una razón equivocada).
+  const base = await io.base();
+  if (!base?.ok) return di(false, `FALTA: la base local de pruebas no contesta: ${base?.motivo ?? "sin motivo"}; no corrí ninguna prueba (saldrían rojas por una razón equivocada)`);
+  di(true, base.hizo?.length ? `CORRIÓ: la base local de pruebas estaba caída y la levanté (${base.hizo.join(", ")}): contesta` : "CORRIÓ: la base local de pruebas contesta (pg_isready)");
   if (e2e.length) {
     const sl = await servidorListo({ cabeza, io });
     if (!sl.ok) return di(false, `FALTA: pruebas de lo tocado: ${sl.motivo}`);
@@ -1439,7 +1505,7 @@ export function ioLanzar() {
     desarrollo de ESTE árbol con su base al día; si no, se dice («SALTADO: … (sin servidor de desarrollo de este árbol)») y no bloquea: se lanza y lo
     dice el CI. Las al revés corren igual (no usan el servidor). Con una roja aquí (o sin poder correr lo que sí se puede) no se lanza nada.
     --sin-local lo salta, y lo dice. → true si se puede lanzar. */
-export async function antesDeLanzar({ archivos, head, primero = [], sinLocal = false, io = ioLanzar() }) {
+export async function antesDeLanzar({ archivos, head, primero = [], sinLocal = false, io = ioLanzar(), ci = null }) {
   if (sinLocal) { io.decir("SALTADO: pruebas locales (--sin-local)"); return true; }
   const sel = seleccionDirecta({ archivos, catalogo: io.catalogo(head), buscar: io.buscar(head), primero });
   const r = recortarLocal(sel, io.duraciones(head), { primero });
@@ -1455,10 +1521,76 @@ export async function antesDeLanzar({ archivos, head, primero = [], sinLocal = f
     }
   }
   io.decir(`pruebas locales antes de lanzar (AV): ${correr.length} de ${sel.length}, ~${Math.ceil(r.seg / 60)} min${r.soloCI.length ? ` · quedan solo para el CI (tope ${TOPE_LOCAL.pruebas} pruebas y ${TOPE_LOCAL.seg / 60} min): ${r.soloCI.map((t) => t.nombre).join(" ")}` : ""}`);
-  const ok = await pruebasAqui({ pruebas: correr, cabeza: head, archivos, decir: (x) => io.decir(x.linea), io: io.pruebas });
-  if (!ok) { io.decir("no se lanzó nada: con una roja aquí, o sin poder correrlas, no se lanza (arréglalo; --sin-local solo si de verdad hay que saltarlo, y se dice)"); return false; }
-  if (!io.limpio()) { io.decir("FALTA: las pruebas locales dejaron el árbol cambiado; no se lanzó nada"); return false; }
+  // AY (28 nov) · La corrida del CI sale YA, a la vez que las pruebas locales (antes: primero ellas, ~5-10 min, y luego el CI). Una roja aquí, o sin
+  // poder correrlas, CANCELA esa corrida; en verde se sigue esperando al CI como siempre. Sin «ci» (o sin nada que correr aquí) se lanza después, como antes.
+  if (ci) ci.lanzar();
+  let ok = false;
+  try { ok = await pruebasAqui({ pruebas: correr, cabeza: head, archivos, decir: (x) => io.decir(x.linea), io: io.pruebas }); }
+  catch (e) { if (ci) await ci.cancelar("las pruebas locales fallaron por un error"); throw e; }
+  if (!ok) {
+    const cancelada = ci ? await ci.cancelar("una prueba local en rojo, o sin poder correrlas") : null;
+    io.decir(ci ? `no se lanzó nada: la corrida del CI ${cancelada === false ? "NO SE PUDO CANCELAR (mira el FALTA de arriba: sigue corriendo)" : "se canceló"} (con una roja aquí, o sin poder correrlas, no se sigue; arréglalo; --sin-local solo si de verdad hay que saltarlo, y se dice)`
+      : "no se lanzó nada: con una roja aquí, o sin poder correrlas, no se lanza (arréglalo; --sin-local solo si de verdad hay que saltarlo, y se dice)");
+    return false;
+  }
+  if (!io.limpio()) { if (ci) await ci.cancelar("las pruebas locales dejaron el árbol cambiado"); io.decir("FALTA: las pruebas locales dejaron el árbol cambiado; no se lanzó nada"); return false; }
   return true;
+}
+
+/** AY · La corrida del CI de una dirigida o un repaso, lanzada a la vez que las pruebas locales. lanzar() la lanza ya (una vez; devuelve la promesa de la
+    corrida, ya encontrada); cancelar(motivo) espera a que aparezca, la cancela (gh run cancel) y DICE el resultado; si no puede cancelarla, lo dice a gritos
+    («NO PUDE CANCELAR … cancélala a mano»); cancelarYa(motivo) es lo mismo sin esperar (SIGINT/SIGTERM: busca la corrida nueva de este commit si aún no
+    sabe su id). io inyectable (los casos): { lanzar(estado), cancelar(id), nuevas(antes), decir, texto, repo }. */
+export function ciParalelo({ io }) {
+  const c = { promesa: null, run: null, estado: {}, cancelada: false };
+  c.lanzar = () => {
+    if (c.promesa) return c.promesa;
+    io.decir(`lanzo: ${io.texto}`);
+    io.decir("AY: la corrida del CI sale ya, a la vez que las pruebas locales; si una sale roja aquí, se cancela");
+    c.promesa = Promise.resolve().then(() => io.lanzar(c.estado)).then((r) => { c.run = r; return r; });
+    c.promesa.catch(() => {});
+    return c.promesa;
+  };
+  const cancelaUna = (id, motivo) => {
+    try { io.cancelar(id); c.cancelada = true; io.decir(`CANCELADA: la corrida ${id} del CI (${motivo}): no queda nada corriendo`); return true; }
+    catch (e) { io.decir(`FALTA: NO PUDE CANCELAR la corrida ${id} del CI (${String(e?.stderr ?? e?.message ?? e).split("\n")[0].slice(0, 200)}): sigue corriendo en GitHub; cancélala a mano: gh run cancel ${id} --repo ${io.repo}`); return false; }
+  };
+  const sinId = (motivo, causa) => { io.decir(`FALTA: NO PUDE CANCELAR la corrida del CI (${causa}): puede estar corriendo en GitHub; mira ${`https://github.com/${io.repo}/actions`} y cancélala a mano (${motivo})`); return false; };
+  c.cancelar = async (motivo) => {
+    if (!c.promesa) return true; // nunca se lanzó: nada que cancelar
+    try { await c.promesa; } catch (e) {
+      // El lanzamiento falló o no vio su corrida: puede que haya salido igual; se busca por el estado de antes de lanzar.
+      return c.cancelarYa(motivo, `el lanzamiento no terminó: ${String(e?.message ?? e).split("\n")[0].slice(0, 120)}`);
+    }
+    return c.run?.id ? cancelaUna(c.run.id, motivo) : sinId(motivo, "no sé su id");
+  };
+  c.cancelarYa = (motivo, causa = "") => {
+    if (!c.promesa) return true;
+    if (c.run?.id) return cancelaUna(c.run.id, motivo);
+    let nuevas = [];
+    try { nuevas = c.estado.antes ? io.nuevas(c.estado.antes) : []; } catch (e) { return sinId(motivo, `${causa ? `${causa}; ` : ""}tampoco pude buscarla (${String(e?.message ?? e).split("\n")[0].slice(0, 100)})`); }
+    if (!nuevas.length) return sinId(motivo, `${causa ? `${causa}; ` : ""}no la encuentro`);
+    return nuevas.map((r) => cancelaUna(r.id, motivo)).every(Boolean);
+  };
+  return c;
+}
+
+/** Lo que ciParalelo lee y lanza de verdad: gh workflow run (la orden de ordenDirigida), gh run cancel y la API. */
+export function ioCI({ repo, rama, head, o }) {
+  const cola = () => api(`repos/${repo}/actions/workflows/ci.yml/runs?event=workflow_dispatch&branch=${encodeURIComponent(rama)}&per_page=30`).workflow_runs ?? [];
+  return {
+    repo, texto: comoTexto(o), decir: (l) => console.log(l),
+    lanzar: (estado) => correrYBuscar({ repo, wf: "ci.yml", rama, args: o, coincide: (r) => r.head_sha === head, estado }),
+    cancelar: (id) => { gh("run", "cancel", String(id), "--repo", repo); },
+    nuevas: (antes) => cola().filter((r) => !antes.has(r.id) && r.head_sha === head),
+  };
+}
+
+/** SIGINT/SIGTERM mientras el CI y las pruebas locales corren a la vez: cancela la corrida del CI y sale (130). Devuelve quien lo quita. */
+function cancelarSiAbortan(ci) {
+  const f = (sig) => { console.log(`\n${sig}: abortado; cancelo la corrida del CI lanzada`); ci.cancelarYa(`abortado con ${sig}`); process.exit(130); };
+  process.on("SIGINT", f); process.on("SIGTERM", f);
+  return () => { process.off("SIGINT", f); process.off("SIGTERM", f); };
 }
 
 const ramaActual = () => {
@@ -1467,8 +1599,9 @@ const ramaActual = () => {
   return r;
 };
 
-async function correrYBuscar({ repo, wf, rama, args, coincide }) {
+async function correrYBuscar({ repo, wf, rama, args, coincide, estado = {} }) {
   const antes = new Set((api(`repos/${repo}/actions/workflows/${wf}/runs?event=workflow_dispatch&branch=${encodeURIComponent(rama)}&per_page=30`).workflow_runs ?? []).map((r) => r.id));
+  estado.antes = antes; // AY: quien aborte sin saber el id de la corrida puede buscar la que apareció después
   gh(...args);
   for (let i = 0; i < 12; i++) {
     await esperar(10_000);
@@ -1504,14 +1637,24 @@ async function cmdDirigida({ mas, sinLocal = false }) {
   const nombres = p.d.pruebas.map((t) => t.nombre), o = ordenDirigida({ rama, nombres, repo });
   if (!o) { console.log("FALTA: la dirigida está vacía (nada del diff nombra una prueba): añade --mas \"…\""); return 1; }
   // AV · Antes de lanzar nada en GitHub, la parte directa de la selección corre aquí (salvo --sin-local, dicho).
-  if (!(await antesDeLanzar({ archivos: p.archivos, head, sinLocal }))) return 1;
-  return lanzarYEsperar({ repo, rama, head, o });
+  return conLocalYCI({ repo, rama, head, o, local: (ci) => antesDeLanzar({ archivos: p.archivos, head, sinLocal, ci }) });
+}
+
+/* AY · Las pruebas locales y el CI a la vez: local(ci) corre las locales (y lanza el CI con ci.lanzar() cuando de verdad va a correr algo); en rojo (false)
+   ya canceló la corrida y no se espera nada más. En verde (o sin nada que correr aquí) se espera al CI como siempre, y solo ENTONCES se declara éxito. */
+export async function conLocalYCI({ repo, rama, head, o, local }) {
+  const ci = ciParalelo({ io: ioCI({ repo, rama, head, o }) }), quita = cancelarSiAbortan(ci);
+  let ok = false;
+  try { ok = await local(ci); } finally { quita(); }
+  if (!ok) return 1;
+  return lanzarYEsperar({ repo, rama, head, o, ci });
 }
 
 /* La dirigida y el repaso se lanzan y se esperan igual: la orden sale SIEMPRE de ordenDirigida (en partes) y aquí no se toca. */
-async function lanzarYEsperar({ repo, rama, head, o }) {
-  console.log(`lanzo: ${comoTexto(o)}`);
-  const r0 = await correrYBuscar({ repo, wf: "ci.yml", rama, args: o, coincide: (r) => r.head_sha === head });
+async function lanzarYEsperar({ repo, rama, head, o, ci = null }) {
+  // AY: con «ci», la corrida ya salió (a la vez que las pruebas locales, que ya terminaron en verde); si no, se lanza ahora como antes.
+  if (!ci?.promesa) console.log(`lanzo: ${comoTexto(o)}`);
+  const r0 = await (ci?.promesa ?? correrYBuscar({ repo, wf: "ci.yml", rama, args: o, coincide: (r) => r.head_sha === head }));
   console.log(`corrida ${r0.id}: ${r0.html_url} · espero sondeando cada ${SONDEO_MS / 1000} s`);
   const r = await esperarCorrida(repo, r0.id, 240);
   const js = trabajosDe(repo, r.id);
@@ -1571,9 +1714,12 @@ async function cmdRepaso({ id, mas, ensayo, sinLocal = false }) {
   console.log(`  ${nombres.length} prueba(s) en vez de ${pt.d.pruebas.length} (la dirigida entera de esta cabeza); «al revés» corre entero como siempre:`);
   for (const t of lista) console.log(`  · ${t.nombre} (${t.por.join("; ")})`);
   // AV · Antes de lanzar (también en el ensayo): las rojas de R1 y la parte directa de lo cambiado desde A corren aquí (salvo --sin-local, dicho).
-  if (!(await antesDeLanzar({ archivos: r.difAHead, head, primero: a.rojas, sinLocal }))) return 1;
-  if (ensayo) { console.log(`ensayo: lanzaría ${comoTexto(o)}`); return 0; }
-  return lanzarYEsperar({ repo, rama, head, o });
+  // Con --ensayo no se lanza nada: solo las pruebas locales (sin «ci»).
+  if (ensayo) {
+    if (!(await antesDeLanzar({ archivos: r.difAHead, head, primero: a.rojas, sinLocal }))) return 1;
+    console.log(`ensayo: lanzaría ${comoTexto(o)}`); return 0;
+  }
+  return conLocalYCI({ repo, rama, head, o, local: (ci) => antesDeLanzar({ archivos: r.difAHead, head, primero: a.rojas, sinLocal, ci }) });
 }
 
 /** Lo que la vía rápida de diseño imprime al final de un --subir que empujó: dónde corren las pruebas que no se esperaron. No espera esa corrida. */
@@ -2443,7 +2589,7 @@ async function casos() {
       const reg = { correr: [], migr: [] };
       return { reg, io: { url: () => "http://127.0.0.1:3199", puertos: () => true, raiz: () => raiz, servidor: () => ({ ok: true, pid: 1, cwd: "/r/t/apps/web", nodeEnv: "development", cadena: DEV }),
         migraciones: (ref) => { reg.migr.push(ref); return ref === s(3) ? 217 : 216; }, salud: async () => SAL(), paginas: () => [], texto: () => "", calentar: async () => ({ hechas: 1, lentas: [], s: 1 }),
-        correr: async (o) => { reg.correr.push(o); return { codigo: 0, salida: RLV(), pasado: false }; }, eco: () => {}, ahora: () => 0, ...y } };
+        correr: async (o) => { reg.correr.push(o); return { codigo: 0, salida: RLV(), pasado: false }; }, base: async () => ({ ok: true, hizo: [] }), eco: () => {}, ahora: () => 0, ...y } };
     };
     const PA = async (y = {}, pruebas = [{ nombre: "evt6c", carril: "e2e", archivo: PRU }]) => { const q = ioQ(y), dichas = []; const bien = await pruebasAqui({ pruebas, cabeza: s(3), archivos: [APP], decir: (z) => dichas.push(z), io: q.io }); return { bien, dichas, reg: q.reg }; };
     const falto = (q, re) => !q.bien && q.dichas.some((z) => z.ok === false && /^FALTA/.test(z.linea) && re.test(z.linea)) && !q.dichas.some((z) => z.ok && /pruebas de lo tocado aquí \(/.test(z.linea));
@@ -2555,6 +2701,82 @@ async function casos() {
       a = await AL({ archivos: [ALR], pr: { servidor: () => { vistos++; return OTRO(); }, correr: verdeDe } });
       ok(a.ok && vistos === 0 && a.corridas.join() === "alrevesX", "antes de lanzar: solo al revés → ni se mira el servidor (no lo usan)");
       ok((await AL({ sinLocal: true })).dichas.join() === "SALTADO: pruebas locales (--sin-local)" && (await AL({ archivos: ["apps/web/app/x.tsx"] })).dichas.some((l) => /^NO HAY: pruebas locales/.test(l)), "antes de lanzar: --sin-local se dice; sin ninguna directa, «NO HAY»");
+    }
+    {
+      // AY (28 nov) · La base local de las pruebas: contesta, o se levanta (dockerd, docker start), o ninguna prueba corre.
+      const BD = (y = {}) => {
+        const reg = { arranques: 0, inicios: [], esperas: 0 }; let docker = y.docker ?? true, estados = y.estados ?? { "tlprueba-db-1": true, "tlprueba-medios-1": true }, base = y.base ?? true;
+        const io = { dbCont: "tlprueba-db-1", mediosCont: "tlprueba-medios-1", registro: "/x/dockerd.log",
+          listo: () => base && docker && estados["tlprueba-db-1"] === true,
+          dockerVivo: () => docker,
+          arrancarDocker: async () => { reg.arranques++; if (y.sinDockerd) return { ok: false, motivo: "spawn dockerd ENOENT" }; if (!y.dockerdMuerto) docker = true; return { ok: true }; },
+          contenedores: async () => Object.entries(estados).map(([nombre, corriendo]) => ({ nombre, corriendo })),
+          iniciar: async (n) => { reg.inicios.push(n); if (y.noInicia) return { ok: false, motivo: "no space left" }; estados = { ...estados, [n]: true }; return { ok: true }; },
+          esperarHasta: async (f) => { reg.esperas++; return !!(await f()); } };
+        return { reg, run: () => asegurarBase({ io }) };
+      };
+      let b = BD(); let r = await b.run();
+      ok(r.ok && !r.hizo.length && !b.reg.arranques && !b.reg.inicios.length, "asegurarBase: si la base ya contesta, no toca nada");
+      b = BD({ docker: false, estados: { "tlprueba-db-1": false, "tlprueba-medios-1": false } }); r = await b.run();
+      ok(r.ok && b.reg.arranques === 1 && b.reg.inicios.join() === "tlprueba-db-1,tlprueba-medios-1" && r.hizo[0] === "arranqué dockerd", "asegurarBase: Docker caído → arranca dockerd y los contenedores parados (base y Garage), y espera a que conteste");
+      b = BD({ estados: { "tlprueba-db-1": false, "tlprueba-medios-1": true } }); r = await b.run();
+      ok(r.ok && !b.reg.arranques && b.reg.inicios.join() === "tlprueba-db-1", "asegurarBase: Docker vivo y la base parada → solo docker start de la base");
+      b = BD({ docker: false, sinDockerd: true }); r = await b.run();
+      ok(!r.ok && /Docker no está corriendo y no pude arrancarlo.*ENOENT/.test(r.motivo), "asegurarBase: dockerd no arranca → motivo claro");
+      b = BD({ docker: false, dockerdMuerto: true }); r = await b.run();
+      ok(!r.ok && /no contestó/.test(r.motivo) && !b.reg.inicios.length, "asegurarBase: dockerd arrancó y no contesta → motivo, sin tocar contenedores");
+      b = BD({ estados: { "tlprueba-medios-1": true } }); r = await b.run();
+      ok(!r.ok && /no existe.*base\.sh/.test(r.motivo) && !b.reg.inicios.length, "asegurarBase: el contenedor de la base no existe → motivo (no se crea una base vacía)");
+      b = BD({ estados: { "tlprueba-db-1": false }, noInicia: true }); r = await b.run();
+      ok(!r.ok && /docker start tlprueba-db-1 falló.*no space left/.test(r.motivo), "asegurarBase: docker start falla → motivo con su salida");
+      b = BD({ base: false }); r = await b.run();
+      ok(!r.ok && /pg_isready no contesta/.test(r.motivo), "asegurarBase: arrancado pero sin contestar → motivo (nunca ok)");
+      let q = await PA({ base: async () => ({ ok: false, motivo: "Docker no está corriendo y no pude arrancarlo (x)" }) });
+      ok(falto(q, /^FALTA: la base local de pruebas no contesta: Docker no está corriendo/) && !q.reg.correr.length && !q.reg.migr.length, "pruebasAqui: la base local no contesta → FALTA «la base local de pruebas no contesta: …» y no corre ninguna prueba");
+      q = await PA({ base: async () => ({ ok: true, hizo: ["arranqué dockerd", "docker start tlprueba-db-1"] }) });
+      ok(q.bien && q.dichas.some((z) => z.ok && /la base local de pruebas estaba caída y la levanté \(arranqué dockerd, docker start tlprueba-db-1\)/.test(z.linea)) && q.reg.correr.length === 1, "pruebasAqui: base levantada por la herramienta → lo dice y corre");
+    }
+    {
+      // AY (28 nov) · El CI sale a la vez que las pruebas locales; una roja aquí (o sin poder correrlas) lo cancela; en verde se sigue.
+      const catA = catalogoDe([PRU]), tiempo = [];
+      const FCI = (y = {}) => {
+        const dichas = [], llamadas = { lanzar: 0, cancelar: [], nuevas: 0 };
+        const io = { repo: "o/r", texto: "gh workflow run ci.yml", decir: (l) => dichas.push(String(l)),
+          lanzar: async (est) => { llamadas.lanzar++; tiempo.push("lanzar"); est.antes = new Set([1]); if (y.lanzaFalla) throw new SinGithub("su corrida no apareció en 2 min"); await new Promise((r) => setTimeout(r, y.demora ?? 5)); return { id: 9001 }; },
+          cancelar: (id) => { llamadas.cancelar.push(id); if (y.cancelaFalla) throw new Error("HTTP 409: Cannot cancel a workflow run that is completed"); },
+          nuevas: () => { llamadas.nuevas++; return y.nuevas ?? []; } };
+        return { ci: ciParalelo({ io }), dichas, llamadas };
+      };
+      const AC = async ({ ci, pr = {}, archivos = [PRU], sinLocal = false } = {}) => {
+        const dichas = [], q2 = ioQ(pr), correr = q2.io.correr;
+        q2.io.correr = async (o) => { tiempo.push("correr"); return correr(o); };
+        const io = { catalogo: () => catA, buscar: () => () => [], duraciones: () => ({}), pruebas: q2.io, limpio: () => true, decir: (l) => dichas.push(String(l)) };
+        return { ok: await antesDeLanzar({ archivos, head: s(3), sinLocal, io, ci: ci.ci }), dichas, reg: q2.reg };
+      };
+      const rojo = { correr: async () => ({ codigo: 1, salida: RLV({ verdes: [], rojas: ["evt6c"] }), pasado: false }) };
+      tiempo.length = 0;
+      let f = FCI(), a = await AC({ ci: f, pr: rojo });
+      ok(!a.ok && tiempo.join() === "lanzar,correr" && f.llamadas.cancelar.join() === "9001" && a.dichas.some((l) => /^FALTA: pruebas de lo tocado aquí.*en rojo aquí: evt6c/.test(l)) && [...a.dichas, ...f.dichas].some((l) => /^CANCELADA: la corrida 9001 del CI/.test(l)) && a.dichas.some((l) => /^no se lanzó nada: la corrida del CI se canceló/.test(l)),
+        "AY: una prueba local en rojo → el CI ya había salido (a la vez), se CANCELA esa corrida, sale el FALTA «en rojo aquí» y no se sigue");
+      tiempo.length = 0; f = FCI(); a = await AC({ ci: f });
+      ok(a.ok && tiempo.join() === "lanzar,correr" && !f.llamadas.cancelar.length && f.ci.promesa && (await f.ci.promesa).id === 9001, "AY: locales en verde → el CI sale a la vez, no se cancela nada y se sigue esperando a esa corrida");
+      f = FCI(); a = await AC({ ci: f, pr: { base: async () => ({ ok: false, motivo: "Docker no está corriendo y no pude arrancarlo (x)" }) } });
+      ok(!a.ok && f.llamadas.cancelar.join() === "9001" && !a.reg.correr.length, "AY: la base local no contesta (las pruebas no pueden correr) → también se cancela el CI y no corre ninguna prueba");
+      f = FCI({ cancelaFalla: true }); a = await AC({ ci: f, pr: rojo });
+      ok(!a.ok && f.dichas.some((l) => /^FALTA: NO PUDE CANCELAR la corrida 9001 del CI.*HTTP 409.*gh run cancel 9001 --repo o\/r/.test(l)) && a.dichas.some((l) => /^no se lanzó nada: la corrida del CI NO SE PUDO CANCELAR/.test(l)), "AY: si la cancelación falla, lo dice a gritos con la orden para cancelar a mano");
+      f = FCI({ lanzaFalla: true, nuevas: [{ id: 77 }] }); a = await AC({ ci: f, pr: rojo });
+      ok(!a.ok && f.llamadas.cancelar.join() === "77" && f.llamadas.nuevas === 1, "AY: el lanzamiento no vio su corrida y las locales salen rojas → se busca la corrida nueva de este commit y se cancela");
+      f = FCI({ lanzaFalla: true }); a = await AC({ ci: f, pr: rojo });
+      ok(!a.ok && !f.llamadas.cancelar.length && f.dichas.some((l) => /^FALTA: NO PUDE CANCELAR la corrida del CI.*no la encuentro.*actions/.test(l)), "AY: sin encontrar ninguna corrida que cancelar, lo dice a gritos (mira GitHub)");
+      f = FCI(); await f.ci.lanzar(); ok(f.ci.cancelarYa("abortado") === true && f.llamadas.cancelar.join() === "9001", "AY: abortar (Ctrl-C) con la corrida ya encontrada → la cancela al momento");
+      f = FCI(); f.ci.lanzar(); await new Promise((r) => setImmediate(r)); ok(f.ci.cancelarYa("abortado") === false && f.llamadas.nuevas === 1 && f.llamadas.cancelar.length === 0 && f.dichas.some((l) => /^FALTA: NO PUDE CANCELAR la corrida del CI.*no la encuentro/.test(l)), "AY: abortar antes de saber su id → busca la corrida nueva de este commit y, si no la encuentra, lo dice a gritos");
+      await f.ci.promesa;
+      f = FCI(); a = await AC({ ci: f, sinLocal: true });
+      ok(a.ok && f.llamadas.lanzar === 0 && !f.llamadas.cancelar.length, "AY: --sin-local → no se lanza nada aquí (se lanza después, como siempre)");
+      f = FCI(); a = await AC({ ci: f, archivos: ["apps/web/app/x.tsx"] });
+      ok(a.ok && f.llamadas.lanzar === 0, "AY: sin ninguna prueba local que correr → el CI se lanza después, como siempre");
+      f = FCI({ demora: 1 }); a = await AC({ ci: f, pr: { correr: async () => { await new Promise((r) => setTimeout(r, 40)); return { codigo: 0, salida: RLV(), pasado: false }; } } });
+      ok(a.ok && f.ci.run?.id === 9001 && a.dichas.some((l) => /CORRIÓ: pruebas de lo tocado aquí/.test(l)), "AY: el CI termina de lanzarse antes que las locales → igual se espera a las locales antes de seguir");
     }
     // --vigilar.
     const sh = s(10), RV = (id, y = {}) => ({ id, path: ".github/workflows/ci.yml", head_branch: "main", head_sha: sh, status: "completed", conclusion: "success", run_attempt: 1, repository: { full_name: REP }, ...y, event: y.event ?? "push" });
