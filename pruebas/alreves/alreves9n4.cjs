@@ -10,7 +10,7 @@ const W = 'apps/web/', L = W + 'lib/', MIG = 'packages/db/migrations/0148_dinero
 const CI = L + 'citas.ts', NO = L + 'noche-reservas.ts', PA = L + 'pagos/pasarela.ts', SU = L + 'suscripcion.ts', ME = L + 'mercado.ts', AY = L + 'ayuda.ts',
   AC = L + 'ayuda-cita.ts', VI = L + 'visitas.ts', RA = L + 'repartidor-auto.ts', CF = L + 'citas-flujo.ts', BA = L + 'barrido.ts',
   FI = W + 'app/(app)/n/[id]/fiesta/Booking.tsx', VS = W + 'app/(app)/n/[id]/visita/Visita.tsx', ES = W + 'app/(app)/cita/[num]/EstimadoCliente.tsx', PN = W + 'app/panel/Panel.tsx',
-  RE = L + 'rentas.ts', VE = L + 'pagos/verificacion.ts', WH = W + 'app/api/stripe/webhook/route.ts';
+  RE = L + 'rentas.ts', VE = L + 'pagos/verificacion.ts', WH = W + 'app/api/stripe/webhook/route.ts', CO = L + 'cobro-fuera.ts';
 const casos = [
   // tresDSecureEnTodos: el depósito de la cita sin quien paga (la verificación no queda a su nombre)
   ['tresDSecureEnTodos', CI, 'usuario: { id: userId, negocio: P.x.id, ciudad: P.x.city }, ', ''],
@@ -45,8 +45,33 @@ const casos = [
   ['tresDSecureEnTodos', VE, '    if (u.rowCount && a.kind === "renta") await sigueRenta(pi);\n', ''],
   // … la verificación vencida no aplica el fallo de la renta (se queda apartada esperando para siempre)
   ['tresDSecureEnTodos', VE, '    if (u.rowCount && x.kind === "renta") await sigueRenta(x.pi);\n', ''],
-  // … el webhook que confirma la verificación no sigue la renta
-  ['tresDSecureEnTodos', WH, '      if (a?.kind === "renta") await (await import("@/lib/rentas")).trasVerificacionRenta(String(o.id));\n', ''],
+  // … el webhook que confirma la verificación no sigue la renta (28 nov: el del depósito, amount_capturable_updated; el del cobro va abajo)
+  ['tresDSecureEnTodos', WH, "kind in ('en_sesion', 'renta') returning kind`, [String(o.id)])).rows[0];\n      if (a?.kind === \"renta\") await (await import(\"@/lib/rentas\")).trasVerificacionRenta(String(o.id));\n",
+    "kind in ('en_sesion', 'renta') returning kind`, [String(o.id)])).rows[0];\n"],
+  // 28 nov (LAUNCH 9q «3-D Secure en el cobro de la RENTA al recoger») · El defecto de antes: el banco pide autenticar el COBRO de la renta y cuenta como un
+  // «no» (falloRecoger, y el depósito verificado se suelta). La renta sin quien paga ni su verificación (el banco que pide es un «no»)
+  ['tresDSecureEnTodos', RE, ', { verif: { usuario: { id: x.uid, negocio: x.biz, ciudad: x.city }, op: x.op, base: `${a.idem}-cobro` } });', ');'],
+  // … verificar → se suelta el depósito y falloRecoger (sin esperar ni el aviso)
+  ['tresDSecureEnTodos', RE, 'if (!r.ok && !r.enCamino && r.verificar) return esperaBanco(x, a, r.verificar, true, desdeBarrido, "renta");',
+    'if (!r.ok && !r.enCamino && r.verificar) { if (hold) await soltarSuelta(hold.pi, depSuelto(x, Number(a.detalle.dep ?? 0), { es: "el banco pidió autenticar la renta", en: "the bank asked to authenticate the rent" })); return falloRecoger(x, r.msg); }'],
+  // … la intención se marca rechazada aunque la verificación quedó a nombre de quien paga
+  ['tresDSecureEnTodos', CO, 'if ("verificar" in r && r.verificar && r.pi) {', 'if (false) {'],
+  // … el sandbox vuelve a no pedir 3-D Secure en el cobro fuera de sesión (como antes: la prueba no lo ensaya)
+  ['tresDSecureEnTodos', PA, 'pide = !r && m[2] === SIM_3DS', 'pide = false'],
+  // … con Stripe de verdad, el authentication_required del cobro fuera de sesión vuelve a ser un «no» a secas
+  ['tresDSecureEnTodos', PA, '      if ((err?.codigo === "authentication_required" || err?.rechazo === "authentication_required") && err.intento?.id) return pideBanco(err.intento.id, err.intento.client_secret ?? "");\n', ''],
+  // … otro toque o el barrido vuelven a la pasarela sin leer la verificación del cobro de ESTA renta
+  ['tresDSecureEnTodos', RE, 'const VC = await verifCobro(a.idem);', 'const VC = null as VerifC | null;'],
+  // … se da por «no» sin mirar en Stripe si el cliente ya lo confirmó (cobrado a última hora)
+  ['tresDSecureEnTodos', RE, '  if (s.estado === "succeeded") return { e: "hecho", pi: V.pi, marca: s.marca, l4: s.ultimos4 };\n', ''],
+  // … el depósito se suelta (y falloRecoger) en cada llegada, no una vez
+  ['tresDSecureEnTodos', RE, 'if (!(await CF.rechazarSinCobro(a.id, "renta_sin_verificar"))) return no("Ya no espera la confirmación del banco.", "It is no longer waiting for the bank confirmation.");', 'await CF.rechazarSinCobro(a.id, "renta_sin_verificar");'],
+  // … el aviso del cobro sin el enlace a la hoja
+  ['tresDSecureEnTodos', RE, '"renta_verify_cobro", { articulo: x.n, negocio: x.bname, monto: money(a.monto), min: String(min) }, { href: `/pago/verificar?pi=${encodeURIComponent(v.pi)}`', '"renta_verify_cobro", { articulo: x.n, negocio: x.bname, monto: money(a.monto), min: String(min) }, { href: `/renta/${x.numero}`'],
+  // … la verificación vencida del cobro se suelta a ciegas como la del depósito (sin mirar si ya se cobró ni aplicar el fallo de la renta)
+  ['tresDSecureEnTodos', VE, '    if (x.cobro) { await sigueRenta(x.pi); if ((await fila(x.pi))?.status !== "pendiente") n++; return; }\n', ''],
+  // … el webhook que confirma el cobro de la renta (payment_intent.succeeded) no la sigue
+  ['tresDSecureEnTodos', WH, "kind in ('renovacion', 'renta') returning business_id as biz, kind", "kind = 'renovacion' returning business_id as biz, kind"],
   // okPorMas: se manda el peso que pasa lo retenido sin pedir el OK
   ['okPorMas', ME, 'if (pide && paso !== "mas") return no(', 'if (false && pide && paso !== "mas") return no('],
   // … se marca listo sin el OK por lo que pasa

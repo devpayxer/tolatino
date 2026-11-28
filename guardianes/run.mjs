@@ -10656,11 +10656,44 @@ const guardianes = {
       const iP = tr.search(/pideVerificar\(dep\)/), iE = tr.search(/if \(pv\) return esperaBanco\(x, a, pv\.verificar, true, desdeBarrido\);/), iS = tr.search(/if \(!\(dep\.ok && dep\.estado === "retenido"\)\)/);
       if (iP < 0 || iE < iP || iS < iE) falla(G, RE, 0, "cuando el banco pide verificar el depósito de la renta, se espera la verificación del cliente con el aviso (esperaBanco) ANTES de soltarlo o pedir otra tarjeta");
       if (/pide verificación|pidió verificar|asked to verify|needs verification/.test(tr)) falla(G, RE, 0, "la renta no suelta el depósito por «pide verificar» (va por la verificación del cliente con el aviso)");
-      if (!/const V = await verifDeposito\(`\$\{a\.idem\}-dep`\);/.test(tr) || !/V\.st === "pendiente" \? esperaBanco\(x, a, V, false, desdeBarrido\)/.test(tr)) falla(G, RE, 0, "otro toque, el barrido, la hoja o el webhook leen la verificación de ESTE depósito antes de volver a la pasarela (nunca otro depósito ni otro aviso)");
+      if (!/const V = await verifDeposito\(`\$\{a\.idem\}-dep`\);/.test(tr) || !/V\.st === "pendiente" \? esperaBanco\(x, a, V, true, desdeBarrido\)/.test(tr)) falla(G, RE, 0, "otro toque, el barrido, la hoja o el webhook leen la verificación de ESTE depósito antes de volver a la pasarela (nunca otro depósito ni otro aviso)");
       if (!/avisar\(x\.uid, "renta_verify",[^\n]*href: `\/pago\/verificar\?pi=\$\{encodeURIComponent\(v\.pi\)\}`/.test(eb) || !/pg_advisory_xact_lock\(hashtext\('renta-verifica:' \|\| \$1\)\)/.test(eb) || !/kind = 'verify_requested' and note->>'pi' = \$2::text/.test(eb)) falla(G, RE, 0, "el aviso renta_verify con el enlace a la hoja sale una vez por verificación (con su evento en la operación y su candado)");
     }
     if (!/if \(u\.rowCount && a\.kind === "renta"\) await sigueRenta\(pi\);/.test(cuerpoFn(v, "confirmarVerificacion")) || !/if \(u\.rowCount && x\.kind === "renta"\) await sigueRenta\(x\.pi\);/.test(cuerpoFn(v, "vencerVerificaciones"))) falla(G, V, 0, "la renta sigue sola al confirmar la verificación del depósito y aplica su fallo (falloRecoger) cuando vence");
-    if (existsSync(WH) && !/if \(a\?\.kind === "renta"\) await \(await import\("@\/lib\/rentas"\)\)\.trasVerificacionRenta\(String\(o\.id\)\);/.test(sinComent(WH))) falla(G, WH, 0, "el webhook que confirma la verificación del depósito de una renta la sigue (una vez: solo quien la pasa a verificada)");
+    // 28 nov · Cada evento en su caso: el del depósito (amount_capturable_updated) y el del cobro de la renta (payment_intent.succeeded, abajo).
+    const wh = existsSync(WH) ? sinComent(WH) : "", caso = (n) => (wh.match(new RegExp(`case "${n.replace(/\./g, "\\.")}":[\\s\\S]*?\\n      return;`)) ?? [""])[0];
+    if (existsSync(WH) && !/if \(a\?\.kind === "renta"\) await \(await import\("@\/lib\/rentas"\)\)\.trasVerificacionRenta\(String\(o\.id\)\);/.test(caso("payment_intent.amount_capturable_updated"))) falla(G, WH, 0, "el webhook que confirma la verificación del depósito de una renta la sigue (una vez: solo quien la pasa a verificada)");
+    // 28 nov (LAUNCH 9q «3-D Secure en el cobro de la RENTA al recoger») · La CLASE «el banco pide autenticar un cobro fuera de sesión y cuenta como un "no"», en el
+    // cobro de la renta al recoger (antes: falloRecoger y el depósito verificado se soltaba). La pasarela devuelve el intento (`authentication_required` con
+    // `pi`) y, con quien paga, su verificación (también el sandbox: ···· 3184 lo pide en cobrarFuera, como Stripe); la intención sigue en camino; la renta va
+    // con quien paga, su operación y la base «-cobro»; `verificar` → esperaBanco «renta» (el aviso renta_verify_cobro con el enlace) ANTES de soltar el
+    // depósito o falloRecoger; otro toque, el barrido, la hoja y el webhook leen ESA verificación (verifCobro) antes de volver a la pasarela; lo que pasó se
+    // MIRA en Stripe (cobrado = la renta sigue) y su intento se cancela antes de decir «no»; el depósito se suelta UNA vez (quien cierra la intención); el
+    // webhook payment_intent.succeeded y el vencimiento siguen la renta.
+    const cfa = (sinComent(P).match(/\n  async cobrarFuera\([\s\S]*?\n  },/) ?? [""])[0];
+    if (!/pide = !r && m\[2\] === SIM_3DS/.test(cfa) || !/if \(pide\) return pideBanco\(/.test(cfa) || !/ya\.status === "requires_action" \? pideBanco\(/.test(cfa)
+      || !/err\?\.codigo === "authentication_required"[^\n]*&& err\.intento\?\.id\) return pideBanco\(/.test(cfa) || !/registrarAccion\(\{ pi, base: x\.verif\.base,/.test(cfa))
+      falla(G, P, 0, "el cobro fuera de sesión que el banco pide autenticar vuelve con su intento y, con quien paga, su verificación (también el sandbox: ···· 3184 lo pide en cobrarFuera, como Stripe)");
+    const CFU = "apps/web/lib/cobro-fuera.ts", cft = existsSync(CFU) ? cuerpoFn(sinComent(CFU), "terminarCobro") : "";
+    { const iV = cft.search(/if \("verificar" in r && r\.verificar && r\.pi\) \{/), iF = cft.search(/set status = 'failed', attempts/);
+      if (iV < 0 || iF < iV || !/cobrarFuera\(\{[^\n]*\n[^\n]*\.\.\.\(o\.verif \? \{ usuario: o\.verif\.usuario,/.test(cft)) falla(G, CFU, 0, "un cobro fuera de sesión que el banco pide autenticar, con la verificación a nombre de quien paga, sigue en camino: no se marca rechazado"); }
+    if (existsSync(RE)) {
+      const re = sinComent(RE), tr = cuerpoFn(re, "terminarCobroRenta"), eb = cuerpoFn(re, "esperaBanco"), cb = cuerpoFn(re, "cobroDelBanco"), nc = cuerpoFn(re, "noConfirmoCobro");
+      const iVC = tr.search(/const VC = await verifCobro\(a\.idem\);/), iT = tr.search(/await CF\.terminarCobro\(a, cierreRecoger\(/), iDep = tr.search(/const V = await verifDeposito\(/);
+      if (iVC < 0 || iT < iVC || iDep < iVC || !/if \(VC\) \{\s*const q = await cobroDelBanco\(x, a\.monto, VC\);\s*if \(q\.e === "espera"\) return esperaBanco\(x, a, VC, true, desdeBarrido, "renta"\);/.test(tr))
+        falla(G, RE, 0, "otro toque, el barrido, la hoja o el webhook leen la verificación del cobro de ESTA renta (verifCobro) antes de volver a la pasarela: Stripe contestaría lo mismo aunque el cliente ya lo hubiera confirmado");
+      const tc = (tr.match(/await CF\.terminarCobro\(a, cierreRecoger\([^\n]*/) ?? [""])[0];
+      if (!/verif: \{ usuario: \{ id: x\.uid,[^}]*\}, op: x\.op, base: `\$\{a\.idem\}-cobro` \}/.test(tc)) falla(G, RE, 0, "el cobro de la renta al recoger va con quien paga, su operación y la base de su verificación: si el banco pide autenticarlo, la verificación queda a nombre del cliente (no es un «no»)");
+      if (!/if \(!r\.ok && !r\.enCamino && r\.verificar\) return esperaBanco\(x, a, r\.verificar, true, desdeBarrido, "renta"\);\s*return trasRecoger\(/.test(tr)) falla(G, RE, 0, "cuando el banco pide autenticar el cobro de la renta, se espera la verificación del cliente con el aviso (esperaBanco «renta») ANTES de soltar el depósito o pedir otra tarjeta");
+      if (!/else await av\.avisar\(x\.uid, "renta_verify_cobro",[^\n]*href: `\/pago\/verificar\?pi=\$\{encodeURIComponent\(v\.pi\)\}`/.test(eb)) falla(G, RE, 0, "el aviso renta_verify_cobro lleva el enlace a la hoja (una vez por verificación del cobro de la renta, con su evento y su candado)");
+      if (!/const s = await pasarela\.intento\(V\.pi\);/.test(cb) || !/if \(s\.estado === "succeeded"\) return \{ e: "hecho"/.test(cb) || !/const sd = await soltarSuelta\(V\.pi,/.test(cb) || !/if \(sd\.e === "cobrada"\) \{/.test(cb) || !/if \(sd\.e !== "liberada"\) return \{ e: "calla" \};/.test(cb))
+        falla(G, RE, 0, "lo que pasó con el cobro de la renta se mira en Stripe (cobrado = la renta sigue) y su intento se cancela ANTES de decir que no (si al cancelarlo ya estaba cobrado, es un sí)");
+      const iR = nc.search(/if \(!\(await CF\.rechazarSinCobro\(a\.id, [^)]*\)\)\) return no\(/), iSD = nc.search(/soltarSuelta\(a\.hold,/), iF = nc.search(/falloRecoger\(/);
+      if (iR < 0 || iSD < iR || iF < iR) falla(G, RE, 0, "el depósito de la renta cuyo cobro no se confirmó se suelta UNA vez: solo quien cierra la intención (rechazarSinCobro) lo suelta y aplica falloRecoger");
+    }
+    if (!/if \(x\.cobro\) \{ await sigueRenta\(x\.pi\);/.test(cuerpoFn(v, "vencerVerificaciones"))) falla(G, V, 0, "la verificación vencida del cobro de una renta la resuelve su renta (mira en Stripe, cancela el intento y aplica su fallo una vez), no un soltar a ciegas");
+    { const cs = caso("payment_intent.succeeded");
+      if (existsSync(WH) && (!/kind in \('renovacion', 'renta'\) returning/.test(cs) || !/if \(a\?\.kind === "renta"\) await \(await import\("@\/lib\/rentas"\)\)\.trasVerificacionRenta\(String\(o\.id\)\);/.test(cs))) falla(G, WH, 0, "el webhook que confirma el cobro de una renta (payment_intent.succeeded) la sigue (una vez: solo quien la pasa a verificada)"); }
   },
 
   /* 9n-4 · okPorMas (L487, L490): el mercado nunca cobra más de lo retenido sin el OK del cliente. Si el peso real pasa lo retenido, «mandar» no sale

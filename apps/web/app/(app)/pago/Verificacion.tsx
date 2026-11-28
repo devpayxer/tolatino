@@ -15,17 +15,19 @@ type N = "Icon" | "Button";
 const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
 /* Lo que el servidor manda cuando el banco pide verificar (lib/pagos/pasarela.ts · Verificar). */
 // renta (27 nov, LAUNCH 9q): el depósito de una renta al recogerla, fuera de sesión: como la renovación, se vuelve a confirmar con la tarjeta guardada.
-export type VerificarT = { pi: string; secreto: string; monto: number; pm: string | null; vence: string; renovacion: boolean; renta?: boolean };
+// cobro (28 nov, LAUNCH 9q): con renta, el COBRO de la renta (no el depósito); se confirma igual.
+export type VerificarT = { pi: string; secreto: string; monto: number; pm: string | null; vence: string; renovacion: boolean; renta?: boolean; cobro?: boolean };
 import { usd as money } from "@/lib/dinero-comun";
 const K = "font-mono text-[10px] font-bold tracking-[0.16em] text-ink/60";
 
-export function Verificacion({ es, v, modo, pk, onListo, onCerrar }: { es: boolean; v: VerificarT; modo: ModoTarjeta; pk: string | null; onListo: () => void; onCerrar: () => void }) {
+// onListo(siguiente) · 28 nov (LAUNCH 9q): la otra verificación de la misma renta que quedó esperando (el depósito confirmado y el banco pide también el cobro).
+export function Verificacion({ es, v, modo, pk, onListo, onCerrar }: { es: boolean; v: VerificarT; modo: ModoTarjeta; pk: string | null; onListo: (siguiente?: string) => void; onCerrar: () => void }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [ocupado, setOcupado] = useState(false), [error, setError] = useState("");
-  const despues = async (r: { ok: true; listo: boolean } | { ok: false; msg: { es: string; en: string } }) => {
+  const despues = async (r: { ok: true; listo: boolean; siguiente?: string } | { ok: false; msg: { es: string; en: string } }) => {
     if (!r.ok) { setError(es ? r.msg.es : r.msg.en); return; }
     if (!r.listo) { setError(E2("Tu banco todavía no lo confirma. Termina en la ventana de tu banco o prueba otra vez.", "Your bank has not confirmed it yet. Finish in your bank's window or try again.")); return; }
-    onListo();
+    onListo(r.siguiente);
   };
   const confirmar = async () => {
     if (ocupado) return;
@@ -56,7 +58,9 @@ export function Verificacion({ es, v, modo, pk, onListo, onCerrar }: { es: boole
         <button type="button" aria-label={E2("Cerrar", "Close")} onClick={onCerrar} className="grid size-11 flex-none place-items-center rounded-[11px] bg-ink/5"><Icon name="close" size={15} /></button>
       </div>
       <div className="text-pretty text-[13.5px] font-medium leading-[1.55] text-ink/70">
-        {v.renta
+        {v.renta && v.cobro
+          ? E2(`Para cobrar la renta de ${money(v.monto)}, tu banco pide que confirmes que eres tú. Se abre aquí mismo; To'Latino no ve lo que escribes en tu banco.`, `To charge the ${money(v.monto)} rent, your bank asks you to confirm it is you. It opens right here; To'Latino does not see what you type at your bank.`)
+          : v.renta
           ? E2(`Para retener el depósito de ${money(v.monto)} de tu renta, tu banco pide que confirmes que eres tú. Se abre aquí mismo; To'Latino no ve lo que escribes en tu banco.`, `To hold the ${money(v.monto)} deposit for your rental, your bank asks you to confirm it is you. It opens right here; To'Latino does not see what you type at your bank.`)
           : v.renovacion
           ? E2(`Para cobrar ${money(v.monto)} de Pro, tu banco pide que confirmes que eres tú. Se abre aquí mismo; To'Latino no ve lo que escribes en tu banco.`, `To charge ${money(v.monto)} for Pro, your bank asks you to confirm it is you. It opens right here; To'Latino does not see what you type at your bank.`)

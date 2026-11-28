@@ -48,6 +48,7 @@ export type FilaTx = { num: string; k: "order" | "table" | "appointment" | "plan
   // 9t: reservación que no se pudo con «Avísame si se libera»: la última entrada de su lista de espera (waiting · offered · taken · left · expired).
   esp: string | null;
   // 27 nov (LAUNCH 9q) · Renta: la última verificación del banco del depósito al recogerla (pendiente · vencida · verificada · fallo), si la hubo.
+  // 28 nov (LAUNCH 9q) · La del COBRO de la renta lleva «cobro:» delante (cobro:pendiente · cobro:verificada · …).
   banco: string | null };
 function donde(s: Staff, f: FiltrosTx) {
   const w = ["o.kind in ('order', 'table', 'appointment', 'plan', 'rental', 'hold', 'market_order', 'party', 'trip', 'night', 'enrollment', 'visit', 'tickets', 'private_event')", "o.sent_at > now() - interval '90 days'", "(cardinality($1::text[]) = 0 or o.city_id = any($1::text[]))",
@@ -74,7 +75,7 @@ export async function listaTx(s: Staff, f: FiltrosTx) {
               py.id::text as pid, (select d.status from disputes d where d.payment_id = py.id order by d.id desc limit 1) as disputa,
               case when o.kind = 'market_order' then (select dd.display_name from delivery_drivers dd where dd.id = o.driver_id) end as rep,
               case when o.kind = 'table' then (select w.status from reservation_waitlist w where w.operation_id = o.id order by w.id desc limit 1) end as esp,
-              case when o.kind = 'rental' then (select case when pa.status = 'pendiente' and pa.expires_at <= now() then 'vencida' else pa.status end from payment_actions pa
+              case when o.kind = 'rental' then (select case when pa.base_idem like '%-cobro' then 'cobro:' else '' end || case when pa.status = 'pendiente' and pa.expires_at <= now() then 'vencida' else pa.status end from payment_actions pa
                 where pa.operation_id = o.id and pa.kind = 'renta' order by pa.created_at desc limit 1) end as banco,
               case when o.discount_cents > 0 then jsonb_build_object('code', (select bp.coupon_code from business_posts bp where bp.id = o.coupon_post_id), 'c', o.discount_cents) end as cup,
               case when o.details->>'rubro' = 'salud' then null else o.details->'svc'->>'es' end as svc, coalesce(o.deposit_cents, 0) as dep,

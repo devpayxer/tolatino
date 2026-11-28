@@ -2,6 +2,9 @@
 // comisión, depósito retenido), «Un día más», tarde (del depósito), daño con foto (aceptar / no estar de acuerdo → cola del
 // Super Admin), tarjeta rechazada al recoger y cambio de tarjeta, vence a las 48 h, cancelar, renovar el depósito, Tu herramienta.
 // 27 nov (LAUNCH 9q) · 3-D Secure al recoger (8b): el aviso con el enlace a la hoja, confirmar → la renta sigue; vence → cambia la tarjeta; el webhook.
+// 28 nov (LAUNCH 9q) · 3-D Secure en el COBRO de la renta (8b y 8c): con ···· 3184 el banco pide autenticar también la renta (como Stripe en todo cobro):
+// la hoja sigue con su verificación; confirmada (la hoja o el webhook) → cobrada con ESE intento; «No fui yo» o vence → intento cancelado, el depósito se
+// suelta UNA vez y cambia la tarjeta; dos toques, el barrido y el webhook a la vez no cobran ni sueltan dos veces.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
 const OUT = ENT.S + '/cap/', B = ENT.B, D = 'hermanos-diaz-multiservicios';
@@ -17,7 +20,8 @@ const MARISOL = "(select id from users where phone = '+15705550122')";
 // 9b-1 · Las de ESTA prueba (ids fijos del ayudante) y la predeterminada es UNA sola entre todas las de Marisol: antes «la primera 4242» era la
 // que otra prueba guardó y el cambio de predeterminada solo tocaba estas dos, así que la del ayudante seguía predeterminada (apartaba con ella).
 const { tarjeta } = require('../lib/negocio-nuevo.cjs'); const PM_NO = tarjeta('5705550122', '0002', { predeterminada: false }), PM_OK = tarjeta('5705550122', '4242');
-// 27 nov (LAUNCH 9q) · La de ···· 3184: el banco del simulador siempre pide 3-D Secure (como la tarjeta de prueba de Stripe).
+// 27 nov (LAUNCH 9q) · La de ···· 3184: el banco del simulador siempre pide 3-D Secure (como la tarjeta de prueba de Stripe). 28 nov · También en el cobro
+// fuera de sesión de la renta (cobrarFuera): primero el depósito, después la renta.
 const PM_3DS = tarjeta('5705550122', '3184', { predeterminada: false });
 const R = (n, col) => sql(`select ${col} from rentals r join operations o on o.id = r.operation_id where o.number = '${n}'`);
 const P = (n) => sql(`select string_agg(p.kind || ':' || p.status || ':' || p.amount_cents || ':' || p.fee_cents, ',' order by p.id) from payments p join operations o on o.id = p.operation_id where o.number = '${n}'`);
@@ -196,20 +200,38 @@ const limpiar = () => {
   const hoja = m.locator('[data-pantalla="PAGO-3DS"]');
   await m.getByText(/Para retener el depósito de \$100 de tu renta/).first().waitFor();
   await m.screenshot({ path: OUT + 'r15-hoja-3ds-m.png' });
+  await clic(hoja.getByRole('button', { name: 'Confirmar con mi banco' }));
+  // 28 nov (LAUNCH 9q) · Depósito confirmado y retenido → el banco pide también el COBRO de la renta (···· 3184): no es un «no». La hoja sigue con ESA
+  // verificación (su página, se abre sola); la renta sigue apartada, la intención en camino (mandada) y el depósito retenido mientras espera.
+  await m.waitForURL((u) => u.href.includes('/pago/verificar?pi=') && !u.href.endsWith(encodeURIComponent(PI7)));
+  const PC7 = PIV(T7);
+  ok(PC7 !== PI7 && m.url().endsWith(`/pago/verificar?pi=${encodeURIComponent(PC7)}`), 'la hoja sigue con la verificación del cobro de la renta (su enlace)');
+  await m.getByText(/Para cobrar la renta de \$55/).first().waitFor();
+  ok(VA(T7) === 'renta:verificada:10000,renta:pendiente:5500' && sql(`select status || '|' || capture_method from sim_intents where id = '${PC7}'`) === 'requires_action|automatic', 'depósito verificado; la verificación del cobro de la renta ($55) espera a nombre del cliente (el intento, captura automática, espera al banco)');
+  ok(R(T7, "r.status || '|' || r.card_failed") === 'held|false' && !P(T7) && sql(`select status || '|' || coalesce(hold_pi, '') || '|' || (sent_at is not null) || '|' || coalesce(last_error, '') from offsession_charges where kind = 'renta' and ref_id = '${RID(T7)}' order by id desc limit 1`) === `pending|${PI7}|true|authentication_required`, 'sigue apartada sin pedir otra tarjeta; la intención en camino (mandada) con su depósito');
+  ok(sql(`select status from sim_intents where id = '${PI7}'`) === 'requires_capture', 'el depósito sigue retenido mientras espera');
+  ok(AV(T7, 'renta_verify_cobro') === '1' && sql(`select count(*) from notifications where tpl = 'renta_verify_cobro' and ref_id = '${T7}' and href = '/pago/verificar?pi=${encodeURIComponent(PC7)}'`) === '1' && AV(T7, 'biz_renta', 'confirme el cobro de la renta') === '1', 'avisos: al cliente con el enlace a la hoja del cobro y al negocio «no la entregues todavía»');
+  await m.screenshot({ path: OUT + 'r16b-hoja-cobro-m.png' });
   await clic(hoja.getByRole('button', { name: 'Confirmar con mi banco' })); await m.getByText('Listo: tu banco lo confirmó').first().waitFor();
+  ok(!!(await vis(m.getByText(/La renta quedó cobrada/))), 'la hoja: listo, la renta quedó cobrada');
   await m.screenshot({ path: OUT + 'r16-verificada-m.png', fullPage: true });
   await espera(() => R(T7, 'r.status') === 'out', 'al confirmar, la renta sigue sola: la tiene');
   ok(P(T7) === 'rental:captured:5500:330,security:held:10000:0', 'renta $55 cobrada y depósito $100 retenido');
   ok(sql(`select stripe_payment_intent from payments p join operations o on o.id = p.operation_id where o.number = '${T7}' and p.kind = 'security'`) === PI7, 'el depósito es ESE intento verificado (nunca otro)');
-  ok(VA(T7) === 'renta:verificada:10000', 'verificación: verificada');
-  ok(AV(T7, 'biz_renta', 'confirmó el depósito con su banco') === '1' && AV(T7, 'renta_recogida') === '1', 'avisos: al negocio «ya puedes entregarla» y al cliente «la tienes»');
+  ok(sql(`select stripe_payment_intent from payments p join operations o on o.id = p.operation_id where o.number = '${T7}' and p.kind = 'rental'`) === PC7 && sql(`select count(*) from sim_intents where id like 'pi_sim_renta-${RID(T7)}-%'`) === '2', 'la renta es ESE intento confirmado: un depósito y un cobro, nunca otros');
+  ok(VA(T7) === 'renta:verificada:10000,renta:verificada:5500', 'verificaciones: las dos verificadas');
+  ok(AV(T7, 'biz_renta', 'confirmó el cobro de la renta con su banco') === '1' && AV(T7, 'renta_recogida') === '1', 'avisos: al negocio «ya puedes entregarla» y al cliente «la tienes»');
   // El webhook del mismo intento, repetido (el mismo evento y otro): no retiene ni cobra otra vez ni repite avisos.
   const SEC = ENT.sec('STRIPE_WEBHOOK_SECRET'), RUN = require('crypto').randomBytes(4).toString('hex');
   const webhook = async (ev) => { const cuerpo = JSON.stringify(ev), t = Math.floor(Date.now() / 1000);
     const r = await fetch(B + '/api/stripe/webhook', { method: 'POST', headers: { 'content-type': 'application/json', 'stripe-signature': `t=${t},v1=${require('crypto').createHmac('sha256', SEC).update(`${t}.${cuerpo}`).digest('hex')}` }, body: cuerpo }); return r.status; };
   const capturable = (id, pi) => ({ id, type: 'payment_intent.amount_capturable_updated', data: { object: { id: pi } } });
   ok([await webhook(capturable(`evt_r9q_${RUN}_a`, PI7)), await webhook(capturable(`evt_r9q_${RUN}_a`, PI7)), await webhook(capturable(`evt_r9q_${RUN}_b`, PI7))].every((s) => s === 200), 'webhook firmado: 200 (y el repetido, 200)');
-  ok(P(T7) === 'rental:captured:5500:330,security:held:10000:0' && AV(T7, 'biz_renta', 'confirmó el depósito con su banco') === '1' && AV(T7, 'renta_recogida') === '1', 'el webhook repetido no retiene, no cobra ni avisa otra vez');
+  ok(P(T7) === 'rental:captured:5500:330,security:held:10000:0' && AV(T7, 'biz_renta', 'confirmó el cobro de la renta con su banco') === '1' && AV(T7, 'renta_recogida') === '1', 'el webhook repetido no retiene, no cobra ni avisa otra vez');
+  // 28 nov · El webhook del cobro de la renta confirmado (payment_intent.succeeded), repetido: tampoco cobra ni avisa otra vez.
+  const exitoso = (id, pi) => ({ id, type: 'payment_intent.succeeded', data: { object: { id: pi } } });
+  ok([await webhook(exitoso(`evt_r9q_${RUN}_e`, PC7)), await webhook(exitoso(`evt_r9q_${RUN}_e`, PC7)), await webhook(exitoso(`evt_r9q_${RUN}_f`, PC7))].every((s) => s === 200), 'webhook del cobro confirmado (y repetido): 200');
+  ok(P(T7) === 'rental:captured:5500:330,security:held:10000:0' && AV(T7, 'biz_renta', 'confirmó el cobro de la renta con su banco') === '1' && AV(T7, 'renta_recogida') === '1' && VA(T7) === 'renta:verificada:10000,renta:verificada:5500', 'el webhook del cobro, repetido, no cobra ni avisa otra vez');
   await panelDet(T7); await h.screenshot({ path: OUT + 'r17-panel-tras-banco-d.png', fullPage: true });
   await clic(h.getByRole('button', { name: 'La devolvió', exact: true })); await h.getByText('Listo: devuelta.').first().waitFor();
   ok(P(T7).endsWith('security:released:10000:0'), 'devuelta: el depósito verificado se libera');
@@ -238,9 +260,83 @@ const limpiar = () => {
   await recogioEspera(T9); const PI9 = PIV(T9);
   sql(`update sim_intents set status = 'requires_capture' where id = '${PI9}' and status = 'requires_action'`);
   ok([await webhook(capturable(`evt_r9q_${RUN}_c`, PI9)), await webhook(capturable(`evt_r9q_${RUN}_c`, PI9)), await webhook(capturable(`evt_r9q_${RUN}_d`, PI9))].every((s) => s === 200), 'webhook de la verificación (y repetido): 200');
-  ok(R(T9, 'r.status') === 'out' && P(T9) === 'rental:captured:5500:330,security:held:10000:0' && VA(T9) === 'renta:verificada:10000', 'el webhook sigue la renta: cobrada y depósito retenido, una vez');
-  ok(AV(T9, 'biz_renta', 'confirmó el depósito con su banco') === '1' && AV(T9, 'renta_recogida') === '1', 'un aviso a cada uno');
+  // 28 nov · El webhook sigue la renta: el depósito queda retenido y el banco pide ahora el cobro de la renta (···· 3184), con su aviso, una vez.
+  const PC9 = PIV(T9);
+  ok(PC9 !== PI9 && VA(T9) === 'renta:verificada:10000,renta:pendiente:5500' && R(T9, 'r.status') === 'held' && !P(T9) && AV(T9, 'renta_verify_cobro') === '1' && sql(`select status from sim_intents where id = '${PI9}'`) === 'requires_capture', 'el webhook sigue la renta: depósito retenido y el cobro de la renta espera al cliente con su aviso (una vez)');
+  // El enlace del primer aviso (el del depósito, ya confirmado) lleva a la verificación que espera: la del cobro.
+  await m.goto(B + `/pago/verificar?pi=${encodeURIComponent(PI9)}`); await m.waitForURL((u) => u.href.endsWith(encodeURIComponent(PC9))); await m.getByText('Tu banco pide confirmar el cobro de la renta').first().waitFor();
+  ok(true, 'el enlace del aviso del depósito lleva a la hoja del cobro de la renta');
+  // El banco confirma el cobro fuera de la hoja (la persona cerró la app): el webhook payment_intent.succeeded la sigue, una vez (también repetido).
+  sql(`update sim_intents set status = 'succeeded', captured_cents = amount_cents where id = '${PC9}' and status = 'requires_action'`);
+  ok([await webhook(exitoso(`evt_r9q_${RUN}_g`, PC9)), await webhook(exitoso(`evt_r9q_${RUN}_g`, PC9)), await webhook(exitoso(`evt_r9q_${RUN}_h`, PC9))].every((s) => s === 200), 'webhook del cobro confirmado fuera de la hoja (y repetido): 200');
+  ok(R(T9, 'r.status') === 'out' && P(T9) === 'rental:captured:5500:330,security:held:10000:0' && VA(T9) === 'renta:verificada:10000,renta:verificada:5500', 'el webhook sigue la renta: cobrada con ESE intento y depósito retenido, una vez');
+  ok(AV(T9, 'biz_renta', 'confirmó el cobro de la renta con su banco') === '1' && AV(T9, 'renta_recogida') === '1', 'un aviso a cada uno');
   await panelDet(T9); await clic(h.getByRole('button', { name: 'La devolvió', exact: true })); await h.getByText('Listo: devuelta.').first().waitFor();
+
+  // ── 8c. 28 nov (LAUNCH 9q «3-D Secure en el cobro de la RENTA al recoger») · El cliente NO confirma el cobro de la renta: «No fui yo» en la hoja, o vence
+  //        (el barrido y otro toque a la vez). Su intento se cancela en Stripe, el depósito retenido para esa renta se suelta UNA vez y lo de siempre (cambia la
+  //        tarjeta); nada se repite. Mientras espera: el panel, Mi renta y Super Admin lo dicen; otro toque no cobra otra vez ni repite el aviso. ──
+  const INT = (n) => sql(`select status || '|' || coalesce(last_error, '') from offsession_charges where kind = 'renta' and ref_id = '${RID(n)}' order by id desc limit 1`);
+  const SIM = (pi) => sql(`select status from sim_intents where id = '${pi}'`);
+  const FALLOS = (n) => sql(`select count(*) from operation_events e join operations o on o.id = e.operation_id where o.number = '${n}' and e.kind = 'payment_failed'`);
+  // Apartar con ···· 3184, la pestaña vieja del panel (abierta antes del toque), «La recogió», el banco confirma el depósito (webhook) → el cobro espera.
+  const cobroEspera = async (n) => {
+    await h2.goto(B + `/panel/${D}/hoy?det=renta:${n}`); await h2.getByText(`#${n}`).first().waitFor();
+    await recogioEspera(n); const pd = PIV(n);
+    sql(`update sim_intents set status = 'requires_capture' where id = '${pd}' and status = 'requires_action'`);
+    ok(await webhook(capturable(`evt_r9q_${RUN}_${n}`, pd)) === 200, `${n}: el banco confirmó el depósito (webhook)`);
+    const pc = PIV(n);
+    ok(pc !== pd && VA(n) === 'renta:verificada:10000,renta:pendiente:5500' && SIM(pd) === 'requires_capture' && SIM(pc) === 'requires_action' && INT(n) === 'pending|authentication_required', `${n}: depósito retenido y el cobro de la renta espera al banco`);
+    return [pd, pc];
+  };
+  await apartar('Lavadora a presión'); const T10 = await confirmarApartar();
+  const [PD10, PC10] = await cobroEspera(T10);
+  // Otro toque (la pestaña vieja, que todavía ve «La recogió» encendido): no vuelve a la pasarela, no cobra otra vez ni repite el aviso.
+  await clic(h2.getByRole('button', { name: 'La recogió' })); await h2.getByText(/pide que confirme el cobro de la renta de \$55/).first().waitFor();
+  ok(sql(`select count(*) from sim_intents where id like 'pi_sim_renta-${RID(T10)}-%'`) === '2' && VA(T10) === 'renta:verificada:10000,renta:pendiente:5500' && AV(T10, 'renta_verify_cobro') === '1'
+    && sql(`select count(*) from operation_events e join operations o on o.id = e.operation_id where o.number = '${T10}' and e.kind = 'verify_requested'`) === '2', 'otro toque: un solo cobro, una sola verificación y un aviso por verificación');
+  // El negocio: espera el cobro (con lo que le queda), el depósito sigue retenido, «La recogió» apagado; Hoy: ESPERA SU BANCO.
+  await panelDet(T10);
+  ok(!!(await vis(h.getByText(/pide que confirme el cobro de la renta de \$55. Le mandamos el aviso con el enlace; le quedan \d+ min. El depósito de \$100 sigue retenido/))) && await h.getByRole('button', { name: 'La recogió' }).isDisabled(), 'panel: espera el cobro de la renta (el depósito sigue retenido) y «La recogió» apagado');
+  await h.screenshot({ path: OUT + 'r19-panel-espera-cobro-d.png', fullPage: true });
+  await h.goto(B + `/panel/${D}/hoy`); await h.getByText(/^RENTAS · /).first().waitFor(); ok(!!(await vis(h.getByText('ESPERA SU BANCO'))), 'panel Hoy: ESPERA SU BANCO');
+  // Super Admin › Transacciones › Rentas: el estado de la verificación del cobro.
+  const ad = await (await b.newContext({ viewport: { width: 1360, height: 900 } })).newPage(); ad.on('pageerror', e => err.push(e.message)); await entrar(ad, '5705550199');
+  await ad.goto(B + `/admin/transacciones?tab=renta&q=${T10}`); await ad.getByText(/renta: espera que el cliente confirme el cobro con su banco/).first().waitFor();
+  ok(true, 'Super Admin › Transacciones › Rentas: espera que el cliente confirme el cobro');
+  await ad.screenshot({ path: OUT + 'r20-admin-espera-cobro-d.png', fullPage: true });
+  // Mi renta: CONFIRMA CON TU BANCO · el cobro de la renta, con el depósito ya retenido y el plazo; el botón lleva a la hoja del cobro.
+  await m.goto(B + `/renta/${T10}`); await m.getByText('Tu banco pide confirmar el cobro de la renta').first().waitFor();
+  ok(!!(await vis(m.getByText(/cobra \$55 de renta; el depósito de \$100 ya quedó retenido. Confírmalo con tu banco en los próximos \d+ min/))), 'cliente: el cobro de la renta, el depósito ya retenido y el plazo');
+  await m.screenshot({ path: OUT + 'r21-renta-confirma-cobro-m.png', fullPage: true });
+  await clic(m.getByRole('button', { name: 'Confirmar con mi banco' })); await m.waitForURL((u) => u.href.endsWith(encodeURIComponent(PC10)));
+  await m.getByText(/Para cobrar la renta de \$55/).first().waitFor();
+  // «No fui yo»: el intento del cobro queda rechazado y cancelado; el depósito se suelta; cambia la tarjeta. Una vez.
+  await clic(hoja.getByRole('button', { name: 'No fui yo' })); await m.getByText(/Tu banco no confirmó el pago/).first().waitFor();
+  await m.screenshot({ path: OUT + 'r22-hoja-cobro-no-m.png' });
+  ok(SIM(PC10) === 'failed' && SIM(PD10) === 'canceled', 'el cobro rechazado (nada salió) y el depósito soltado en Stripe');
+  ok(INT(T10) === 'failed|renta_sin_verificar' && R(T10, "r.status || '|' || r.card_failed") === 'held|true' && !P(T10), 'la intención rechazada; sigue apartada, la tarjeta no pasó y nada en el libro');
+  ok(VA(T10) === 'renta:verificada:10000,renta:fallo:5500', 'la verificación del cobro: fallo');
+  ok(AV(T10, 'renta_tarjeta') === '1' && AV(T10, 'biz_renta', 'no confirmó el cobro de la renta con su banco · no se cobró nada y se soltó el depósito') === '1' && FALLOS(T10) === '1', 'una vez: al cliente «cambia la tarjeta», al negocio lo que pasó y un «no pasó» en la línea de tiempo');
+  ok(sql(`select count(*) from money_alerts where kind = 'hold_stuck' and subject_id in ('suelta:${PD10}', 'suelta:${PC10}')`) === '0', 'sin alertas: el cobro y el depósito se soltaron');
+  await barrido();
+  ok(AV(T10, 'renta_tarjeta') === '1' && FALLOS(T10) === '1' && INT(T10) === 'failed|renta_sin_verificar' && VA(T10) === 'renta:verificada:10000,renta:fallo:5500', 'el barrido después no repite nada');
+  await m.goto(B + `/pago/verificar?pi=${encodeURIComponent(PC10)}`); await m.getByText('Esta confirmación ya no sirve').first().waitFor(); ok(true, 'la hoja del cobro rechazado ya no sirve');
+  await panelDet(T10); ok(!!(await vis(h.getByText(/no pasó al recoger/))), 'panel: la tarjeta no pasó');
+  await clic(h.getByRole('button', { name: 'Cancelar el apartado' })); await h.getByText(/Apartado cancelado/).first().waitFor();
+  // Vence sin confirmarlo: el barrido y otro toque (la pestaña vieja) a la vez. El intento del cobro se cancela y el depósito se suelta UNA vez.
+  await apartar('Lavadora a presión'); const T11 = await confirmarApartar();
+  const [PD11, PC11] = await cobroEspera(T11);
+  sql(`update payment_actions set expires_at = now() - interval '1 minute' where pi = '${PC11}'`);
+  await Promise.all([barrido(), clic(h2.getByRole('button', { name: 'La recogió' }))]);
+  await espera(() => INT(T11) === 'failed|renta_sin_verificar', 'vence: la intención rechazada (una vez, quien llegó primero)');
+  ok(SIM(PC11) === 'canceled' && SIM(PD11) === 'canceled', 'el intento del cobro cancelado en Stripe (nadie lo puede confirmar ya) y el depósito soltado');
+  ok(VA(T11) === 'renta:verificada:10000,renta:vencida:5500' && R(T11, "r.status || '|' || r.card_failed") === 'held|true' && !P(T11), 'la verificación vencida; sigue apartada, la tarjeta no pasó y nada en el libro');
+  ok(AV(T11, 'renta_tarjeta') === '1' && FALLOS(T11) === '1' && Number(AV(T11, 'biz_renta', 'no confirmó el cobro de la renta con su banco')) <= 1, 'una sola vez: un «no pasó» y un aviso al cliente (al negocio, solo si lo cerró el barrido)');
+  ok(sql(`select count(*) from money_alerts where kind = 'hold_stuck' and subject_id in ('suelta:${PD11}', 'suelta:${PC11}')`) === '0', 'sin alertas: el cobro y el depósito se soltaron');
+  await barrido();
+  ok(AV(T11, 'renta_tarjeta') === '1' && FALLOS(T11) === '1' && VA(T11) === 'renta:verificada:10000,renta:vencida:5500', 'otro barrido no repite nada');
+  await panelDet(T11); await clic(h.getByRole('button', { name: 'Cancelar el apartado' })); await h.getByText(/Apartado cancelado/).first().waitFor();
   // La semilla como estaba: la tarjeta 3184 de Marisol fuera (la pone tarjeta() cada vez), la de siempre predeterminada.
   sql(`update payment_methods set status = 'removed', is_default = false where user_id = ${MARISOL} and stripe_pm_id = '${PM_3DS}'`);
   sql(`update payment_methods set is_default = (stripe_pm_id = '${PM_OK}') where user_id = ${MARISOL}`);

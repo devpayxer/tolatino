@@ -2,7 +2,9 @@
 /* 9k · Confirmar el pago que el banco pidió verificar (renovación de Pro fuera de sesión): la misma hoja «Tu banco pide confirmar» de la app, abierta
    desde el aviso. Hecho → «Listo» y al plan; vencida o rechazada → lo dice y al plan (el siguiente intento sale solo).
    27 nov (LAUNCH 9q) · También el depósito de una renta al recogerla (rentaNum): hecho → la renta sigue sola; vencida o rechazada → no se cobró nada y en
-   tu renta se cambia la tarjeta. El botón lleva a tu renta. */
+   tu renta se cambia la tarjeta. El botón lleva a tu renta.
+   28 nov (LAUNCH 9q) · Y el COBRO de la renta (v.cobro): hecho → la renta quedó cobrada y te la entregan. Si al confirmar el depósito el banco pide también el
+   cobro de la renta, la hoja sigue con esa verificación (la misma página con su enlace: siguiente). */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
@@ -17,7 +19,10 @@ export function VerificarCobro({ es, v, estado, negocio, rentaNum, modo, pk }: {
   const router = useRouter();
   const [abierta, setAbierta] = useState(estado === "pendiente"), [listo, setListo] = useState(estado === "verificada");
   const plan = rentaNum ? `/renta/${rentaNum}` : negocio ? `/panel/${negocio}/cobros/plan` : "/cuenta";
-  const t = rentaNum ? (listo ? [E2("Listo: tu banco lo confirmó", "Done: your bank confirmed it"), E2("El depósito quedó retenido y seguimos con tu renta: te avisamos en cuanto quede cobrada y te la puedan entregar.", "The deposit is held and we continue with your rental: we will let you know as soon as it is charged and they can hand it to you.")]
+  const t = rentaNum && v.cobro ? (listo ? [E2("Listo: tu banco lo confirmó", "Done: your bank confirmed it"), E2("La renta quedó cobrada: ya te la pueden entregar. Te llega el aviso.", "The rent is charged: they can hand it to you now. You will get the notice.")]
+    : estado === "pendiente" ? [E2("Tu banco pide confirmar el cobro de la renta", "Your bank asks you to confirm the rent charge"), E2("Para entregarte la renta, el negocio cobra la renta en tu tarjeta. Confírmalo con tu banco para que quede cobrada.", "To hand you the rental, the business charges the rent to your card. Confirm it with your bank so it goes through.")]
+    : [E2("Esta confirmación ya no sirve", "This confirmation is no longer valid"), E2("Venció o tu banco la rechazó. No se cobró nada y la renta sigue apartada: cambia la tarjeta en tu renta y avísale al negocio.", "It expired or your bank declined it. Nothing was charged and the rental stays on hold: change the card in your rental and let the business know.")])
+    : rentaNum ? (listo ? [E2("Listo: tu banco lo confirmó", "Done: your bank confirmed it"), E2("El depósito quedó retenido y seguimos con tu renta: te avisamos en cuanto quede cobrada y te la puedan entregar.", "The deposit is held and we continue with your rental: we will let you know as soon as it is charged and they can hand it to you.")]
     : estado === "pendiente" ? [E2("Tu banco pide confirmar el depósito", "Your bank asks you to confirm the deposit"), E2("Para entregarte la renta, el negocio retiene el depósito en tu tarjeta. Confírmalo con tu banco para que quede retenido.", "To hand you the rental, the business holds the deposit on your card. Confirm it with your bank so it is held.")]
     : [E2("Esta confirmación ya no sirve", "This confirmation is no longer valid"), E2("Venció o tu banco la rechazó. No se cobró nada y la renta sigue apartada: cambia la tarjeta en tu renta y avísale al negocio.", "It expired or your bank declined it. Nothing was charged and the rental stays on hold: change the card in your rental and let the business know.")])
     : listo ? [E2("Listo: tu banco lo confirmó", "Done: your bank confirmed it"), E2("El cobro quedó hecho y tu plan sigue. Te llega el recibo.", "The charge went through and your plan continues. You will get the receipt.")]
@@ -34,7 +39,7 @@ export function VerificarCobro({ es, v, estado, negocio, rentaNum, modo, pk }: {
         <Button variant="secondary" block onClick={() => router.push(plan)}>{rentaNum ? E2("Ir a mi renta", "Go to my rental") : negocio ? E2("Ir a mi plan", "Go to my plan") : E2("Ir a mi cuenta", "Go to my account")}</Button>
       </div>
     </main>
-    {abierta && !listo && <Verificacion es={es} v={v} modo={modo} pk={pk} onCerrar={() => setAbierta(false)} onListo={() => { setAbierta(false); setListo(true); router.refresh(); }} />}
+    {abierta && !listo && <Verificacion es={es} v={v} modo={modo} pk={pk} onCerrar={() => setAbierta(false)} onListo={(sig) => { setAbierta(false); if (sig) { router.push(`/pago/verificar?pi=${encodeURIComponent(sig)}`); return; } setListo(true); router.refresh(); }} />}
     </>
   );
 }

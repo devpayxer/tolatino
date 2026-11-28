@@ -101,11 +101,16 @@ export async function marcarHecho(c: PoolClient, id: string, pi: string): Promis
 /* noLlego (9t5): la consulta dijo que ese cobro nunca llegó a Stripe; la intención quedó rechazada sin que el banco dijera que no: el flujo no lo cuenta
    como rechazo (como enCamino) y el siguiente cobro del objeto es otra intención con otra llave. */
 /* 9t6 · devuelto: el equipo decidió que ninguno de los cobros que halló Stripe vale y se devuelven (gateway_review): para el flujo es como «nunca llegó». */
+/* 28 nov (LAUNCH 9q) · verificar: el banco pidió autenticar el cobro y la verificación quedó a nombre de quien paga (terminarCobro con `verif`): NO es un «no»
+   (la intención sigue en camino, ya mandada, hasta que se confirme o venza: quien llama la cierra con cerrarConfirmado o rechazarSinCobro). */
 export type Cobrado = { ok: true; pi: string; marca: string | null; l4: string | null; ya?: true }
-  | { ok: false; enCamino: true; msg: Bi; noLlego?: true; devuelto?: true } | { ok: false; enCamino?: undefined; codigo: string; msg: Bi; pi?: string };
+  | { ok: false; enCamino: true; msg: Bi; noLlego?: true; devuelto?: true } | { ok: false; enCamino?: undefined; codigo: string; msg: Bi; pi?: string; verificar?: import("./pagos/pasarela").Verificar };
+/* 28 nov (LAUNCH 9q) · De quién es la verificación si el banco pide autenticar el cobro (el de la renta al recogerla): quien paga, la operación y la base
+   de la verificación. Sin esto, el banco que pide autenticar es un «no» (el plan del Hogar, un día más, los días tarde). */
+export type VerifCobro = { usuario: import("./pagos/pasarela").Quien; op: string; base: string };
 /* Pasos 2 y 3 (también desde el barrido). `cerrar`: lo que el flujo hace con el cobro hecho, en la MISMA transacción que lo marca 'done' (una vez); sin
    él, quien llama cierra en su propia transacción con marcarHecho. */
-export async function terminarCobro(a: Intencion, cerrar?: (c: PoolClient, r: { pi: string; marca: string | null; l4: string | null }) => Promise<unknown>): Promise<Cobrado> {
+export async function terminarCobro(a: Intencion, cerrar?: (c: PoolClient, r: { pi: string; marca: string | null; l4: string | null }) => Promise<unknown>, o: { verif?: VerifCobro } = {}): Promise<Cobrado> {
   if (a.st === "done") return { ok: true, pi: a.pi ?? "", marca: null, l4: null, ya: true };
   if (a.st === "failed") return { ok: false, codigo: "ya_rechazado", msg: YA_RECHAZADO };
   // 9t5 · Pasadas HORAS_LLAVE nunca va a la pasarela con su llave: se cierra con lo que contestó la consulta (o sigue en camino con su alerta).
@@ -120,10 +125,11 @@ export async function terminarCobro(a: Intencion, cerrar?: (c: PoolClient, r: { 
   }
   const cliente = await pasarela.cliente(a.payer).catch(() => null);
   const meta = { ...((a.detalle.meta as Record<string, string> | undefined) ?? {}), cobro: a.id, ...(m.gref ? { tl_intencion: m.gref } : {}) };
-  type R = { ok: true; id: string; marca?: string | null; ultimos4?: string | null } | { ok: false; codigo: string; mensaje: Bi; pi?: string };
+  type R = { ok: true; id: string; marca?: string | null; ultimos4?: string | null } | { ok: false; codigo: string; mensaje: Bi; pi?: string; verificar?: import("./pagos/pasarela").Verificar };
   const caida = { ok: false as const, codigo: "error", mensaje: EN_CAMINO };
   const r: R = a.destino
-    ? await pasarela.cobrarFuera({ centavos: a.monto, comision: a.fee, destino: a.destino, pm: a.pm, cliente, idem: a.idem, meta }).catch(() => caida)
+    ? await pasarela.cobrarFuera({ centavos: a.monto, comision: a.fee, destino: a.destino, pm: a.pm, cliente, idem: a.idem, meta,
+        ...(o.verif ? { usuario: o.verif.usuario, verif: { kind: "renta" as const, op: o.verif.op, base: o.verif.base } } : {}) }).catch(() => caida)
     : await pasarela.cobrarDirecto({ centavos: a.monto, pm: a.pm, cliente, idem: a.idem, meta }).catch(() => caida);
   if (!r.ok) {
     const codigo = String(r.codigo ?? "error").slice(0, 60);
@@ -131,13 +137,28 @@ export async function terminarCobro(a: Intencion, cerrar?: (c: PoolClient, r: { 
       await db().query(`update offsession_charges set attempts = least(10000, attempts + 1), last_error = left($2, 120) where id = $1::bigint and status = 'pending'`, [a.id, codigo]);
       return { ok: false, enCamino: true, msg: EN_CAMINO };
     }
-    // Un «no» de verdad (también el banco que pide 3-D Secure fuera de sesión: no se cobró): nada salió; la intención queda rechazada.
+    // 28 nov (LAUNCH 9q) · El banco pide autenticar y la verificación quedó a nombre de quien paga: no es un «no». La intención sigue en camino (ya mandada)
+    // con su intento anotado; nadie vuelve a la pasarela con esta llave (Stripe contestaría lo mismo): quien llama la cierra al confirmarse o vencer.
+    if ("verificar" in r && r.verificar && r.pi) {
+      await db().query(`update offsession_charges set attempts = least(10000, attempts + 1), last_error = 'authentication_required' where id = $1::bigint and status = 'pending'`, [a.id]);
+      return { ok: false, codigo, msg: r.mensaje, pi: r.pi, verificar: r.verificar };
+    }
+    // Un «no» de verdad (también el banco que pide 3-D Secure fuera de sesión sin una verificación a nombre de quien paga: no se cobró): nada salió; la
+    // intención queda rechazada.
     await db().query(`update offsession_charges set status = 'failed', attempts = least(10000, attempts + 1), last_error = left($2, 120) where id = $1::bigint and status = 'pending'`, [a.id, codigo]);
     return { ok: false, codigo, msg: r.mensaje, ...(r.pi ? { pi: r.pi } : {}) };
   }
   return cerrarHecho(a, { pi: r.id, marca: r.marca ?? null, l4: r.ultimos4 ?? null }, cerrar);
 }
 type Cerrar = (c: PoolClient, r: { pi: string; marca: string | null; l4: string | null }) => Promise<unknown>;
+/* 28 nov (LAUNCH 9q) · El cobro que el banco pidió autenticar y quien paga confirmó (Stripe dice cobrado: se mira, nunca se supone): se cierra por el MISMO
+   cierre que un cobro contestado ('done' una vez, con lo del flujo en su transacción). Quien llega segundo (la hoja, el webhook, el barrido) lee `ya`. */
+export const cerrarConfirmado = (a: Intencion, hecho: { pi: string; marca: string | null; l4: string | null }, cerrar: Cerrar) => cerrarHecho(a, hecho, cerrar);
+/* 28 nov (LAUNCH 9q) · El cobro que el banco pidió autenticar y nadie confirmó: su intento ya se canceló en Stripe (nada salió ni puede salir). La intención,
+   ya mandada, queda rechazada UNA vez: true solo para quien la cierra (y suelta lo que se retuvo para ella); el siguiente intento es otra llave. */
+export async function rechazarSinCobro(id: string, porque: string): Promise<boolean> {
+  return !!(await db().query(`update offsession_charges set status = 'failed', last_error = left($2, 120) where id = $1::bigint and status = 'pending'`, [id, porque])).rowCount;
+}
 /* El cierre de un cobro hecho, el mismo para la respuesta de la pasarela y para lo que encontró la consulta: 'done' una vez y lo del flujo en la MISMA
    transacción. Sin `cerrar`, quien llama cierra en su propia transacción con marcarHecho. */
 async function cerrarHecho(a: Intencion, hecho: { pi: string; marca: string | null; l4: string | null }, cerrar?: Cerrar): Promise<Cobrado> {

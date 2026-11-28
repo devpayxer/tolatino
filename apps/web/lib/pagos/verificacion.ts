@@ -11,9 +11,15 @@ import { pasarela, type Retencion, type Verificar } from "./pasarela";
    - 27 nov (LAUNCH 9q) · El depósito de una renta al recogerla (fuera de sesión, kind 'renta'): el cliente recibe el aviso renta_verify con el mismo enlace;
      al confirmar (aquí, o el webhook amount_capturable_updated) la renta sigue sola (lib/rentas.ts › trasVerificacionRenta: depósito retenido, renta
      cobrada); si nadie la confirma en verificacion_min, vence aquí y la renta aplica su fallo de siempre (falloRecoger).
+   - 28 nov (LAUNCH 9q) · El COBRO de la renta al recogerla (captura automática, fuera de sesión; kind 'renta', base «-cobro»): el aviso renta_verify_cobro
+     con el mismo enlace; al confirmar (aquí, o el webhook payment_intent.succeeded) la renta queda cobrada con ESE intento y el depósito retenido; si nadie
+     la confirma, al vencer la resuelve su renta (rentas › cobroDelBanco: mira en Stripe, cancela el intento y aplica falloRecoger, soltando el depósito una
+     vez). Al confirmar el depósito, si el banco pide además el cobro de la renta, la hoja sigue con esa verificación (siguiente).
    Solo quien paga completa su verificación; el servidor mira el estado en Stripe (nunca le cree a la pantalla). */
 type Bi = { es: string; en: string };
-export type ResVerificar = { ok: true; listo: boolean } | { ok: false; msg: Bi };
+/* siguiente (28 nov, LAUNCH 9q): la otra verificación de la misma renta que quedó esperando al confirmar esta (el depósito confirmado y el banco pide también
+   el cobro de la renta): la hoja sigue con ella. */
+export type ResVerificar = { ok: true; listo: boolean; siguiente?: string } | { ok: false; msg: Bi };
 
 /* Lo que el flujo devuelve a la pantalla cuando el banco pide verificar (solo si la verificación quedó a nombre de quien paga). */
 export function pideVerificar(ret: Retencion): { verificar: Verificar } | null {
@@ -34,22 +40,26 @@ export async function bancoPide(ret: Extract<Retencion, { ok: true }>, ctx?: imp
   return { ok: false, msg: { es: "Tu banco pide una verificación extra. Prueba con otra tarjeta.", en: "Your bank asks for an extra verification. Try another card." }, tarjeta: true };
 }
 
-const fila = async (pi: string) => (await db().query<{ user_id: string; status: string; viva: boolean; kind: string; business_id: string | null; amount_cents: number; pm: string | null; vence: string; num: string | null }>(
+const fila = async (pi: string) => (await db().query<{ user_id: string; status: string; viva: boolean; kind: string; business_id: string | null; amount_cents: number; pm: string | null; vence: string; num: string | null; cobro: boolean; siguiente: string | null }>(
   `select a.user_id::text, a.status, a.expires_at > now() as viva, a.kind, a.business_id, a.amount_cents, a.pm, to_char(a.expires_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as vence,
-          (select o.number from operations o where o.id = a.operation_id) as num
+          (select o.number from operations o where o.id = a.operation_id) as num, a.kind = 'renta' and a.base_idem like '%-cobro' as cobro,
+          (select b.pi from payment_actions b where a.kind = 'renta' and b.operation_id = a.operation_id and b.kind = 'renta' and b.user_id = a.user_id and b.pi <> a.pi
+              and b.status = 'pendiente' and b.expires_at > now() and b.created_at >= a.created_at order by b.created_at desc limit 1) as siguiente
      from payment_actions a where a.pi = $1::text`, [pi])).rows[0] ?? null;
+/* 28 nov (LAUNCH 9q) · La siguiente verificación de la misma renta, si quedó una esperando (se lee DESPUÉS de seguir la renta). */
+const siguienteDe = async (pi: string) => { const s = (await fila(pi))?.siguiente; return s ? { siguiente: s } : {}; };
 /* 27 nov (LAUNCH 9q) · La renta que esperaba esta verificación sigue sola (confirmada, rechazada o vencida): lib/rentas.ts › trasVerificacionRenta. */
 const sigueRenta = async (pi: string) => (await import("../rentas")).trasVerificacionRenta(pi);
 
 /* La verificación pendiente de una persona (la página de la renovación la abre por su enlace). Otra persona: «no existe». */
-export async function verificacionDe(userId: string, pi: string): Promise<(Verificar & { estado: string; negocio: string | null; rentaNum: string | null }) | null> {
+export async function verificacionDe(userId: string, pi: string): Promise<(Verificar & { estado: string; negocio: string | null; rentaNum: string | null; siguiente: string | null }) | null> {
   if (!/^pi_[A-Za-z0-9_.:-]{3,250}$/.test(pi)) return null;
   const a = await fila(pi);
   if (!a || a.user_id !== userId) return null;
   const s = await pasarela.intento(pi);
   const renta = a.kind === "renta";
-  return { pi, secreto: s?.secreto ?? "", monto: a.amount_cents, pm: a.pm, vence: a.vence, renovacion: a.kind === "renovacion", ...(renta ? { renta: true } : {}), estado: a.viva || a.status !== "pendiente" ? a.status : "vencida",
-    negocio: renta ? null : a.business_id, rentaNum: renta ? a.num : null };
+  return { pi, secreto: s?.secreto ?? "", monto: a.amount_cents, pm: a.pm, vence: a.vence, renovacion: a.kind === "renovacion", ...(renta ? { renta: true, ...(a.cobro ? { cobro: true } : {}) } : {}), estado: a.viva || a.status !== "pendiente" ? a.status : "vencida",
+    negocio: renta ? null : a.business_id, rentaNum: renta ? a.num : null, siguiente: renta ? a.siguiente : null };
 }
 
 /* Después de la hoja: el servidor mira el estado real del cobro. Retenido o cobrado → verificada (y, si era una renovación, el período se
@@ -57,7 +67,7 @@ export async function verificacionDe(userId: string, pi: string): Promise<(Verif
 export async function confirmarVerificacion(userId: string, pi: string): Promise<ResVerificar> {
   const a = /^pi_[A-Za-z0-9_.:-]{3,250}$/.test(pi) ? await fila(pi) : null;
   if (!a || a.user_id !== userId) return { ok: false, msg: { es: "Esa verificación no existe.", en: "That verification does not exist." } };
-  if (a.status === "verificada") return { ok: true, listo: true };
+  if (a.status === "verificada") return { ok: true, listo: true, ...(a.kind === "renta" ? await siguienteDe(pi) : {}) };
   if (a.status !== "pendiente" || !a.viva) return { ok: false, msg: { es: "La verificación venció. Vuelve a intentarlo: no se cobró nada.", en: "The verification expired. Try again: nothing was charged." } };
   const s = await pasarela.intento(pi);
   if (!s) return { ok: false, msg: { es: "No pudimos ver la respuesta de tu banco. Prueba de nuevo en un momento.", en: "We could not see your bank's answer. Try again in a moment." } };
@@ -66,7 +76,7 @@ export async function confirmarVerificacion(userId: string, pi: string): Promise
     if (u.rowCount && a.kind === "renovacion" && a.business_id) await (await import("../suscripcion")).completarRenovacion(a.business_id, pi);
     // 27 nov (LAUNCH 9q) · La renta sigue sola (una vez: quien llega segundo, el webhook u otra pestaña, encuentra la intención ya cerrada).
     if (u.rowCount && a.kind === "renta") await sigueRenta(pi);
-    return { ok: true, listo: true };
+    return { ok: true, listo: true, ...(a.kind === "renta" ? await siguienteDe(pi) : {}) };
   }
   // Fuera de sesión (renovación, renta) el intento espera en «requires_payment_method» hasta que la hoja lo vuelve a confirmar: todavía no es un «no».
   if (s.estado === "requires_action" || (a.kind === "renta" && s.estado === "requires_payment_method")) return { ok: true, listo: false };
@@ -97,8 +107,9 @@ export async function vencerVerificaciones(): Promise<number> {
   const C = await import("../cobros");
   const U = await import("../barrido-uno"), B = new U.Fallos("verificaciones");
   let n = 0;
-  await U.porTandas(B, 200, async (vistos) => (await db().query<{ pi: string; kind: string; uid: string; biz: string | null; city: string | null; amt: number; ultimo: boolean }>(
-    `select a.pi, a.kind, a.user_id::text as uid, a.business_id as biz, a.city_id as city, a.amount_cents as amt, a.expires_at < now() - make_interval(mins => $1::int) as ultimo from payment_actions a
+  await U.porTandas(B, 200, async (vistos) => (await db().query<{ pi: string; kind: string; uid: string; biz: string | null; city: string | null; amt: number; ultimo: boolean; cobro: boolean }>(
+    `select a.pi, a.kind, a.user_id::text as uid, a.business_id as biz, a.city_id as city, a.amount_cents as amt, a.expires_at < now() - make_interval(mins => $1::int) as ultimo,
+            a.kind = 'renta' and a.base_idem like '%-cobro' as cobro from payment_actions a
       where a.expires_at < now() and (a.status = 'pendiente' or (a.status = 'verificada' and a.kind = 'en_sesion'
             and not exists (select 1 from payments p where p.stripe_payment_intent = a.pi)
             and not exists (select 1 from sponsorship_payments s where s.pi = a.pi)
@@ -108,6 +119,9 @@ export async function vencerVerificaciones(): Promise<number> {
       order by a.expires_at, a.pi limit 200`, [C.SUELTA_ESPERA_MIN, vistos])).rows, (x) => x.pi, async (x) => {
     // Una retención verificada que sí entró al libro después (carrera con el flujo) no se suelta: se vuelve a mirar dentro del update.
     if (x.kind === "en_sesion" && (await db().query(`select 1 from payments where stripe_payment_intent = $1::text`, [x.pi])).rowCount) return;
+    // 28 nov (LAUNCH 9q) · El COBRO de la renta (captura automática) lo resuelve su renta: mira en Stripe primero (confirmado a última hora → la renta sigue
+    // con ese cobro; nunca se cancela lo cobrado) y, si no, cancela el intento y aplica su fallo de siempre una vez (rentas › cobroDelBanco, noConfirmoCobro).
+    if (x.cobro) { await sigueRenta(x.pi); if ((await fila(x.pi))?.status !== "pendiente") n++; return; }
     // 26 nov · Por cobros › soltarSuelta: la que no se suelta se reintenta en el próximo barrido y, pasada la gracia (SUELTA_ESPERA_MIN después de vencer),
     // alerta y se deja (antes se reintentaba sin fin en silencio); la que Stripe ya había cobrado alerta en el acto. Guardián liberarSoloPorLaRegla.
     const r = await C.soltarSuelta(x.pi, { que: { es: x.kind === "renovacion" ? "Verificación del banco de una renovación de Pro que nadie completó a tiempo" : x.kind === "renta" ? "Verificación del banco del depósito de una renta que el cliente no completó a tiempo" : "Verificación del banco que nadie completó a tiempo (la retención no entró al libro)",

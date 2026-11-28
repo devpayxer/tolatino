@@ -20,5 +20,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
   const v = await verificacionDe(u.id, pi);
   const modo = pasarela.modo();
   if (!v || modo === "apagado") notFound();
-  return <VerificarCobro es={lang === "es"} v={v} estado={v.estado} negocio={v.negocio} rentaNum={v.rentaNum} modo={modo} pk={await llave("STRIPE_PUBLISHABLE_KEY")} />;
+  // 28 nov (LAUNCH 9q) · La verificación del depósito de una renta ya hecha y el banco pide ahora el cobro de la renta: el enlace del primer aviso lleva a la que espera.
+  if (v.estado === "verificada" && v.siguiente) redirect(`/pago/verificar?pi=${encodeURIComponent(v.siguiente)}`);
+  // key: otra verificación (la siguiente de la misma renta) es otra hoja, sin lo que quedó de la anterior.
+  return <VerificarCobro key={v.pi} es={lang === "es"} v={v} estado={v.estado} negocio={v.negocio} rentaNum={v.rentaNum} modo={modo} pk={await llave("STRIPE_PUBLISHABLE_KEY")} />;
 }

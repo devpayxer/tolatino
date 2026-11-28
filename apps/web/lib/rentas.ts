@@ -2,8 +2,8 @@ import "server-only";
 import { diasEspeciales, rangosDia } from "./dias-especiales";
 import type { PoolClient } from "pg";
 import { db, tx, type AlGuardar } from "./db";
-import { comision, soltarSuelta, type ContextoSuelta, type Suelta } from "./cobros";
-import { pasarela } from "./pagos/pasarela";
+import { comision, soltarSuelta, SUELTA_ESPERA_MIN, type ContextoSuelta, type Suelta } from "./cobros";
+import { esCobroRenta, pasarela } from "./pagos/pasarela";
 import { usd as money } from "./dinero-comun";
 
 /* Renta de herramienta (Fase 4 · bloque 4f-2). Diseño: neg-hogar-plan.js (rentForm / rentStatus) y la pestaña Tienda de la
@@ -150,7 +150,8 @@ type Fila = { rid: string; op: string; numero: string; biz: string; uid: string;
   // 4y-4: vehículo (Transporte): millas incluidas por día, precio de la milla de más, licencia revisada y odómetro.
   vehiculo: boolean; mpd: number | null; mi: number | null; lic: boolean; odoOut: number | null; odoIn: number | null;
   // 27 nov (LAUNCH 9q) · Apartada y esperando que el cliente confirme el depósito con su banco (3-D Secure al recoger): el intento y los minutos que le quedan.
-  banco: { pi: string; min: number } | null };
+  // 28 nov (LAUNCH 9q) · que: qué confirma, el depósito o el COBRO de la renta (el banco pidió autenticarlo después de retener el depósito).
+  banco: { pi: string; min: number; que: "deposito" | "renta" } | null };
 const SEL = `select r.id::text as rid, r.operation_id::text as op, o.number as numero, r.business_id as biz, r.user_id::text as uid, r.city_id as city, r.status as st, r.item_name as n, r.price_cents as p, r.deposit_cents as dep,
     r.days as dias, r.week, r.rent_cents as rent, r.pick_on::text as pick, r.due_on::text as due, r.expires_at as exp, r.payment_method as pm, r.card_failed as "cardFailed", r.late_days as "lateD", r.late_cents as "lateC",
     r.damage_cents as "dmgC", r.damage_note as "dmgNota", m.url as "dmgFoto", r.damage_status as "dmgSt", r.damage_asked_at as "dmgAt", r.out_at as "outAt", r.back_at as "backAt", r.created_at as at, r.cancelled_by as "cxBy",
@@ -158,7 +159,7 @@ const SEL = `select r.id::text as rid, r.operation_id::text as op, o.number as n
     (select h.ranges->-1->>1 from business_hours h where h.business_id = r.business_id and h.module = '' and h.weekday = extract(dow from r.due_on)::int and h.open) as close,
     nullif(u.first_name, '') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as cliente,
     b.category_id = 'NEG-TRANS' as vehiculo, (i.svc_attrs->>'mpd')::int as mpd, (i.svc_attrs->>'mi')::int as mi, r.license_checked_at is not null as lic, r.odometer_out as "odoOut", r.odometer_in as "odoIn",
-    (select jsonb_build_object('pi', pa.pi, 'min', greatest(1, ceil(extract(epoch from pa.expires_at - now()) / 60))::int) from payment_actions pa
+    (select jsonb_build_object('pi', pa.pi, 'min', greatest(1, ceil(extract(epoch from pa.expires_at - now()) / 60))::int, 'que', case when pa.base_idem like '%-cobro' then 'renta' else 'deposito' end) from payment_actions pa
       where r.status = 'held' and pa.operation_id = r.operation_id and pa.kind = 'renta' and pa.status = 'pendiente' and pa.expires_at > now() order by pa.created_at desc limit 1) as banco
   from rentals r join operations o on o.id = r.operation_id join items i on i.id = r.item_id join businesses b on b.id = r.business_id join cities ci on ci.id = r.city_id join users u on u.id = r.user_id
   left join media m on m.id = r.damage_photo and m.status = 'visible'`;
@@ -195,7 +196,7 @@ export async function rentaPanel(negocio: string, numero: string): Promise<Renta
   await barrerRentas({ numero });
   const x = (await db().query<Fila>(`${SEL} where o.number = $1 and r.business_id = $2`, [numero, negocio])).rows[0];
   // El intento de la verificación es del cliente (solo él la abre): al negocio, solo que la espera y cuánto le queda.
-  return x ? vista({ ...x, banco: x.banco ? { pi: "", min: x.banco.min } : null }) : null;
+  return x ? vista({ ...x, banco: x.banco ? { pi: "", min: x.banco.min, que: x.banco.que } : null }) : null;
 }
 /* Las rentas del negocio para Hoy: apartadas, las que tienen fuera y las devueltas con algo pendiente o de los últimos 2 días. */
 export type RentaFila = { numero: string; st: Fila["st"]; n: Bi; cliente: string; pick: string; due: string; tarde: number; dmgSt: string | null; cardFailed: boolean; banco: boolean };
@@ -252,22 +253,31 @@ const hrefNeg = (x: Fila) => ({ href: `/panel/${x.biz}/hoy?det=renta:${x.numero}
    renta sigue apartada y la intención en camino SIN mandarse (no se cancela ni vence el apartado) hasta que lo confirme (la hoja de /pago/verificar o el
    webhook: trasVerificacionRenta) o venza en verificacion_min (Configuración › Dinero; vencerVerificaciones). El aviso con el enlace sale UNA vez por
    verificación: la primera vez que se ve, con su evento en la línea de tiempo de la operación (verify_requested, con candado por intento). */
-async function esperaBanco(x: Fila, a: Intencion, v: { pi: string; vence: string }, nueva: boolean, desdeBarrido: Origen): Promise<Res> {
-  const dep = Number(a.detalle.dep ?? 0);
+/* 28 nov (LAUNCH 9q «3-D Secure en el cobro de la RENTA al recoger») · que = "renta": el banco pidió autenticar el COBRO de la renta (con el depósito de esta
+   intención ya retenido, que se queda retenido mientras espera). El mismo camino que el depósito: la verificación a nombre del cliente con su operación, su
+   aviso renta_verify_cobro con el enlace a la hoja UNA vez por intento (su evento verify_requested con el candado) y el negocio que espera. */
+async function esperaBanco(x: Fila, a: Intencion, v: { pi: string; vence: string }, nueva: boolean, desdeBarrido: Origen, que: "deposito" | "renta" = "deposito"): Promise<Res> {
+  const dep = Number(a.detalle.dep ?? 0), cobro = que === "renta";
   if (nueva) {
     const primera = await tx(async (c) => {
       await c.query(`select pg_advisory_xact_lock(hashtext('renta-verifica:' || $1))`, [v.pi]);
       if ((await c.query(`select 1 from operation_events where operation_id = $1::bigint and kind = 'verify_requested' and note->>'pi' = $2::text`, [x.op, v.pi])).rowCount) return false;
       await c.query(`insert into operation_events (operation_id, kind, actor, actor_id, note) values ($1::bigint, 'verify_requested', 'system', null, $2::jsonb)`,
-        [x.op, JSON.stringify({ es: `El banco pidió que el cliente confirme el depósito de ${money(dep)}: se le mandó el aviso con el enlace`, en: `The bank asked the customer to confirm the ${money(dep)} deposit: the notice with the link was sent`, pi: v.pi })]);
+        [x.op, JSON.stringify(cobro ? { es: `El banco pidió que el cliente confirme el cobro de la renta de ${money(a.monto)}: se le mandó el aviso con el enlace${dep ? ` (el depósito de ${money(dep)} sigue retenido)` : ""}`, en: `The bank asked the customer to confirm the ${money(a.monto)} rent charge: the notice with the link was sent${dep ? ` (the ${money(dep)} deposit stays held)` : ""}`, pi: v.pi }
+          : { es: `El banco pidió que el cliente confirme el depósito de ${money(dep)}: se le mandó el aviso con el enlace`, en: `The bank asked the customer to confirm the ${money(dep)} deposit: the notice with the link was sent`, pi: v.pi })]);
       return true;
     });
     if (primera) {
       const av = await import("./avisos"), min = Math.max(1, Math.round((new Date(v.vence).getTime() - Date.now()) / 60000));
-      await av.avisar(x.uid, "renta_verify", { articulo: x.n, negocio: x.bname, monto: money(dep), min: String(min) }, { href: `/pago/verificar?pi=${encodeURIComponent(v.pi)}`, ref: ["renta", x.numero] });
-      if (desdeBarrido) await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente ?? { es: "Cliente", en: "Customer" }, que: { es: "su banco pide que confirme el depósito · le mandamos el aviso; no la entregues todavía", en: "their bank asks them to confirm the deposit · we sent them the notice; do not hand it over yet" }, articulo: x.n }, hrefNeg(x));
+      if (!cobro) await av.avisar(x.uid, "renta_verify", { articulo: x.n, negocio: x.bname, monto: money(dep), min: String(min) }, { href: `/pago/verificar?pi=${encodeURIComponent(v.pi)}`, ref: ["renta", x.numero] });
+      else await av.avisar(x.uid, "renta_verify_cobro", { articulo: x.n, negocio: x.bname, monto: money(a.monto), min: String(min) }, { href: `/pago/verificar?pi=${encodeURIComponent(v.pi)}`, ref: ["renta", x.numero] });
+      if (desdeBarrido) await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente ?? { es: "Cliente", en: "Customer" }, que: cobro
+        ? { es: "su banco pide que confirme el cobro de la renta · le mandamos el aviso; no la entregues todavía", en: "their bank asks them to confirm the rent charge · we sent them the notice; do not hand it over yet" }
+        : { es: "su banco pide que confirme el depósito · le mandamos el aviso; no la entregues todavía", en: "their bank asks them to confirm the deposit · we sent them the notice; do not hand it over yet" }, articulo: x.n }, hrefNeg(x));
     }
   }
+  if (cobro) return no(`El banco de ${x.cliente ?? "Cliente"} pide que confirme el cobro de la renta de ${money(a.monto)}. Ya le mandamos el aviso con el enlace: cuando lo confirme, la renta queda cobrada y te avisamos.${dep ? ` El depósito de ${money(dep)} sigue retenido.` : ""} No la entregues todavía.`,
+    `${x.cliente ?? "Customer"}'s bank asks them to confirm the ${money(a.monto)} rent charge. We sent them the notice with the link: once they confirm, the rent is charged and we let you know.${dep ? ` The ${money(dep)} deposit stays held.` : ""} Do not hand it over yet.`);
   return no(`El banco de ${x.cliente ?? "Cliente"} pide que confirme el depósito de ${money(dep)}. Ya le mandamos el aviso con el enlace: cuando lo confirme, se cobra la renta sola y te avisamos. No la entregues todavía.`,
     `${x.cliente ?? "Customer"}'s bank asks them to confirm the ${money(dep)} deposit. We sent them the notice with the link: once they confirm, the rent is charged by itself and we let you know. Do not hand it over yet.`);
 }
@@ -289,12 +299,79 @@ async function noVerifico(x: Fila, a: Intencion, pi: string, dep: number, desdeB
 }
 /* 27 nov (LAUNCH 9q) · Después de la verificación del depósito (confirmada, rechazada o vencida; desde la hoja, el webhook o el barrido): la renta sigue
    por su mismo cierre (terminarCobroRenta), que lee la verificación y no la repite. Quien llega segundo encuentra la intención ya cerrada. */
+/* 28 nov (LAUNCH 9q) · También la del COBRO de la renta (base «-cobro»): la renta sigue por el mismo cierre, que lee esa verificación y lo que dice Stripe
+   (cobroDelBanco) antes de nada. Si su intención ya no espera y la verificación sigue pendiente (no pasa: el cierre la anota antes), se cierra sola
+   mirando a Stripe (cobroHuerfano): nunca queda un intento que el cliente todavía pueda confirmar sin su renta. */
 export async function trasVerificacionRenta(pi: string): Promise<void> {
-  const v = (await db().query<{ base: string }>(`select base_idem as base from payment_actions where pi = $1::text and kind = 'renta'`, [pi])).rows[0];
-  if (!v || !v.base.endsWith("-dep")) return;
-  const id = (await db().query<{ id: string }>(`select id::text from offsession_charges where kind = 'renta' and idem_key = $1 and status = 'pending'`, [v.base.slice(0, -4)])).rows[0]?.id;
+  const v = (await db().query<{ base: string; st: string }>(`select base_idem as base, status as st from payment_actions where pi = $1::text and kind = 'renta'`, [pi])).rows[0];
+  const idem = !v ? null : v.base.endsWith("-dep") ? v.base.slice(0, -4) : esCobroRenta(v.base) ? v.base.slice(0, -"-cobro".length) : null;
+  if (!v || !idem) return;
+  const id = (await db().query<{ id: string }>(`select id::text from offsession_charges where kind = 'renta' and idem_key = $1 and status = 'pending'`, [idem])).rows[0]?.id;
   const CF = await import("./cobro-fuera"), a = id ? await CF.intencion(id) : null;
   if (a?.st === "pending") await terminarCobroRenta(a, "banco");
+  else if (esCobroRenta(v.base) && v.st === "pendiente") await cobroHuerfano(pi, idem);
+}
+/* 28 nov (LAUNCH 9q) · La verificación del cobro de la renta de ESTA intención (base: su llave + «-cobro»; el cobro va siempre con la llave de la intención,
+   así que hay una sola). ultimo: venció hace más de la gracia de soltarSuelta (su alerta, si Stripe no cancela el intento). */
+type VerifC = { pi: string; st: string; viva: boolean; vence: string; ultimo: boolean };
+const verifCobro = async (idem: string): Promise<VerifC | null> => (await db().query<VerifC>(
+  `select pi, status as st, expires_at > now() as viva, to_char(expires_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as vence, expires_at < now() - make_interval(mins => $2::int) as ultimo
+     from payment_actions where base_idem = $1::text and kind = 'renta' order by created_at desc limit 1`, [`${idem}-cobro`, SUELTA_ESPERA_MIN])).rows[0] ?? null;
+/* 28 nov (LAUNCH 9q) · Qué pasó con el cobro de la renta que el banco pidió autenticar, MIRADO en Stripe (nunca supuesto por la verificación ni la pantalla):
+   «hecho» (el cliente lo confirmó, en la hoja, fuera de ella o a última hora: Stripe lo cobró) · «espera» (su verificación sigue viva y el intento espera al
+   banco; real: requires_payment_method hasta que la hoja lo vuelve a confirmar) · «calla» (Stripe no contestó, el intento sigue en proceso o no se dejó
+   cancelar: no se decide nada, el siguiente toque o el barrido vuelven a mirar) · «no» (rechazada o vencida, y su intento YA cancelado en Stripe: después de
+   decirlo, nadie lo puede confirmar). Si al cancelarlo Stripe dice que ya estaba cobrado (lo confirmó en ese instante), es «hecho» y la alerta que abrió
+   soltarSuelta se cierra sola con lo que pasó. forzar: la renta ya no lo espera (no se queda esperando). */
+type CobroBanco = { e: "hecho"; pi: string; marca: string | null; l4: string | null } | { e: "espera" } | { e: "calla" } | { e: "no" };
+const ESPERA_BANCO = new Set(["requires_action", "requires_payment_method", "requires_confirmation"]);
+async function cobroDelBanco(x: { numero: string; uid: string; biz: string; city: string }, monto: number, V: VerifC, forzar = false): Promise<CobroBanco> {
+  const s = await pasarela.intento(V.pi);
+  if (!s || s.estado === "processing") return { e: "calla" };
+  if (s.estado === "succeeded") return { e: "hecho", pi: V.pi, marca: s.marca, l4: s.ultimos4 };
+  if (!forzar && V.st === "pendiente" && V.viva && ESPERA_BANCO.has(s.estado)) return { e: "espera" };
+  if (s.estado !== "canceled") {
+    const sd = await soltarSuelta(V.pi, { que: { es: `Cobro de la renta ${x.numero} que el cliente no confirmó con su banco`, en: `Rent charge of rental ${x.numero} the customer did not confirm with their bank` },
+      monto, persona: x.uid, negocio: x.biz, ciudad: x.city, luego: "deja", ultimo: V.ultimo });
+    if (sd.e === "cobrada") {
+      await (await import("./dinero-alertas")).cerrarAlertaSola("hold_stuck", `suelta:${V.pi}`, { es: "Cerrada sola: el cliente confirmó el cobro de la renta con su banco en ese momento; la renta siguió con ese cobro.", en: "Closed by itself: the customer confirmed the rent charge with their bank at that moment; the rental continued with that charge." }).catch(() => undefined);
+      return { e: "hecho", pi: V.pi, marca: s.marca, l4: s.ultimos4 };
+    }
+    if (sd.e !== "liberada") return { e: "calla" };
+  }
+  return { e: "no" };
+}
+/* 28 nov (LAUNCH 9q) · La verificación que se cierra ANTES que su intención (si algo se corta en medio, el barrido vuelve a leerla y termina igual). */
+const cerrarVerif = async (pi: string, confirmada: boolean) => db().query(confirmada ? `update payment_actions set status = 'verificada' where pi = $1::text and status = 'pendiente'`
+  : `update payment_actions set status = case when expires_at < now() then 'vencida' else 'fallo' end where pi = $1::text and status = 'pendiente'`, [pi]);
+/* 28 nov (LAUNCH 9q) · El cliente no confirmó el cobro de la renta con su banco y su intento ya está cancelado en Stripe (cobroDelBanco «no»): lo de siempre
+   cuando el banco no deja (falloRecoger: cambia la tarjeta), y el depósito retenido para ESTA intención se suelta UNA vez: solo quien cierra la intención
+   (rechazarSinCobro, where pending) lo suelta y avisa; quien llega segundo (la hoja, el webhook, el barrido, otro toque) lee que ya no espera. */
+async function noConfirmoCobro(x: Fila, a: Intencion, pi: string, desdeBarrido: Origen): Promise<Res> {
+  const CF = await import("./cobro-fuera");
+  await cerrarVerif(pi, false);
+  if (!(await CF.rechazarSinCobro(a.id, "renta_sin_verificar"))) return no("Ya no espera la confirmación del banco.", "It is no longer waiting for the bank confirmation.");
+  const sd = a.hold ? await soltarSuelta(a.hold, depSuelto(x, Number(a.detalle.dep ?? 0), { es: "el cliente no confirmó el cobro de la renta con su banco", en: "the customer did not confirm the rent charge with their bank" })) : null;
+  const f = await falloRecoger(x, { es: "no confirmó el cobro de la renta con su banco", en: "the rent charge was not confirmed with the bank" });
+  if (desdeBarrido) await (await import("./avisos")).avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente ?? { es: "Cliente", en: "Customer" }, que: sd?.e === "liberada"
+    ? { es: "no confirmó el cobro de la renta con su banco · no se cobró nada y se soltó el depósito; ya le pedimos cambiar la tarjeta", en: "did not confirm the rent charge with their bank · nothing was charged and the deposit was released; we asked them to change the card" }
+    : { es: "no confirmó el cobro de la renta con su banco · no se cobró la renta; ya le pedimos cambiar la tarjeta", en: "did not confirm the rent charge with their bank · the rent was not charged; we asked them to change the card" }, articulo: x.n }, hrefNeg(x));
+  return f;
+}
+/* 28 nov (LAUNCH 9q) · Una verificación del cobro de la renta pendiente cuya intención ya no espera (otra la cerró): no debería pasar (el cierre la anota
+   antes). Se cierra mirando a Stripe: si no se cobró, el intento se cancela (nadie lo puede confirmar ya); si se cobró y su intención no quedó hecha con
+   ESE intento, el equipo de dinero decide (offsession_unapplied, una vez). */
+async function cobroHuerfano(pi: string, idem: string): Promise<void> {
+  const CF = await import("./cobro-fuera");
+  const id = (await db().query<{ id: string }>(`select id::text from offsession_charges where kind = 'renta' and idem_key = $1`, [idem])).rows[0]?.id;
+  const a = id ? await CF.intencion(id) : null;
+  const x = a ? (await db().query<Fila>(`${SEL} where r.id = $1::bigint`, [a.ref])).rows[0] : null;
+  const V = await verifCobro(idem);
+  if (!a || !x || !V || V.pi !== pi) return;
+  const q = await cobroDelBanco(x, a.monto, V, true);
+  if (q.e === "calla" || q.e === "espera") return;
+  await cerrarVerif(pi, q.e === "hecho");
+  if (q.e === "hecho" && !(a.st === "done" && a.pi === pi)) await CF.alertaSinAplicar(a, { es: `el cliente confirmó el cobro de la renta ${x.numero} con su banco cuando ese cobro ya no se esperaba (${a.st}).`, en: `the customer confirmed the rent charge of rental ${x.numero} with their bank when that charge was no longer expected (${a.st}).` });
 }
 /* 26 nov (LAUNCH «el dinero dice lo que pasó» (1)) · El depósito de una renta que se suelta sin su operación con regla (cobros › soltarSuelta): de quién es,
    cuánto y por qué, para la alerta al equipo de dinero si Stripe no lo suelta o ya lo había cobrado. */
@@ -304,6 +381,58 @@ const depSuelto = (x: { numero: string; uid: string; biz: string; city: string }
 const depDicho = (s: Suelta | null): Bi => !s ? { es: "", en: "" } : s.e === "liberada" ? { es: "; el depósito se soltó", en: "; the deposit was released" }
   : s.e === "cobrada" ? { es: "; el depósito ya estaba cobrado en Stripe (tiene su propia alerta)", en: "; the deposit had already been charged in Stripe (it has its own alert)" }
   : { es: "; el depósito no se pudo soltar (tiene su propia alerta)", en: "; the deposit could not be released (it has its own alert)" };
+/* El cierre de «La recogió», en la transacción que marca la intención hecha (una vez): la renta sale, la renta cobrada y el depósito retenido en el libro.
+   ap.v: si la renta todavía estaba apartada (se aplicó). 28 nov · Fuera de terminarCobroRenta: el mismo cierre para la renta que contestó la pasarela y para
+   la que el cliente confirmó con su banco (cerrarConfirmado). */
+type Retenido = { pi: string; marca: string | null; ultimos4: string | null } | null;
+function cierreRecoger(x: Fila, a: Intencion, hold: Retenido, ap: { v: boolean }) {
+  const d = a.detalle as { dep?: number; actor?: string; lic?: boolean; odo?: number | null };
+  return async (c: PoolClient, h: { pi: string; marca: string | null; l4: string | null }) => {
+    const u = await c.query(`update rentals set status = 'out', out_at = now(), card_failed = false, updated_at = now(),
+                             license_checked_by = case when $2 then $3::uuid else license_checked_by end, license_checked_at = case when $2 then now() else license_checked_at end, odometer_out = coalesce($4::int, odometer_out)
+                             where id = $1::bigint and status = 'held'`, [x.rid, !!d.lic, d.actor ?? null, d.odo ?? null]);
+    ap.v = !!u.rowCount;
+    await pagoRenta(c, a, h.pi, h.marca, h.l4);
+    if (!ap.v) { await ev(c, x.op, "payment_captured", "system", null, { es: `Renta de ${money(a.monto)} cobrada cuando ya no estaba apartada: lo revisa To'Latino`, en: `Rent of ${money(a.monto)} charged when it was no longer on hold: To'Latino reviews it` }); return; }
+    if (hold) await c.query(`insert into payments (operation_id, user_id, business_id, city_id, kind, seq, method, stripe_payment_intent, amount_cents, held_cents, fee_cents, status, card_brand, card_last4, held_at, simulated, payment_method)
+                   values ($1::bigint, $2, $3, $4, 'security', $5, 'card', $6, $7, $7, 0, 'held', $8, $9, now(), $10, $11) on conflict (stripe_payment_intent) do nothing`,
+      [x.op, x.uid, x.biz, x.city, await seqDe(c, x.op, "security"), hold.pi, d.dep, hold.marca, hold.ultimos4, hold.pi.startsWith("pi_sim_"), a.pm]);
+    await c.query(`update operations set stage = 'picked_up', pay_status = $2, updated_at = now() where id = $1::bigint`, [x.op, hold ? "held" : "captured"]);
+    await ev(c, x.op, "payment_captured", "business", d.actor ?? null, { es: `La recogió: renta ${money(a.monto)}${d.dep ? ` · depósito ${money(d.dep)} retenido` : ""}`, en: `Picked up: rent ${money(a.monto)}${d.dep ? ` · ${money(d.dep)} deposit held` : ""}` });
+  };
+}
+/* Lo que sigue a la renta de «La recogió» según lo que contestó (hecha, en camino o un «no»). porCobro (28 nov): la hecha es la que el cliente confirmó con
+   su banco (el aviso al negocio lo dice); solo quien la cerró (no `ya`) avisa. */
+async function trasRecoger(x: Fila, a: Intencion, hold: Retenido, r: import("./cobro-fuera").Cobrado, ap: { v: boolean }, desdeBarrido: Origen, porCobro: boolean): Promise<Res> {
+  const CF = await import("./cobro-fuera"), av = await import("./avisos"), dep = Number(a.detalle.dep ?? 0);
+  const hrefN = hrefNeg(x), hrefC = { href: `/renta/${x.numero}`, ref: ["renta", x.numero] as [string, string] };
+  if (r.ok) {
+    if (r.ya) return { ok: true };
+    if (!ap.v) {
+      // 26 nov · Lo que pasó con el depósito, como pasó (antes decía «el depósito se soltó» sin mirar a la pasarela).
+      const sd = hold ? await soltarSuelta(hold.pi, depSuelto(x, dep, { es: "la renta dejó de estar apartada", en: "the rental stopped being on hold" })) : null;
+      await CF.alertaSinAplicar(a, { es: `la renta ${x.numero} dejó de estar apartada en ese momento${depDicho(sd).es}.`, en: `rental ${x.numero} stopped being on hold at that moment${depDicho(sd).en}.` });
+      return no("Ya no está apartada.", "It is no longer on hold.");
+    }
+    await av.avisar(x.uid, "renta_recogida", { articulo: x.n, monto: money(a.monto), deposito: money(dep), dia: diaCorto(x.due) }, hrefC);
+    if (desdeBarrido) await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente ?? { es: "Cliente", en: "Customer" }, que: desdeBarrido !== "banco"
+      ? { es: "la renta que quedó en camino ya se cobró · ya la tiene", en: "the rental that was in progress has been charged · they already have it" }
+      : porCobro ? { es: `confirmó el cobro de la renta con su banco · renta cobrada${dep ? " y depósito retenido" : ""}: ya puedes entregarla`, en: `confirmed the rent charge with their bank · rent charged${dep ? " and deposit held" : ""}: you can hand it over now` }
+      : { es: "confirmó el depósito con su banco · renta cobrada y depósito retenido: ya puedes entregarla", en: "confirmed the deposit with their bank · rent charged and deposit held: you can hand it over now" }, articulo: x.n }, hrefN);
+    return { ok: true };
+  }
+  if (r.enCamino) {
+    // 9t5 · Nunca llegó a Stripe (la consulta): nada se cobró y el depósito se soltó; la renta sigue apartada y puede volver a tocarse «La recogió».
+    // 9t6 · O el equipo decidió que ninguno de los cobros que halló Stripe vale (salió de más): se devuelve y no queda nada cobrado.
+    if (r.noLlego && desdeBarrido) await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente ?? { es: "Cliente", en: "Customer" }, que: r.devuelto ? { es: "el cobro que quedó en camino salió de más en Stripe y se devuelve · no quedó nada cobrado: vuelve a tocar «La recogió»", en: "the charge that was in progress was taken in excess in Stripe and is being refunded · nothing was charged: tap «Picked up» again" }
+      : { es: "el cobro que quedó en camino nunca llegó a Stripe · no se cobró nada: vuelve a tocar «La recogió»", en: "the charge that was in progress never reached Stripe · nothing was charged: tap «Picked up» again" }, articulo: x.n }, hrefN);
+    return { ...no(r.msg === CF.EN_CAMINO ? CAMINO_RENTA.es : r.msg.es, r.msg === CF.EN_CAMINO ? CAMINO_RENTA.en : r.msg.en), enCamino: true };
+  }
+  if (hold) await soltarSuelta(hold.pi, depSuelto(x, dep, { es: "la renta no se cobró", en: "the rent was not charged" }));
+  const f = await falloRecoger(x, r.msg);
+  if (desdeBarrido) await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente ?? { es: "Cliente", en: "Customer" }, que: { es: "la tarjeta no pasó al terminar el cobro en camino · no se cobró nada", en: "the card did not go through when finishing the in-progress charge · nothing was charged" }, articulo: x.n }, hrefN);
+  return f;
+}
 export async function terminarCobroRenta(a: Intencion, desdeBarrido: Origen = false): Promise<Res> {
   const CF = await import("./cobro-fuera");
   if (a.st === "failed") return no(CF.YA_RECHAZADO.es, CF.YA_RECHAZADO.en, { tarjeta: true });
@@ -322,11 +451,36 @@ export async function terminarCobroRenta(a: Intencion, desdeBarrido: Origen = fa
   const av = await import("./avisos"), hrefN = { href: `/panel/${x.biz}/hoy?det=renta:${x.numero}`, ref: ["renta", x.numero] as [string, string] }, hrefC = { href: `/renta/${x.numero}`, ref: ["renta", x.numero] as [string, string] };
 
   if (d.que === "recoger") {
+    // 28 nov (LAUNCH 9q «3-D Secure en el cobro de la RENTA al recoger») · Si el cobro de la renta de ESTA intención ya pidió autenticar al banco, nadie vuelve
+    // a la pasarela con su llave (Stripe contestaría lo mismo, aunque el cliente ya lo hubiera confirmado): otro toque, otra pestaña, el barrido, la hoja y el
+    // webhook leen su verificación y lo que dice Stripe (cobroDelBanco). El depósito de esta intención ya quedó retenido (hold_pi) antes de mandar la renta.
+    const VC = await verifCobro(a.idem);
     if (x.st !== "held") {
+      if (VC) {
+        // No pasa (con la intención en camino la renta no se cancela ni vence). Si pasa, la renta ya no lo espera: nada se queda esperando al banco.
+        const q = await cobroDelBanco(x, a.monto, VC, true);
+        if (q.e === "calla" || q.e === "espera") return { ...no(CAMINO_RENTA.es, CAMINO_RENTA.en), enCamino: true };
+        await cerrarVerif(VC.pi, q.e === "hecho");
+        const yo = q.e === "hecho" ? await CF.cerrarConfirmado(a, q, (c, h) => pagoRenta(c, a, h.pi, null, null)).then((h) => h.ok && !h.ya) : await CF.rechazarSinCobro(a.id, "renta_no_apartada");
+        if (yo && q.e === "hecho") await CF.alertaSinAplicar(a, { es: `la renta ${x.numero} ya no estaba apartada (${x.st}) cuando el cliente confirmó el cobro con su banco.`, en: `rental ${x.numero} was no longer on hold (${x.st}) when the customer confirmed the charge with their bank.` });
+        if (yo) await CF.soltarDeposito(a, { es: `la renta ${x.numero} ya no estaba apartada`, en: `rental ${x.numero} was no longer on hold` });
+        return q.e === "hecho" ? { ok: true } : no("Ya no está apartada.", "It is no longer on hold.");
+      }
       // La renta ya no está apartada (venció, se canceló o ya salió): lo retenido se suelta y, si la renta se cobró, lo decide el equipo de dinero.
       const r = await CF.noAplica(a, "renta_no_apartada", { es: `la renta ${x.numero} ya no estaba apartada (${x.st}).`, en: `rental ${x.numero} was no longer on hold (${x.st}).` }, (c, h) => pagoRenta(c, a, h.pi, null, null));
       await CF.soltarDeposito(a, { es: `la renta ${x.numero} ya no estaba apartada`, en: `rental ${x.numero} was no longer on hold` });
       return r ? { ok: true } : no("Ya no está apartada.", "It is no longer on hold.");
+    }
+    if (VC) {
+      const q = await cobroDelBanco(x, a.monto, VC);
+      if (q.e === "espera") return esperaBanco(x, a, VC, true, desdeBarrido, "renta"); // true: si el primero cayó antes de avisar, el aviso sale ahora (el candado y el evento por pi lo dejan en uno)
+      if (q.e === "calla") return { ...no(CAMINO_RENTA.es, CAMINO_RENTA.en), enCamino: true };
+      // Rechazada o vencida, con su intento ya cancelado en Stripe: lo de siempre (falloRecoger) y el depósito se suelta, una vez.
+      if (q.e === "no") return noConfirmoCobro(x, a, VC.pi, desdeBarrido);
+      // Confirmada (Stripe lo cobró): la renta sigue por el MISMO cierre con ESE intento y el depósito retenido para esta intención, una vez.
+      await cerrarVerif(VC.pi, true);
+      const held = a.hold ? { pi: a.hold, marca: q.marca, ultimos4: q.l4 } : null, ap = { v: false };
+      return trasRecoger(x, a, held, await CF.cerrarConfirmado(a, q, cierreRecoger(x, a, held, ap)), ap, desdeBarrido, true);
     }
     // 1. El depósito (retenido, sin comisión), con la llave de esta intención. 2. La renta (cobrada). Si la renta no pasa, se suelta el depósito.
     let hold: { pi: string; marca: string | null; ultimos4: string | null } | null = null;
@@ -343,7 +497,7 @@ export async function terminarCobroRenta(a: Intencion, desdeBarrido: Origen = fa
       if (V && ((V.st === "pendiente" && V.viva) || V.st === "verificada")) {
         const s = await pasarela.intento(V.pi);
         if (!s && V.st === "verificada") return { ...no(CAMINO_RENTA.es, CAMINO_RENTA.en), enCamino: true };
-        if (s?.estado !== "requires_capture") return V.st === "pendiente" ? esperaBanco(x, a, V, false, desdeBarrido) : noVerifico(x, a, V.pi, d.dep!, desdeBarrido);
+        if (s?.estado !== "requires_capture") return V.st === "pendiente" ? esperaBanco(x, a, V, true, desdeBarrido) : noVerifico(x, a, V.pi, d.dep!, desdeBarrido);
         await db().query(`update payment_actions set status = 'verificada' where pi = $1::text and status = 'pendiente'`, [V.pi]);
         dep = { ok: true, pi: V.pi, estado: "retenido", marca: s.marca, ultimos4: s.ultimos4 };
       } else if (V) return noVerifico(x, a, V.pi, d.dep!, desdeBarrido);
@@ -367,45 +521,13 @@ export async function terminarCobroRenta(a: Intencion, desdeBarrido: Origen = fa
       hold = dep;
       await CF.anotarRetencion(a.id, dep.pi);
     }
-    let aplicado = false;
-    const r = await CF.terminarCobro(a, async (c, h) => {
-      const u = await c.query(`update rentals set status = 'out', out_at = now(), card_failed = false, updated_at = now(),
-                               license_checked_by = case when $2 then $3::uuid else license_checked_by end, license_checked_at = case when $2 then now() else license_checked_at end, odometer_out = coalesce($4::int, odometer_out)
-                               where id = $1::bigint and status = 'held'`, [x.rid, !!d.lic, d.actor ?? null, d.odo ?? null]);
-      aplicado = !!u.rowCount;
-      await pagoRenta(c, a, h.pi, h.marca, h.l4);
-      if (!aplicado) { await ev(c, x.op, "payment_captured", "system", null, { es: `Renta de ${money(a.monto)} cobrada cuando ya no estaba apartada: lo revisa To'Latino`, en: `Rent of ${money(a.monto)} charged when it was no longer on hold: To'Latino reviews it` }); return; }
-      if (hold) await c.query(`insert into payments (operation_id, user_id, business_id, city_id, kind, seq, method, stripe_payment_intent, amount_cents, held_cents, fee_cents, status, card_brand, card_last4, held_at, simulated, payment_method)
-                     values ($1::bigint, $2, $3, $4, 'security', $5, 'card', $6, $7, $7, 0, 'held', $8, $9, now(), $10, $11) on conflict (stripe_payment_intent) do nothing`,
-        [x.op, x.uid, x.biz, x.city, await seqDe(c, x.op, "security"), hold.pi, d.dep, hold.marca, hold.ultimos4, hold.pi.startsWith("pi_sim_"), a.pm]);
-      await c.query(`update operations set stage = 'picked_up', pay_status = $2, updated_at = now() where id = $1::bigint`, [x.op, hold ? "held" : "captured"]);
-      await ev(c, x.op, "payment_captured", "business", d.actor ?? null, { es: `La recogió: renta ${money(a.monto)}${d.dep ? ` · depósito ${money(d.dep)} retenido` : ""}`, en: `Picked up: rent ${money(a.monto)}${d.dep ? ` · ${money(d.dep)} deposit held` : ""}` });
-    });
-    if (r.ok) {
-      if (r.ya) return { ok: true };
-      if (!aplicado) {
-        // 26 nov · Lo que pasó con el depósito, como pasó (antes decía «el depósito se soltó» sin mirar a la pasarela).
-        const sd = hold ? await soltarSuelta(hold.pi, depSuelto(x, d.dep ?? 0, { es: "la renta dejó de estar apartada", en: "the rental stopped being on hold" })) : null;
-        await CF.alertaSinAplicar(a, { es: `la renta ${x.numero} dejó de estar apartada en ese momento${depDicho(sd).es}.`, en: `rental ${x.numero} stopped being on hold at that moment${depDicho(sd).en}.` });
-        return no("Ya no está apartada.", "It is no longer on hold.");
-      }
-      await av.avisar(x.uid, "renta_recogida", { articulo: x.n, monto: money(a.monto), deposito: money(d.dep ?? 0), dia: diaCorto(x.due) }, hrefC);
-      if (desdeBarrido) await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente ?? { es: "Cliente", en: "Customer" }, que: desdeBarrido === "banco"
-        ? { es: "confirmó el depósito con su banco · renta cobrada y depósito retenido: ya puedes entregarla", en: "confirmed the deposit with their bank · rent charged and deposit held: you can hand it over now" }
-        : { es: "la renta que quedó en camino ya se cobró · ya la tiene", en: "the rental that was in progress has been charged · they already have it" }, articulo: x.n }, hrefN);
-      return { ok: true };
-    }
-    if (r.enCamino) {
-      // 9t5 · Nunca llegó a Stripe (la consulta): nada se cobró y el depósito se soltó; la renta sigue apartada y puede volver a tocarse «La recogió».
-      // 9t6 · O el equipo decidió que ninguno de los cobros que halló Stripe vale (salió de más): se devuelve y no queda nada cobrado.
-      if (r.noLlego && desdeBarrido) await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente ?? { es: "Cliente", en: "Customer" }, que: r.devuelto ? { es: "el cobro que quedó en camino salió de más en Stripe y se devuelve · no quedó nada cobrado: vuelve a tocar «La recogió»", en: "the charge that was in progress was taken in excess in Stripe and is being refunded · nothing was charged: tap «Picked up» again" }
-        : { es: "el cobro que quedó en camino nunca llegó a Stripe · no se cobró nada: vuelve a tocar «La recogió»", en: "the charge that was in progress never reached Stripe · nothing was charged: tap «Picked up» again" }, articulo: x.n }, hrefN);
-      return { ...no(r.msg === CF.EN_CAMINO ? CAMINO_RENTA.es : r.msg.es, r.msg === CF.EN_CAMINO ? CAMINO_RENTA.en : r.msg.en), enCamino: true };
-    }
-    if (hold) await soltarSuelta(hold.pi, depSuelto(x, d.dep ?? 0, { es: "la renta no se cobró", en: "the rent was not charged" }));
-    const f = await falloRecoger(x, r.msg);
-    if (desdeBarrido) await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente ?? { es: "Cliente", en: "Customer" }, que: { es: "la tarjeta no pasó al terminar el cobro en camino · no se cobró nada", en: "the card did not go through when finishing the in-progress charge · nothing was charged" }, articulo: x.n }, hrefN);
-    return f;
+    // 28 nov (LAUNCH 9q) · La renta va con quien paga, su operación y la base de su verificación: si el banco pide autenticar este cobro, la verificación
+    // queda a nombre del cliente y se espera (esperaBanco «renta»: el aviso con el enlace a la hoja), con el depósito retenido, ANTES de soltar nada o
+    // pedir otra tarjeta: no es un «no» del banco.
+    const ap = { v: false };
+    const r = await CF.terminarCobro(a, cierreRecoger(x, a, hold, ap), { verif: { usuario: { id: x.uid, negocio: x.biz, ciudad: x.city }, op: x.op, base: `${a.idem}-cobro` } });
+    if (!r.ok && !r.enCamino && r.verificar) return esperaBanco(x, a, r.verificar, true, desdeBarrido, "renta");
+    return trasRecoger(x, a, hold, r, ap, desdeBarrido, false);
   }
 
   if (d.que === "dia") {

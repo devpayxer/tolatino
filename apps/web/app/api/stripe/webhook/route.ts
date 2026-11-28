@@ -60,8 +60,11 @@ async function aplicar(ev: Ev) {
       return;
     case "payment_intent.succeeded":
       {
-        const a = (await db().query<{ biz: string }>(`update payment_actions set status = 'verificada' where pi = $1::text and status = 'pendiente' and kind = 'renovacion' returning business_id as biz`, [String(o.id)])).rows[0];
-        if (a) await (await import("@/lib/suscripcion")).completarRenovacion(a.biz, String(o.id));
+        // 28 nov (LAUNCH 9q) · También el COBRO de una renta al recogerla que el banco pidió autenticar (captura automática): la renta sigue sola con ese
+        // cobro (una vez: solo quien la pasa a verificada; la hoja que llega después, otro evento o el barrido la encuentran hecha).
+        const a = (await db().query<{ biz: string; kind: string }>(`update payment_actions set status = 'verificada' where pi = $1::text and status = 'pendiente' and kind in ('renovacion', 'renta') returning business_id as biz, kind`, [String(o.id)])).rows[0];
+        if (a?.kind === "renovacion") await (await import("@/lib/suscripcion")).completarRenovacion(a.biz, String(o.id));
+        if (a?.kind === "renta") await (await import("@/lib/rentas")).trasVerificacionRenta(String(o.id));
       }
       await tx(async (c) => {
         const p = (await c.query<{ op: string }>(`update payments set status = 'captured', captured_at = coalesce(captured_at, now()), updated_at = now() where stripe_payment_intent = $1 and status = 'held' returning operation_id::text as op`, [String(o.id)])).rows[0];

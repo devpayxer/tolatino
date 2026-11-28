@@ -23,7 +23,9 @@ export type Retencion = { ok: true; pi: string; estado: "retenido" | "accion"; s
    guardada en una renovación fuera de sesión; en el sandbox, la verificación simulada). El monto es solo para mostrarlo: lo decidió el servidor. */
 export type Verificar = { pi: string; secreto: string; monto: number; pm: string | null; vence: string; renovacion: boolean;
   /* 27 nov (LAUNCH 9q) · El depósito de una renta al recogerla (fuera de sesión): la hoja vuelve a confirmar con la tarjeta guardada, como la renovación. */
-  renta?: boolean };
+  renta?: boolean;
+  /* 28 nov (LAUNCH 9q) · Con renta: es el COBRO de la renta (captura automática), no el depósito. La hoja lo dice; se confirma igual. */
+  cobro?: boolean };
 /* Quién paga (para guardar la verificación pendiente a su nombre: solo esa persona la completa). Sin esto, un «requires_action» sigue como antes. */
 export type Quien = { id: string; negocio?: string | null; ciudad?: string | null };
 export type EstadoCuenta = { cargos: boolean; pagos: boolean; pide: string[]; banco: string | null };
@@ -46,6 +48,8 @@ const RECHAZO: Record<string, [string, string]> = {
   expired_card: ["Esa tarjeta ya venció. Prueba con otra.", "That card has expired. Try another."],
   incorrect_cvc: ["El código de seguridad no coincide. Revísalo.", "The security code does not match. Check it."],
   processing_error: ["Tu banco no respondió. Prueba de nuevo en un momento.", "Your bank did not respond. Try again in a moment."],
+  // 28 nov · Un cobro fuera de sesión que el banco pide autenticar sin una verificación a nombre de quien paga (pasarela.cobrarFuera sin `usuario`).
+  authentication_required: ["Tu banco pide una verificación extra. Prueba con otra tarjeta.", "Your bank asks for an extra verification. Try another card."],
 };
 const traducir = (codigo: string | null): { es: string; en: string } => { const x = RECHAZO[codigo ?? ""] ?? RECHAZO.card_declined!; return { es: x[0], en: x[1] }; };
 
@@ -53,7 +57,8 @@ const traducir = (codigo: string | null): { es: string; en: string } => { const 
    manda pm_sim_<marca>_<últimos4>. 0002 = rechazada · 9995 = sin fondos · 0069 = vencida · el resto, aprobada. ── */
 const SIM_PM = /^pm_sim_(visa|mc|amex|disc)_(\d{4})(?:_[0-9a-f]{8})?$/;
 function simRechazo(l4: string) { return l4 === "0002" ? "card_declined" : l4 === "9995" ? "insufficient_funds" : l4 === "0069" ? "expired_card" : null; }
-/* 9k · 4000 0027 6000 3184: el banco SIEMPRE pide 3-D Secure (como la tarjeta de prueba de Stripe). */
+/* 9k · 4000 0027 6000 3184: el banco SIEMPRE pide 3-D Secure (como la tarjeta de prueba de Stripe). 28 nov · También en el cobro fuera de sesión con
+   captura automática (cobrarFuera: el cobro de la renta al recoger, el plan del Hogar), como Stripe con esa tarjeta en todo cobro. */
 const SIM_3DS = "3184";
 /* 9t5 · Lo que Stripe no tiene como tarjeta de prueba y el sandbox necesita para ensayar «sin respuesta» en un cobro fuera de sesión:
    ···· 0404 = la pasarela no contesta y nada sale (cada intento, igual); ···· 0408 = el cobro SÍ sale pero la respuesta se pierde (el primer intento con
@@ -82,9 +87,11 @@ async function registrarAccion(x: { pi: string; base: string; idem: string; quie
      on conflict (pi) do update set pi = excluded.pi
      returning to_char(expires_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as vence`,
     [x.pi, x.base, x.idem, x.quien.id, x.quien.negocio ?? null, x.quien.ciudad ?? null, x.kind, x.monto, x.pm && /^pm_[A-Za-z0-9_]{3,200}$/.test(x.pm) ? x.pm : null, x.minutos ?? null, x.op ?? null])).rows[0]!;
-  return { pi: x.pi, secreto: x.secreto, monto: x.monto, pm: x.pm, vence: r.vence, renovacion: x.kind === "renovacion", ...(x.kind === "renta" ? { renta: true } : {}) };
+  return { pi: x.pi, secreto: x.secreto, monto: x.monto, pm: x.pm, vence: r.vence, renovacion: x.kind === "renovacion", ...(x.kind === "renta" ? { renta: true, ...(esCobroRenta(x.base) ? { cobro: true } : {}) } : {}) };
 }
 export { registrarAccion };
+/* 28 nov (LAUNCH 9q) · De una verificación 'renta': la del COBRO de la renta lleva la base `<llave de la intención>-cobro`; la del depósito, `<llave>-dep`. */
+export const esCobroRenta = (base: string) => base.endsWith("-cobro");
 const VERIFICAR_MSG = { es: "Tu banco pide confirmar que eres tú. Confírmalo para seguir.", en: "Your bank asks you to confirm it is you. Confirm it to continue." };
 const simId = (p: string) => `${p}_sim_${randomBytes(9).toString("hex")}`;
 
@@ -284,31 +291,47 @@ export const pasarela = {
   },
 
   /* Cobro fuera de sesión para un negocio (el plan de cada mes): captura automática con la tarjeta guardada, la comisión
-     de To'Latino y el resto al negocio. Idempotente por `idem` (un cobro por período). */
-  async cobrarFuera(x: { centavos: number; comision: number; destino: string; pm: string; cliente?: string | null; idem: string; meta: Record<string, string> }): Promise<{ ok: true; id: string; marca: string | null; ultimos4: string | null } | { ok: false; codigo: string; mensaje: { es: string; en: string } }> {
+     de To'Latino y el resto al negocio. Idempotente por `idem` (un cobro por período).
+     28 nov (LAUNCH 9q «3-D Secure en el cobro de la RENTA al recoger») · El banco que pide autenticar este cobro (Stripe: «authentication_required» con su
+     PaymentIntent, o «requires_action») contesta `authentication_required` con su intento (`pi`), nunca un «no» a secas. Con quien paga y de qué es (`usuario`
+     y `verif`: el cobro de la renta al recogerla, con su operación), la verificación queda a su nombre (payment_actions kind 'renta', base `verif.base`) y
+     vuelve en `verificar`: la hoja la vuelve a confirmar con la tarjeta guardada. Sin ellos (el plan del Hogar, un día más, los días tarde) sigue siendo un
+     «no» del banco para quien llama. En el sandbox, ···· 3184 pide 3-D Secure también aquí, como la tarjeta de prueba de Stripe (en todo cobro). */
+  async cobrarFuera(x: { centavos: number; comision: number; destino: string; pm: string; cliente?: string | null; idem: string; meta: Record<string, string>; usuario?: Quien; verif?: { kind: "renta"; op: string; base: string } }): Promise<{ ok: true; id: string; marca: string | null; ultimos4: string | null } | { ok: false; codigo: string; mensaje: { es: string; en: string }; pi?: string; verificar?: Verificar }> {
     { const rv = await pagoRevision(); if (rv) return { ok: false, codigo: "revision", mensaje: rv }; }
+    // El banco pidió autenticar (fuera de sesión): con quien paga, su verificación; sin él, un «no» que dice por qué.
+    const pideBanco = async (pi: string, secreto: string) => {
+      const verificar = x.usuario && x.verif ? await registrarAccion({ pi, base: x.verif.base, idem: x.idem, quien: x.usuario, kind: x.verif.kind, op: x.verif.op, monto: x.centavos, pm: x.pm, secreto }) : undefined;
+      return { ok: false as const, codigo: "authentication_required", mensaje: verificar ? VERIFICAR_MSG : traducir("authentication_required"), pi, ...(verificar ? { verificar } : {}) };
+    };
     if (modoPago() === "simulador") {
       const m = SIM_PM.exec(x.pm);
       if (!m) return { ok: false, codigo: "card_declined", mensaje: traducir("card_declined") };
       const id = `pi_sim_${x.idem}`, ya = (await db().query<{ status: string }>(`select status from sim_intents where id = $1`, [id])).rows[0];
-      if (ya) return ya.status === "succeeded" ? { ok: true, id, marca: m[1]!, ultimos4: m[2]! } : { ok: false, codigo: "card_declined", mensaje: traducir("card_declined") };
+      // Con la misma llave, lo mismo que la primera vez (como Stripe con Idempotency-Key): cobrado, esperando al banco, o un «no».
+      if (ya) return ya.status === "succeeded" ? { ok: true, id, marca: m[1]!, ultimos4: m[2]! } : ya.status === "requires_action" ? pideBanco(id, secretoSim(id)) : { ok: false, codigo: "card_declined", mensaje: traducir("card_declined") };
       if (m[2] === SIM_CALLA) return { ok: false, codigo: "red", mensaje: SIN_RESPUESTA_SIM };
-      const r = simRechazo(m[2]!);
-      await db().query(`insert into sim_intents (id, amount_cents, fee_cents, destination, status, captured_cents, card, metadata) values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)`,
-        [id, x.centavos, x.comision, x.destino, r ? "failed" : "succeeded", r ? 0 : x.centavos, x.pm, JSON.stringify(x.meta)]);
+      const r = simRechazo(m[2]!), pide = !r && m[2] === SIM_3DS;
+      await db().query(`insert into sim_intents (id, amount_cents, fee_cents, destination, status, captured_cents, card, capture_method, metadata) values ($1, $2, $3, $4, $5, $6, $7, 'automatic', $8::jsonb)`,
+        [id, x.centavos, x.comision, x.destino, r ? "failed" : pide ? "requires_action" : "succeeded", r || pide ? 0 : x.centavos, x.pm, JSON.stringify(x.meta)]);
       if (m[2] === SIM_COBRA_Y_CALLA) return { ok: false, codigo: "red", mensaje: SIN_RESPUESTA_SIM };
+      if (pide) return pideBanco(id, secretoSim(id));
       return r ? { ok: false, codigo: r, mensaje: traducir(r) } : { ok: true, id, marca: m[1]!, ultimos4: m[2]! };
     }
     if (modoPago() === "apagado") return { ok: false, codigo: "apagado", mensaje: { es: "El cobro con tarjeta no está disponible.", en: "Card charging is not available." } };
     try {
-      const pi = await stripe<{ id: string; status: string; payment_method?: { card?: { brand?: string; last4?: string } } }>("POST", "/v1/payment_intents", {
+      const pi = await stripe<{ id: string; status: string; client_secret?: string; payment_method?: { card?: { brand?: string; last4?: string } } }>("POST", "/v1/payment_intents", {
         amount: x.centavos, currency: "usd", customer: x.cliente ?? undefined, payment_method: x.pm, off_session: true, confirm: true,
         application_fee_amount: x.comision, transfer_data: { destination: x.destino }, metadata: x.meta, expand: ["payment_method"],
       }, { idem: `fue-${x.idem}` });
       const card = pi.payment_method?.card;
+      if (pi.status === "requires_action") return pideBanco(pi.id, pi.client_secret ?? "");
       return pi.status === "succeeded" ? { ok: true, id: pi.id, marca: card?.brand ?? null, ultimos4: card?.last4 ?? null } : { ok: false, codigo: pi.status, mensaje: traducir(null) };
     } catch (e) {
       const err = e instanceof ErrorStripe ? e : null;
+      // Fuera de sesión, el banco que pide autenticar responde «authentication_required» con el PaymentIntent (queda en requires_payment_method hasta que
+      // quien paga lo vuelve a confirmar en la hoja con su tarjeta guardada): no es un «no» del banco.
+      if ((err?.codigo === "authentication_required" || err?.rechazo === "authentication_required") && err.intento?.id) return pideBanco(err.intento.id, err.intento.client_secret ?? "");
       return { ok: false, codigo: err?.rechazo ?? err?.codigo ?? "error", mensaje: traducir(err?.rechazo ?? err?.codigo ?? null) };
     }
   },
