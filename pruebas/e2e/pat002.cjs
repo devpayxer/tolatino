@@ -389,7 +389,9 @@ let OP = null;
       === `${HZ} 00:00 → ${HZ2} 00:00|reservado|month|${MES}`, 'lo cobrado es lo que enseñó la pantalla: las mismas fechas, 1 mes reservado, el precio del mes');
     ok(sql(`select count(*) || '|' || min(amount_cents) || '|' || min(reason) from sponsorship_payments where kind = 'negocio' and ref_id = ${RZ2}`) === `1|${MES}|renovacion` && Number(cobrosZ()) === Number(antesZ) + 1, 'un solo cobro de renovación por el precio del mes');
     // El rechazo del servidor sin cobro: la misma petición de «Pagar», con otra clave de intento (no la cubre la idempotencia) y la página oculta.
-    ok(capZ.length === 1, `se capturó la petición real de «Pagar» (${capZ.length})`);
+    // 28 nov · En WebKit (iPhone SE, iPad) Playwright entrega el evento «request» de la acción hasta ~2 s después de que la base ya tiene la renovación
+    // (llega junto con la respuesta; CI 45933165937): se espera a tenerla capturada en vez de mirarla al instante.
+    ok(await espera(async () => capZ.length > 0) && capZ.length === 1, `se capturó la petición real de «Pagar» (${capZ.length})`);
     const claveZ = '00000000-0000-4000-8000-000000009902', cuerpoZ = JSON.parse(capZ[0].body); cuerpoZ[1].clave = claveZ;
     const pagosZ = sql(`select count(*) from sponsorship_payments where kind = 'negocio' and business_id = '${BIZ}'`), patrociniosZ = sql(`select count(*) from sponsorships where business_id = '${BIZ}'`);
     ocultar();

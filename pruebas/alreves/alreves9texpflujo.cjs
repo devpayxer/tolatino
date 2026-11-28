@@ -2,10 +2,12 @@
 // nunca entero en la memoria del proceso. Se inyecta el defecto, el guardián debe fallar con SU mensaje ([exportacionEnFlujo]); se restaura.
 // 26 nov · Y «Exportar sus datos» del equipo por el mismo camino (acción sin base64, ruta con el permiso en cada descarga, un uso, vence en minutos,
 // lo de la persona sin las filas del equipo), y ninguna ruta pone content-length (Next 15 lo quita).
+// 28 nov · Y bajarSinCarrera: bajar con un POST solo por lib/bajar-post.ts, sin el router en el mismo paso (Safari cortaba la descarga: CI 45933165937).
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
 const X = 'apps/web/lib/datos/exportar.ts', RT = 'apps/web/app/api/datos/archivo/[id]/route.ts', Z = 'apps/web/lib/pases/zip.ts', G = 'exportacionEnFlujo';
+const GB = 'bajarSinCarrera', HB = 'apps/web/lib/bajar-post.ts', CO = 'apps/web/app/(app)/cuenta/ajustes/privacidad/datos/comun.ts', DA = 'apps/web/app/(app)/cuenta/ajustes/privacidad/datos/Datos.tsx', EXN = 'apps/web/app/panel/[id]/exportar/Exportar.tsx', APK = 'apps/web/app/(app)/beta/apk/[ficha]/BajarApk.tsx';
 const AU = 'apps/web/app/admin/acciones-usuarios.ts', RE = 'apps/web/app/api/admin/usuarios/archivo/[id]/route.ts', UI = 'apps/web/app/admin/U360.tsx', MG = 'packages/db/migrations/0227_exportar_del_equipo_en_flujo.sql';
 const casos = [
   // Bajar: leer el ZIP entero otra vez.
@@ -49,7 +51,26 @@ const casos = [
   // La acción ya no deja la auditoría al quedar listo.
   [G, AU, 'auditar(c, { actor: a.s.id, action: "usuario.exportar"', 'Promise.resolve({ actor: a.s.id, action: "usuario.exportar"'],
   // La pantalla vuelve al base64 → Blob.
-  [G, UI, 'const f = document.createElement("form");', 'const f = document.createElement("form"); void new Blob([]);'],
+  [G, UI, '    if (r.enlace) bajarPorPost(', '    void new Blob([]);\n    if (r.enlace) bajarPorPost('],
+  // 28 nov · bajarSinCarrera. Usuarios 360° vuelve a refrescar a la vez que baja (el defecto de CI 45933165937).
+  [GB, UI, '    if (r.enlace) bajarPorPost(`/api/admin/usuarios/archivo/${encodeURIComponent(r.enlace)}`, () => router.refresh());\n    else router.refresh();', '    if (r.enlace) bajarPorPost(`/api/admin/usuarios/archivo/${encodeURIComponent(r.enlace)}`);\n    router.refresh();'],
+  // … o baja desde la acción, antes de que hecho refresque.
+  [GB, UI, 'hacer: (m) => exportarDatos(u.id, m) })', 'hacer: async (m) => { const r = await exportarDatos(u.id, m); if (r.ok && r.enlace) bajarPorPost(`/api/admin/usuarios/archivo/${r.enlace}`); return r; } })'],
+  // La acción vuelve a revalidar (su respuesta trae la pantalla nueva, que la descarga corta a medias).
+  [GB, AU, '{ borrada: true, sinRevalidar: true });', '{ borrada: true });'],
+  [GB, AU, '  return { ...r, enlace: a.enlace };', '  listo(id);\n  return { ...r, enlace: a.enlace };'],
+  [GB, AU, '  if (!opc.sinRevalidar) listo(id);', '  listo(id);'],
+  // El ayudante refresca a tiempo fijo, o en cuanto una sonda pasa (aunque sea de antes de que la navegación arranque).
+  [GB, HB, 'if (despues) cuandoPuedaCargar(despues);', 'if (despues) window.setTimeout(despues, 2500);'],
+  [GB, HB, 'if (ok && (fallo || t >= ARRANQUE_MS)) { fn(); return; }', 'if (ok) { fn(); return; }'],
+  [GB, HB, 'const ARRANQUE_MS = 1000;', 'const ARRANQUE_MS = 0;'],
+  // Mi cuenta y el panel: el refresco «a los 2,5 s» de antes, o en el mismo paso.
+  [GB, DA, '() => bajarArchivo(f.id, () => router.refresh())', '() => { bajarArchivo(f.id); window.setTimeout(() => router.refresh(), 2500); }'],
+  [GB, EXN, '() => bajarArchivo(f.id, () => router.refresh())', '() => { bajarArchivo(f.id); router.refresh(); }'],
+  [GB, DA, '() => bajarArchivo(f.id, () => router.refresh())', '() => bajarArchivo(f.id, router.refresh())'],
+  // Un formulario a mano, fuera del ayudante.
+  [GB, CO, '  bajarPorPost(`/api/datos/archivo/${encodeURIComponent(id)}`, despues);', '  const f = document.createElement("form"); f.method = "post"; f.action = `/api/datos/archivo/${id}`; document.body.appendChild(f); f.submit(); void despues;'],
+  [GB, APK, 'const bajar = () => bajarPorPost(`/beta/apk/${ficha}/bajar`);', 'const bajar = () => { const f = document.createElement("form"); f.method = "post"; f.action = `/beta/apk/${ficha}/bajar`; document.body.appendChild(f); f.submit(); };'],
   // La ruta del equipo baja sin revisar usr:exportar.
   [G, RE, ' || !s.puede("usr", "exportar")) return new NextResponse(null, { status: 404', ') return new NextResponse(null, { status: 404'],
   // Su GET gasta el enlace.

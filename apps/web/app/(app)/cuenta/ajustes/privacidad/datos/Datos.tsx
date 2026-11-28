@@ -53,7 +53,7 @@ export function Datos({ es, yo, tel, archivos, pruebas, dias, llave = false }: {
     { type: "note", tone: "info", ic: "folder", s: E2(FIJAS.es.exportar, FIJAS.en.exportar) },
     { type: "sec", t: E2("Tu archivo", "Your file"), fs: "14px" },
   ];
-  B.push(archivos.length ? { type: "rows", rows: filasArchivo(archivos, es).map((f) => ({ key: f.id, ic: f.icon, t: f.t, s: f.s, tag: f.tag, acts: f.bajar ? [[E2("Bajar", "Download"), "primary", () => { bajarArchivo(f.id); window.setTimeout(() => router.refresh(), 2500); }]] as [string, string, () => void][] : undefined })) }
+  B.push(archivos.length ? { type: "rows", rows: filasArchivo(archivos, es).map((f) => ({ key: f.id, ic: f.icon, t: f.t, s: f.s, tag: f.tag, acts: f.bajar ? [[E2("Bajar", "Download"), "primary", () => bajarArchivo(f.id, () => router.refresh())]] as [string, string, () => void][] : undefined })) }
     : { type: "empty", ic: "folder", t: E2("Todavía no pediste tu archivo", "You have not requested your file yet"), s: E2("Es un ZIP con lo tuyo en JSON y CSV, y un LEEME.", "It is a ZIP with your data in JSON and CSV, plus a README.") });
   if (paso === "codigo") {
     if (pruebas && prueba) B.push({ type: "note", tone: "warn", ic: "info", s: E2(`Sandbox: el código es ${prueba} (en producción llega por SMS).`, `Sandbox: the code is ${prueba} (in production it arrives by text).`) });

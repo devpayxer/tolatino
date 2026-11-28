@@ -12858,7 +12858,8 @@ const guardianes = {
     if (!ex || !/hacer\(id, \["exportar"\], motivo,/.test(ex) || !/await apartarParaEquipo\(c, u\.id, s\.id\)/.test(ex) || !/await armarParaEquipo\(a\.enlace, a\.u\.id,/.test(ex) || !/auditar\(c, \{ actor: a\.s\.id, action: "usuario\.exportar"/.test(ex) || !/return \{ \.\.\.r, enlace: a\.enlace \};/.test(ex) || /base64|armarZip\(|archivo: z|archivo\?: string/.test(au))
       falla(G, AU, 0, "exportarDatos: permiso usr:exportar (hacer), aparta la fila, arma a disco (armarParaEquipo) con la auditoría «usuario.exportar» al quedar listo, y devuelve solo el enlace (nunca el archivo)");
     const ui = sinComent(UI);
-    if (/\batob\(|new Blob\(/.test(ui) || !/f\.method = "post"; f\.action = `\/api\/admin\/usuarios\/archivo\/\$\{encodeURIComponent\(enlace\)\}`/.test(ui)) falla(G, UI, 0, "Usuarios 360° baja el archivo con un formulario POST a /api/admin/usuarios/archivo/<enlace> (no un base64 a Blob)");
+    // 28 nov · El formulario lo arma lib/bajar-post.ts (bajarPorPost; guardián bajarSinCarrera): Usuarios 360° le pasa la ruta con el id del enlace.
+    if (/\batob\(|new Blob\(/.test(ui) || !/bajarPorPost\(`\/api\/admin\/usuarios\/archivo\/\$\{encodeURIComponent\(r\.enlace\)\}`/.test(ui)) falla(G, UI, 0, "Usuarios 360° baja el archivo con un formulario POST a /api/admin/usuarios/archivo/<enlace> (bajarPorPost; no un base64 a Blob)");
     const re = sinComent(RE), reGet = re.slice(re.indexOf("export async function GET"), re.indexOf("export async function POST")), rePost = re.slice(re.indexOf("export async function POST"));
     if (re.indexOf("export async function GET") < 0 || /bajarExportacionEquipo|abrirObjeto|update |application\/zip|db\(\)/.test(reGet)) falla(G, RE, 0, "el GET de la ruta del equipo no gasta el enlace ni sirve el archivo (lleva a Usuarios)");
     if (/export async function (PUT|PATCH|DELETE|HEAD|OPTIONS)/.test(re)) falla(G, RE, 0, "la ruta del equipo: solo GET (sin gastar) y POST");
@@ -12894,6 +12895,53 @@ const guardianes = {
     // La causa del «content-length vacío»: Next 15 lo quita de toda respuesta de una ruta (FORBIDDEN_HEADERS); ninguna ruta lo pone creyendo que llega.
     for (const f of archivos.filter((a) => (/^apps\/web\/app\/.*\/route\.tsx?$/.test(a) || a === "apps/web/lib/entrega-privada.ts")))
       if (/["']content-length["']\s*(?::|\]\s*=)/i.test(sinComent(f))) falla(G, f, 0, "pone content-length en la respuesta de una ruta: Next 15 lo quita (send-response.ts, FORBIDDEN_HEADERS) y el navegador nunca lo recibe; el cuerpo sale «chunked»");
+  },
+
+  /* 28 nov · bajarSinCarrera: los archivos de un uso («Descargar mis datos», «Exportar los datos del negocio», «Exportar sus datos» del equipo, la app
+     de prueba) se bajan con un formulario POST: la página navega a la ruta y el servidor contesta «attachment». Safari (WebKit; en el iPhone, todos los
+     navegadores) corta TODAS las cargas en vuelo de la página en cuanto arranca esa navegación y rechaza al instante las que empiezan mientras sigue
+     pendiente, aunque termine en descarga (Chromium no corta nada). Si una es del router de Next (router.refresh/push/replace, la respuesta de una
+     acción que revalida), Next navega «a lo duro» a la misma pantalla y ESA navegación cancela la descarga: el archivo no se guarda y el enlace, de un
+     uso, ya se gastó (CI 45933165937: expeq9t y usr1l en el iPhone SE y el iPad; Usuarios 360° llamaba a router.refresh() justo detrás del envío).
+     Visto también con la respuesta lenta: el refresco «a los 2,5 s» de Mi cuenta cortaba la descarga igual. Ahora:
+     - Un solo camino: lib/bajar-post.ts (bajarPorPost). Ningún otro archivo de apps/web arma o envía un formulario a mano (createElement("form"), .submit()).
+     - bajarPorPost no refresca a ciegas: lo de `despues` corre cuando la página vuelve a poder cargar (cuandoPuedaCargar: una sonda que falla mientras
+       la navegación está pendiente y pasa cuando terminó), nunca en el mismo paso ni con un tiempo fijo.
+     - Quien baja no mueve el router en el mismo paso (router.refresh/push/replace o location, ni con un setTimeout): eso va en `despues`.
+     - «Exportar sus datos» (Usuarios 360°): se baja desde `hecho`, con la acción ya terminada, una sola vez, y la acción no revalida (exportarDatos con
+       sinRevalidar y sin listo antes de devolver el enlace): su respuesta no trae la pantalla nueva, que la descarga cortaría a medias.
+     e2e expeq9t y usr1l (Usuarios 360°) y datos9d (la persona y el negocio), con la descarga real del navegador, en WebKit: iPhone SE e iPad.
+     Al revés: alreves9texpflujo. */
+  bajarSinCarrera() {
+    const G = "bajarSinCarrera", H = "apps/web/lib/bajar-post.ts", UI = "apps/web/app/admin/U360.tsx", AU = "apps/web/app/admin/acciones-usuarios.ts";
+    if (!existsSync(H)) return falla(G, H, 0, "falta lib/bajar-post.ts: el único camino para bajar un archivo con un POST");
+    const h = sinComent(H), bp = cuerpoFn(h, "bajarPorPost"), cc = cuerpoFn(h, "cuandoPuedaCargar");
+    if (!/f\.method = "post"; f\.action = accion;/.test(bp) || !/document\.body\.appendChild\(f\); f\.submit\(\); f\.remove\(\);/.test(bp) || !/if \(despues\) cuandoPuedaCargar\(despues\);/.test(bp) || /despues\(\)|setTimeout\(\s*despues/.test(bp))
+      falla(G, H, 0, "bajarPorPost envía el formulario y deja lo de después a cuandoPuedaCargar: nunca en el mismo paso ni con un tiempo fijo");
+    if (!/fetch\(SONDA, \{ method: "HEAD", cache: "no-store"/.test(cc) || !/if \(!ok\) fallo = true;/.test(cc) || !/if \(ok && \(fallo \|\| t >= ARRANQUE_MS\)\) \{ fn\(\); return; \}/.test(cc) || !/if \(t < TOPE_MS\) window\.setTimeout\(probar, PASO_MS\);/.test(cc))
+      falla(G, H, 0, "cuandoPuedaCargar corre lo de después solo cuando la sonda pasa tras haber fallado (la descarga ya arrancó) o, sin fallar, pasado el arranque; nunca pasado el tope");
+    const am = /const ARRANQUE_MS = ([\d_]+);/.exec(h);
+    if (!am || +am[1].replace(/_/g, "") < 1000) falla(G, H, 0, "ARRANQUE_MS de al menos 1 000 ms: antes, una sonda que pasa puede ser de antes de que la navegación arranque");
+    // La llamada entera (paréntesis balanceados) y lo que sigue en la misma línea hasta cerrar el bloque.
+    const cierre = (t, i) => { let d = 0; for (let j = i; j < t.length; j++) { if (t[j] === "(") d++; else if (t[j] === ")" && --d === 0) return j + 1; } return t.length; };
+    for (const f of archivos.filter((a) => /^apps\/web\/(app|lib)\/.*\.tsx?$/.test(a) && a !== H)) {
+      const t = sinComent(f);
+      if (/createElement\(\s*["'`]form["'`]\s*\)|\.submit\(\s*\)/.test(t)) falla(G, f, 0, "arma o envía un formulario a mano: los archivos se bajan con bajarPorPost (lib/bajar-post.ts), que no deja que Safari corte la descarga");
+      for (const m of t.matchAll(/\b(bajarPorPost|bajarArchivo)\(/g)) {
+        const ini = m.index + m[0].length - 1, fin = cierre(t, ini), args = t.slice(ini, fin), tras = t.slice(fin).split(/\}|\n/)[0], ln = t.slice(0, m.index).split("\n").length;
+        if (/router\.(refresh|push|replace)\(|location\.(assign|replace|reload)\(|location\.href\s*=/.test(tras)) falla(G, f, ln, `${m[1]} con el router (o location) en el mismo paso: en Safari corta la descarga; lo de después va en su \`despues\``);
+        if (/(?<!=>\s*)router\.(refresh|push|replace)\(/.test(args)) falla(G, f, ln, `${m[1]} recibe router.…() ya llamado: va como función en \`despues\` (() => router.refresh())`);
+      }
+    }
+    // «Exportar sus datos»: desde hecho (la acción ya terminó), una sola vez, y refrescar en `despues`.
+    if (!existsSync(UI) || !existsSync(AU)) return falla(G, UI, 0, "falta Usuarios 360° o sus acciones");
+    const ui = sinComent(UI), he = /const hecho = \(r: ResAdm & \{ enlace\?: string \}\) => \{([\s\S]*?)\n  \};/.exec(ui)?.[1] ?? "";
+    if (!/if \(r\.enlace\) bajarPorPost\(`\/api\/admin\/usuarios\/archivo\/\$\{encodeURIComponent\(r\.enlace\)\}`, \(\) => router\.refresh\(\)\);\s*else router\.refresh\(\);/.test(he) || (ui.match(/\bbajarPorPost\(/g) ?? []).length !== 1)
+      falla(G, UI, 0, "Usuarios 360°: «Exportar sus datos» se baja una vez, desde hecho (con la acción ya terminada), y refresca cuando la descarga arrancó (despues), no a la vez");
+    const au = sinComent(AU), ex = cuerpoFn(au, "exportarDatos"), hc = cuerpoFn(au, "hacer");
+    if (!/\{ borrada: true, sinRevalidar: true \}\);/.test(ex) || /listo\(id\);\s*return \{ \.\.\.r, enlace: a\.enlace \};|revalidatePath\(/.test(ex) || !/if \(!opc\.sinRevalidar\) listo\(id\);/.test(hc))
+      falla(G, AU, 0, "exportarDatos vuelve con el enlace sin revalidar (sinRevalidar; ni listo(id) antes): su respuesta no trae la pantalla nueva, que la descarga cortaría a medias en Safari");
+    for (const x of ["pruebas/e2e/expeq9t.cjs", "pruebas/e2e/usr1l.cjs", "pruebas/e2e/datos9d.cjs"]) if (!existsSync(x) || !/waitForEvent\(['"]download['"]/.test(readFileSync(x, "utf8"))) falla(G, x, 0, "la prueba baja el archivo de verdad (waitForEvent('download'))");
   },
 
   /* 9t (19 nov) · resumenComunidadUnaPasada: el barrido de la Comunidad con 1 M de vecinos tardaba 9,2 s de 10 (carga 44571463348): «activos por

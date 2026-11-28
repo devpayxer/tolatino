@@ -29,7 +29,10 @@ const BORRADA = ["deleted_pending", "deleted", "merged"];
 const EST: Record<string, string> = { active: "activa", muted: "silenciada", suspended: "suspendida", banned: "baneada", deleted_pending: "borrándose", deleted: "borrada", merged: "fusionada" };
 const listo = (id: string) => { revalidatePath(`/admin/usuarios/${id}`); revalidatePath("/admin/usuarios"); };
 
-async function hacer(id: unknown, permisos: Accion[], motivo: unknown, fn: (c: PoolClient, s: Staff, u: U, m: string) => Promise<string | null>, ok: string, opc: { sinMotivo?: string; borrada?: boolean } = {}): Promise<ResAdm> {
+/* 28 nov · `sinRevalidar`: la respuesta de la acción no trae la pantalla nueva (sin revalidatePath). Solo «Exportar sus datos»: la pantalla baja el archivo
+   en cuanto vuelve la acción, y en Safari esa descarga corta lo que siga llegando de la respuesta; refresca ella cuando la descarga ya arrancó
+   (lib/bajar-post.ts; guardián bajarSinCarrera). */
+async function hacer(id: unknown, permisos: Accion[], motivo: unknown, fn: (c: PoolClient, s: Staff, u: U, m: string) => Promise<string | null>, ok: string, opc: { sinMotivo?: string; borrada?: boolean; sinRevalidar?: boolean } = {}): Promise<ResAdm> {
   const s = await staff();
   if (!s || !permisos.some((a) => s.puede("usr", a))) return no("Tu rol no puede hacer esto.");
   if (typeof id !== "string" || !UUID.test(id)) return no("Esa persona no existe.");
@@ -42,7 +45,7 @@ async function hacer(id: unknown, permisos: Accion[], motivo: unknown, fn: (c: P
     return fn(c, s, u, m);
   });
   if (r) return no(r);
-  listo(id);
+  if (!opc.sinRevalidar) listo(id);
   return { ok: true, mensaje: ok };
 }
 const cerrarTodas = (c: PoolClient, userId: string) =>
@@ -216,16 +219,17 @@ export async function exportarDatos(id: string, motivo: string): Promise<ResAdm 
   const r = await hacer(id, ["exportar"], motivo, async (c, s, u, m) => {
     ap = { enlace: await apartarParaEquipo(c, u.id, s.id), s, u, m };
     return null;
-  }, "Datos exportados. Quedó en la auditoría.", { borrada: true });
+  }, "Datos exportados. Quedó en la auditoría.", { borrada: true, sinRevalidar: true });
   const a = ap as { enlace: string; s: Staff; u: U; m: string } | null;
   if (!r.ok || !a) return r;
   try {
     await armarParaEquipo(a.enlace, a.u.id, (c, secciones) =>
       auditar(c, { actor: a.s.id, action: "usuario.exportar", targetKind: "user", targetId: a.u.id, city: a.u.city_id, after: { archivo: `ZIP por el mapa de datos (${secciones.size} partes)` }, reason: a.m }));
   } catch {
+    listo(id); // sin archivo no hay descarga: la pantalla ya puede traer la fila que no salió
     return no("No pudimos armar el archivo. Prueba otra vez.");
   }
-  listo(id);
+  // 28 nov · Sin listo(id): la respuesta lleva solo el enlace; la pantalla refresca cuando la descarga ya arrancó (U360 › hecho).
   return { ...r, enlace: a.enlace };
 }
 

@@ -17,6 +17,10 @@ const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); };
 const vis = async (l) => { const n = await l.count(); for (let i = 0; i < n; i++) if (await l.nth(i).isVisible()) return l.nth(i); return null; };
 const clic = async (l) => { for (let i = 0; i < 24; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l + ' · la página dice: ' + (await l.page().locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 300)); };
+// 28 nov · Lo que se toca en el detalle del panel, DENTRO del detalle: entre 1024 y 1199 de ancho (el iPad, 1194) el detalle es una ventana encima de
+// Hoy, y la fila de Hoy tiene su propio «Confirmar» debajo; el primero «visible» era ese, tapado por la ventana (CI 45746724935: «… subtree intercepts
+// pointer events» hasta vencer). En escritorio ancho el detalle es la columna de la derecha: el mismo [data-screen-label].
+const detalle = (p) => p.locator('[data-screen-label="Panel v2 · detalle"]');
 const espera = async (f, v) => { let x; for (let i = 0; i < 48; i++) { x = f(); if (x === v) return x; await new Promise((r) => setTimeout(r, 250)); } return x; };
 const ve = async (l) => { for (let i = 0; i < 40; i++) { if (await vis(l)) return true; await new Promise((r) => setTimeout(r, 250)); } return false; };
 const barrer = () => execSync(`curl -s -X POST -H 'x-barrido-token: ${ENT.TOK}' ${B}/api/interno/barrido`).toString();
@@ -51,7 +55,9 @@ const reset = () => {
 };
 
 (async () => {
-  require('../lib/negocio-nuevo.cjs').sinTopeDeAyuda('5705550122'); // 9b-1 · el tope de 5 ayudas al día de Marisol (ver lib)
+  // 9b-1 · el tope de 5 ayudas al día de Marisol (ver lib). 28 nov · Y el de Yaritza y Héctor, que también pasan por la hoja de El Compa: tras unas
+  // corridas el mismo día en la misma base, su hoja ya no lleva al formulario (pasarHoja vencía esperando ?de=compa).
+  for (const t of ['5705550122', '5705550299', '5705550288']) require('../lib/negocio-nuevo.cjs').sinTopeDeAyuda(t);
   reset();
   // Re-corrida: el servidor deja 20 fotos privadas por hora por persona; las de corridas anteriores se corren 2 h atrás.
   sql(`update media set created_at = created_at - interval '2 hours' where private and created_at > now() - interval '1 hour' and uploaded_by in (select id from users where phone in ('+15705550122', '+15705550299', '+15705550288'))`);
@@ -76,7 +82,7 @@ const reset = () => {
   // ── 1 · Bienes Raíces: «Me cobraron por ver» con foto → directo a «Posible estafa» y la propiedad en pausa ──
   ok(!!PROP && !!CARRO && !!BAUT, `fixtures de la semilla: propiedad ${PROP}, carro ${CARRO}, bautizo ${BAUT}`);
   const V1 = await pedir(y, INM, PROP, { g: grupo(`g.item_id = ${PROP} and g.purpose = 'visita'`) });
-  await yes.goto(`${B}/panel/${INM}/hoy?det=vis:${V1}`); await clic(yes.getByRole('button', { name: 'Confirmar', exact: true }));
+  await yes.goto(`${B}/panel/${INM}/hoy?det=vis:${V1}`); await clic(detalle(yes).getByRole('button', { name: 'Confirmar', exact: true }));
   ok(await espera(() => st(V1), 'confirmed') === 'confirmed', `${V1}: la agencia confirma`);
   await y.goto(`${B}/vis/${V1}`); await y.getByText('CONFIRMADA').first().waitFor();
   ok(!(await vis(y.getByRole('button', { name: 'Ayuda con la visita' }))), 'antes de la hora no hay Ayuda (todavía no pasó)');
@@ -146,10 +152,10 @@ const reset = () => {
   // ── 3 · Dealer: «El precio en la puerta fue más» → el dealer acepta → «Me lo devolvieron» ──
   const yd = await ctx('5705550299', D);
   const V2 = await pedir(y, DL, CARRO, { g: grupo(`g.business_id = '${DL}' and g.purpose = 'prueba' and g.item_id is null`), licencia: true });
-  await juan.goto(`${B}/panel/${DL}/hoy?det=vis:${V2}`); await clic(juan.getByRole('button', { name: 'Confirmar', exact: true }));
+  await juan.goto(`${B}/panel/${DL}/hoy?det=vis:${V2}`); await clic(detalle(juan).getByRole('button', { name: 'Confirmar', exact: true }));
   ok(await espera(() => st(V2), 'confirmed') === 'confirmed', `${V2}: el dealer confirma la prueba`);
   sql(`update operations set scheduled_at = now() - interval '2 hours' where number = '${V2}'`);
-  await juan.goto(`${B}/panel/${DL}/hoy?det=vis:${V2}`); await clic(juan.getByRole('button', { name: 'Pasó', exact: true }));
+  await juan.goto(`${B}/panel/${DL}/hoy?det=vis:${V2}`); await clic(detalle(juan).getByRole('button', { name: 'Pasó', exact: true }));
   ok(await espera(() => st(V2), 'done') === 'done', 'el dealer marca «Pasó»');
   await yd.goto(`${B}/vis/${V2}`); await clic(yd.getByRole('button', { name: 'Ayuda con el dealer' })); await yd.waitForURL(/\/ayuda(\?|$)/); await pasarHoja(yd);
   const g = yd.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await g.getByText('¿Qué pasó?').first().waitFor();
@@ -206,7 +212,7 @@ const reset = () => {
     await clic(h.getByRole('button', { name: 'Enviar solicitud' })); await h.waitForURL(/\/insc\/I-\d+/, { timeout: 15000 });
     return h.url().match(/I-\d+/)[0];
   })();
-  await luis.goto(`${B}/panel/${FE}/hoy?det=insc:${I1}`); await clic(luis.getByRole('button', { name: 'Confirmar', exact: true }));
+  await luis.goto(`${B}/panel/${FE}/hoy?det=insc:${I1}`); await clic(detalle(luis).getByRole('button', { name: 'Confirmar', exact: true }));
   await espera(() => sql(`select status from operations where number = '${I1}'`), 'confirmed');
   sql(`update operations set status = 'done', done_at = now() where number = '${I1}'`); // la charla ya pasó
   await h.goto(`${B}/insc/${I1}`); await clic(h.getByRole('button', { name: 'Ayuda con la iglesia' })); await h.waitForURL(/\/insc\/I-\d+\/ayuda(\?|$)/); await pasarHoja(h);

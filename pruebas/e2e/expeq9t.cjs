@@ -3,8 +3,8 @@
 // sube al almacén privado y se baja en flujo con un POST a /api/admin/usuarios/archivo/<id> (un uso, 10 minutos, solo quien lo armó, con usr:exportar y
 // la persona en sus ciudades revisados en CADA descarga). Comprueba:
 //   1 · Ana (Admin) lo baja de verdad desde la pantalla (descarga real del navegador): NO vacío, del tamaño y la huella que el servidor guardó, un ZIP
-//       válido con lo de siempre (perfil, JSON + CSV, LEEME ES/EN), y es el MISMO archivo, byte a byte, que el que la persona arma en Mi cuenta
-//       (el contenido de antes salvo el envoltorio). La dirección lleva solo el id del enlace. Auditoría «usuario.exportar» con su motivo, como antes.
+//       válido con lo de siempre (perfil, JSON + CSV, LEEME ES/EN), y es el MISMO archivo que el que la persona arma en Mi cuenta: las mismas
+//       partes con las mismas filas (el contenido de antes salvo el envoltorio; el orden de las filas lo pone Postgres, ver abajo). La dirección lleva solo el id del enlace. Auditoría «usuario.exportar» con su motivo, como antes.
 //   2 · El enlace no sirve dos veces (410); un GET no lo gasta; tras vencer, 410 y el barrido saca el archivo del almacén (también el ya bajado).
 //   3 · Sin permiso: Lucía (Solo lectura) no ve «Exportar sus datos» y, pidiendo la ruta directo, 404; Beto (Admin, pero no lo armó) 404; sin sesión
 //       404; desde otro sitio 403. A Beto le quitan usr:exportar (o la ciudad de la persona) entre armarlo y bajarlo → 404 sin gastarlo; se lo
@@ -87,9 +87,17 @@ async function armarSinBajar(p, U, motivo) {
     ok(!/token_hash|code_hash|phone_enc/.test(Object.values(z).map((x) => x.toString('utf8')).join('\n')), 'sin huellas ni cifrados (igual que siempre)');
     const au = sql(`select count(*) || '|' || max(reason) || '|' || max(after->>'archivo') from audit_entries where actor_id = '${UA}' and action = 'usuario.exportar' and target_id = '${UP}'`).split('|');
     ok(au[0] === '1' && au[1] === `Pedido de privacidad por Soporte ${TAG}` && /^ZIP por el mapa de datos \(\d+ partes\)$/.test(au[2]), `auditoría como antes: «usuario.exportar» con su motivo y «${au[2]}»`);
-    // El mismo archivo que la persona pide en Mi cuenta (lo arma el barrido): byte a byte.
+    // El mismo archivo que la persona pide en Mi cuenta (lo arma el barrido): las mismas partes con las mismas filas. 28 nov · Ya no byte a byte: la
+    // consulta de cada parte no lleva orden y Postgres da las filas en el orden de su plan, que cambia cuando analiza la tabla. Con los 3 000 avisos
+    // recién puestos, el autoanalyze cayó entre los dos armados (iPhone SE, 28 nov): el del equipo salió por el índice (id de mayor a menor) y el de
+    // la persona leyendo la tabla (de menor a mayor). Mismas filas, otro orden, otra huella. El orden del archivo queda anotado en LAUNCH.
     for (let i = 0; i < 8 && sql(`select status from data_exports where id = '${EP}'`) !== 'listo'; i++) barrido();
-    ok(sql(`select sha256 || '|' || bytes from data_exports where id = '${EP}'`) === `${row[2]}|${row[3]}`, 'es el MISMO archivo, byte a byte, que el que la persona arma en Mi cuenta (sha256 y tamaño)');
+    const zp = leerZip((await delAlmacen(`/privado/exportes/${EP}.zip`)).b);
+    const filasDe = (k, b) => (k.endsWith('.json') ? JSON.parse(b.toString('utf8')).map((x) => JSON.stringify(x)).sort()
+      : k.endsWith('.csv') ? (([cab, ...r]) => [cab, ...r.sort()])(b.toString('utf8').split('\r\n')) : [b.toString('utf8')]);
+    const iguales = Object.keys(z).sort().join() === Object.keys(zp).sort().join() && Object.keys(z).every((k) => JSON.stringify(filasDe(k, z[k])) === JSON.stringify(filasDe(k, zp[k])));
+    ok(iguales && sql(`select sections - '_ms' = (select sections - '_ms' from data_exports where id = '${E1}') from data_exports where id = '${EP}'`) === 't',
+      `es el MISMO archivo que el que la persona arma en Mi cuenta: las mismas ${Object.keys(z).length} partes con las mismas filas, y las mismas cuentas por parte`);
     // Ese mismo barrido ya sacó del almacén el del equipo bajado (como el de la persona).
     ok(sql(`select status || '|' || (file_gone_at is not null) from data_exports where id = '${E1}'`) === 'bajado|true' && (await delAlmacen(`/privado/exportes/${E1}.zip`)).s === 404, 'el barrido saca del almacén el archivo del equipo ya bajado');
     ok(!fs.existsSync(require('path').join(require('os').tmpdir(), 'tl-exportes', `${E1}.zip`)), 'y el temporal de disco no quedó (el servidor corre en esta máquina)');

@@ -1,6 +1,7 @@
 /* 9d · Lo común de «Descargar mis datos» (Mi cuenta) y «Exportar los datos del negocio» (Panel › Más): las filas del archivo con su estado, si se
    puede pedir otro y bajar con POST (un uso; el GET de una vista previa nunca lo gasta: /api/datos/archivo/[id]). */
 import type { Exportacion } from "@/lib/datos/exportar";
+import { bajarPorPost } from "@/lib/bajar-post";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 
 const dia = (iso: string, es: boolean) => new Intl.DateTimeFormat(es ? "es-US" : "en-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "");
@@ -33,9 +34,8 @@ export function puedePedir(L: Exportacion[], es: boolean): { puede: boolean; not
   return { puede: true, nota: null };
 }
 
-/* Bajar: un formulario POST al mismo sitio (el navegador guarda el ZIP y la pantalla se queda). */
-export function bajarArchivo(id: string) {
-  const f = document.createElement("form");
-  f.method = "post"; f.action = `/api/datos/archivo/${encodeURIComponent(id)}`; f.style.display = "none";
-  document.body.appendChild(f); f.submit(); f.remove();
+/* Bajar: un formulario POST al mismo sitio (el navegador guarda el ZIP y la pantalla se queda). 28 nov · `despues` (refrescar la lista) corre
+   cuando la descarga ya arrancó, nunca a tiempo fijo: en Safari un refresco con la descarga pendiente la cortaba (lib/bajar-post.ts). */
+export function bajarArchivo(id: string, despues?: () => void) {
+  bajarPorPost(`/api/datos/archivo/${encodeURIComponent(id)}`, despues);
 }

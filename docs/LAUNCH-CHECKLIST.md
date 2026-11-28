@@ -3132,6 +3132,19 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       Safari y en la app To'Latino (Capacitor). Guardián `buscarEscribeAlMomento`, al revés `alrevesBuscarAlMomento`, punta a punta `bus9t` (7).
 - [ ] **→ 9b** · **Corrida de anchos en WebKit de verdad:** `fic9cab`, `din9t10b` y `tarAK` con `anchoPropio`/`escritorioPropio` se comprobaron emulando
       ipad e iphone-se en Chromium (aquí no hay WebKit); verlos en verde en la próxima corrida nocturna de anchos (4 noches en rojo hasta el 24 nov).
+      _28 nov (Opus):_ `expeq9t`/`usr1l` (CI 45933165937) eran del producto: el `router.refresh()` detrás del formulario de descarga hacía que Safari cortara el archivo (enlace de un uso gastado); arreglado con `lib/bajar-post.ts` (también Mi cuenta y el panel), guardián `bajarSinCarrera`. `pat002` y `ayu4if` eran de la prueba (el «request» de la acción llega tarde en WebKit; en el iPad tocaba el «Confirmar» de Hoy tapado por la ventana del detalle). En verde aquí en WebKit (SE e iPad, 2+ veces) y Chromium; falta verlo en la nocturna.
+- [ ] **→ 9t** · **Bajar un archivo sin conexión (28 nov, revisión de otro modelo):** si el teléfono pierde la señal justo al bajar, `bajarPorPost` no
+      refresca la lista (deja de mirar a los 120 s) y la fila del archivo queda como estaba hasta volver a abrir la pantalla. Inofensivo (el archivo no se
+      pierde: el enlace de un uso sigue vivo hasta que vence); mostrar «revisa tu conexión» y refrescar al volver la señal. Nota: el guardián
+      bajarSinCarrera no mira `requestSubmit()` porque el Super Admin lo usa en un formulario de la pantalla (ui.tsx), no para bajar archivos.
+- [ ] **→ 9t** · **El archivo de datos (de la persona, del equipo) sale con las filas en el orden que elige Postgres (28 nov):** `datosDeCuenta` hace `select *`
+      sin `order by`; el mismo contenido sale por el índice (avisos de mayor a menor) o leyendo la tabla (de menor a mayor) según cuándo se analizó la tabla, así
+      que dos archivos de los mismos datos no son idénticos byte a byte (cazado por `expeq9t`, que ahora compara partes y filas sin el orden). Ordenar cada parte
+      por su llave (y medir el armado con 400 000 avisos: `exportacionEnFlujo`) para que el archivo salga en orden y siempre igual.
+- [ ] **→ 9t** · **Panel › Patrocinio no ve el patrocinio activo si hay 20 o más a futuro (28 nov):** `patPanel` (lib/patrocinio.ts) busca el `vivo` entre las
+      20 filas más recientes por fecha de inicio; con 20 reservados o cancelados a futuro, el activo queda fuera y el panel ofrece comprar. Visto en una base
+      local tras ~10 corridas de `pat002` (cada una deja cancelados a futuro: «FALLO el panel muestra las cifras», en Chromium y WebKit); en el CI no pasa
+      (base nueva). Buscar el vivo y el siguiente con su propia consulta, no dentro de la lista con tope.
 - [ ] **→ 9b** · **Una prueba nueva que mide a un ancho concreto** usa `ENT.anchoPropio` (o `ENT.escritorioPropio` si necesita cursor); si vale a cualquier
       ancho, mide contra `innerWidth`/`viewportSize()`. El guardián `anchoPropioRespetado` cubre din9t6b, din9t7b y din9t10b, no una prueba nueva con un ancho escrito.
 - [x] **→ 9b** · **Pruebas que dan por hecho un dato de la semilla que otra prueba cambia (24 nov):** `fic9cab` exigía la oferta en vivo de

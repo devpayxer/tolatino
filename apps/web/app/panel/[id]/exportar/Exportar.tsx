@@ -57,7 +57,7 @@ export function Exportar({ es, negocio, dueno, tel, archivos, dias, pruebas, lla
     return <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720, padding: "18px 16px 60px", margin: "0 auto" }}><PanelBloques bloques={B} /></div>;
   }
   B.push(archivos.length ? { type: "rows", k: E2("TU ARCHIVO", "YOUR FILE"), items: filasArchivo(archivos, es).map((f) => ({ key: f.id, icon: f.icon, t: f.t, s: f.s, tag: f.tag[0], tone: f.tag[1],
-    acts: f.bajar ? [{ l: E2("Bajar", "Download"), v: "primary", icon: "folder", onClick: () => { bajarArchivo(f.id); window.setTimeout(() => router.refresh(), 2500); } }] : undefined })) }
+    acts: f.bajar ? [{ l: E2("Bajar", "Download"), v: "primary", icon: "folder", onClick: () => bajarArchivo(f.id, () => router.refresh()) }] : undefined })) }
     : { type: "empty", icon: "folder", t: E2("Todavía no pediste el archivo", "You have not requested the file yet"), s: E2("Es un ZIP con JSON y CSV, y un LEEME.", "It is a ZIP with JSON and CSV, plus a README.") });
   if (msg) B.push({ type: "note", tone: "ink", icon: "info", t: msg });
   if (paso === "codigo") {
