@@ -3562,7 +3562,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       detenerse (se deshizo a mano; las dos duraciones nuevas, `alrevesAltFin` 28 s y `alrevesBateriaCompa` 283 s, se anotaron con su fuente). Arreglo: con
       0 suites leídas no escribe y sale con 1, y acepta la sangría; su caso en `--casos`. Va solo, como todo cambio del CI (AM). También: un encargo que suma
       pruebas de punta a punta las asigna con `repartir.mjs --regenerar` en su mismo commit (el 28 nov cinco sin asignar pusieron roja `alrevesReparto`).
-- [ ] **→ 9b-3** · **El archivo de datos lee tablas sin índice por la columna de la persona (28 nov, Fable, al revisar el orden de las exportaciones):**
+- [ ] **→ 9b** · **El archivo de datos lee tablas sin índice por la columna de la persona (28 nov, Fable, al revisar el orden de las exportaciones):**
       `compa_messages` solo tiene `(user_id, at)` PARCIAL (`sender = 'user'`), así que `where user_id = $1` del archivo recorre la tabla entera (medido con
       EXPLAIN en la base de pruebas). Con el «order by» nuevo y el cursor optimizando para el 10 %, el plan era aún peor (la llave primaria entera, filtrando);
       se arregló con `set local cursor_tuple_fraction = 1` en `porPartes` (el archivo lee todo). Falta: un índice por la columna de la persona en cada tabla
