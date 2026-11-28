@@ -3562,3 +3562,14 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       detenerse (se deshizo a mano; las dos duraciones nuevas, `alrevesAltFin` 28 s y `alrevesBateriaCompa` 283 s, se anotaron con su fuente). Arreglo: con
       0 suites leídas no escribe y sale con 1, y acepta la sangría; su caso en `--casos`. Va solo, como todo cambio del CI (AM). También: un encargo que suma
       pruebas de punta a punta las asigna con `repartir.mjs --regenerar` en su mismo commit (el 28 nov cinco sin asignar pusieron roja `alrevesReparto`).
+- [ ] **→ 9b-3** · **El archivo de datos lee tablas sin índice por la columna de la persona (28 nov, Fable, al revisar el orden de las exportaciones):**
+      `compa_messages` solo tiene `(user_id, at)` PARCIAL (`sender = 'user'`), así que `where user_id = $1` del archivo recorre la tabla entera (medido con
+      EXPLAIN en la base de pruebas). Con el «order by» nuevo y el cursor optimizando para el 10 %, el plan era aún peor (la llave primaria entera, filtrando);
+      se arregló con `set local cursor_tuple_fraction = 1` en `porPartes` (el archivo lee todo). Falta: un índice por la columna de la persona en cada tabla
+      del mapa de datos que no lo tenga (migración con `create index concurrently` fuera de transacción) y un guardián que lo exija para toda tabla que
+      exporta; medirlo con `scripts/carga` (400 000 avisos, 1 M mensajes de El Compa).
+- [ ] **→ 9b** · **Pruebas que cambian la Configuración global en la base compartida (28 nov):** `compa7g` pone `compa_tope_mes_cents = 0` y cambia los límites
+      de El Compa mientras corre; si a la vez corre la batería de El Compa (el guardián `bateriaCompaFija` con base, o `alrevesBateriaCompa`) en otro encargo,
+      las preguntas se cortan antes de `detectar` y el caso «SIN tapar» sale «no lo notó» (pasó el 28 nov en un repaso local; la repetición pasó 39/39). En el
+      CI cada parte tiene su base, así que es solo local. Arreglo: que la batería diga «no corrió» (ninguna pregunta llegó a `detectar` con algo que tapar) en
+      vez de «no lo notó», y que dos encargos en paralelo no compartan base (cada uno con la suya, como en el CI).

@@ -134,6 +134,9 @@ export function datosDeNegocio(negocio: string): Consulta[] {
 /* Leer una consulta de PARTE en PARTE con un cursor (dentro de la transacción de c). Cada tanda sale limpia. */
 async function* porPartes(c: PoolClient, q: Consulta, n: number, tam = PARTE): AsyncGenerator<Fila[]> {
   const cur = `exp_${n}`;
+  // 28 nov · El archivo lee TODAS las filas: el plan tiene que ser el del total, no el de las primeras (un cursor, por defecto, optimiza para el 10 %).
+  // Con «order by» la llave, el plan de las primeras recorría la tabla entera por su llave primaria filtrando a la persona (compa_messages, medido).
+  await c.query("set local cursor_tuple_fraction = 1");
   // nosemgrep: tolatino-sql-con-texto-interpolado — q.sql sale solo de datosDeCuenta/datosDeNegocio (consultas fijas o identificadores del mapa con ident())
   await c.query(`declare ${cur} no scroll cursor for ${q.sql}`, q.args);
   try {
