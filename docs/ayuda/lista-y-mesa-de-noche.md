@@ -20,7 +20,7 @@ es consumo, no un cargo aparte. To'Latino **nunca cobra el cover, los tragos ni 
   en la puerta. Puedes **salir de la lista** cuando quieras; no se cobra nada.
 - **Mesa con depósito:** se **retiene** al enviar y se **cobra** cuando el local confirma; se descuenta de tu cuenta en el local.
   - El local no tiene mesa o no contesta a tiempo (1 hora, nunca después de 15 min antes de tu hora): no se cobra nada y pedimos que se suelte la retención.
-  - Te proponen **otra hora**: la aceptas (se cobra) o eliges «No me sirve» (pedimos que se suelte la retención). Tienes 30 minutos.
+  - Te proponen **otra hora**: la aceptas (se cobra) o eliges «No me sirve» (pedimos que se suelte la retención). Tienes 30 minutos: si no contestas, la reserva se cancela sola, no se cobra nada y te avisamos («Venció la otra hora»), igual que al local.
   - **Cancelas antes de las 6 PM** de esa noche (o 2 horas antes si llegas antes de las 8 PM): es gratis; pedimos que se suelte la retención o, si ya se cobró, la devolución de lo que queda. Antes de confirmar, la hoja te dice qué vamos a pedir con tu tarjeta; lo que pasó lo ves después en la pantalla y en Avisos. Después, el
     depósito se queda con el local.
   - **No llegas** (la mesa se guarda 30 min) o **no entras por no tener identificación**: el depósito se queda con el local.
@@ -59,7 +59,7 @@ charge. To'Latino **never charges the cover, drinks or the minimum**: those are 
   **leave the list** any time; nothing is charged.
 - **Table with a deposit:** **held** when you send and **charged** when the venue confirms; it comes off your bill at the venue.
   - No table or no reply in time (1 hour, never later than 15 min before your time): nothing is charged and we ask for the hold to come off your card.
-  - They propose **another time**: accept it (charged) or choose «Doesn't work» (we ask for the hold to come off your card). You have 30 minutes.
+  - They propose **another time**: accept it (charged) or choose «Doesn't work» (we ask for the hold to come off your card). You have 30 minutes: if you do not answer, the booking is cancelled on its own, nothing is charged and we tell you («The new time expired»), and we tell the venue too.
   - **You cancel before 6 PM** that night (or 2 hours before if you arrive before 8 PM): it is free; we ask for the hold to come off or, if it was already charged, a refund of what is left. Before you confirm, the sheet tells you what we will request with your card; what happened shows afterwards on the screen and in Notifications. After that the deposit stays with
     the venue.
   - **You don't show up** (the table is held 30 min) or **can't get in without ID**: the deposit stays with the venue.

@@ -331,7 +331,7 @@ export function cuandoInsc(det: Record<string, unknown>, es: boolean) {
 }
 /* 4ie · Iglesias: las mismas plantillas con el habla de la iglesia (insc_fe_*) y, en consejería, capellanía, oración y recuperación,
    NEUTRAS (insc_fen_*: sin el lugar, el servicio ni el motivo; guardián avisoFeNeutro). */
-const FE_TPL = ["insc_ok", "insc_alt", "insc_no", "insc_exp", "insc_cx", "insc_biz_cx", "insc_grupo_cx", "insc_empieza", "insc_done"];
+const FE_TPL = ["insc_ok", "insc_alt", "insc_no", "insc_exp", "insc_cx", "insc_biz_cx", "insc_grupo_cx", "insc_empieza", "insc_done", "insc_alt_fin"];
 export const tplFe = (tpl: string, neutro: boolean) => (FE_TPL.includes(tpl) ? `${neutro ? "insc_fen_" : "insc_fe_"}${tpl.slice(5)}` : tpl);
 async function avisarCliente(numero: string, tpl0: string, extra: Record<string, string | Bi> = {}) {
   const o = await leer(db(), "o.number = $1", [numero]);
@@ -717,6 +717,11 @@ export async function vencerInsc(f: { negocio?: string; userId?: string; numero?
     n++;
     const s = await soltarRetencion(o.id, { es: "La inscripción venció sin respuesta", en: "The enrollment expired without a reply" });
     if (o.status === "pending") await avisarCliente(o.num, "insc_exp", { dev: o.mat ? soltadaO(s, { es: ` Se liberó tu matrícula de ${usdI(o.mat)}.`, en: ` Your ${usdI(o.mat)} fee was released.` }) : { es: " No se cobró nada.", en: " Nothing was charged." } });
+    // «Otro grupo / otra fecha» que no contestó: se cancela y se avisa a los dos, una vez (solo quien la cancela avisa; otra pasada ya no la ve).
+    else {
+      await avisarCliente(o.num, "insc_alt_fin", { dev: o.mat ? soltadaO(s, { es: ` Se liberó tu matrícula de ${usdI(o.mat)}.`, en: ` Your ${usdI(o.mat)} fee was released.` }) : { es: " No se cobró nada.", en: " Nothing was charged." } });
+      await avisarNeg(o.num, "biz_insc_alt_fin", { dinero: soltadaO(s, o.mat ? { es: ` Se liberó su matrícula de ${usdI(o.mat)}.`, en: ` Their ${usdI(o.mat)} fee was released.` } : { es: " No se cobró nada.", en: " Nothing was charged." }, "negocio") });
+    }
   }
   // 2. Empieza: el día de inicio, una inscripción confirmada pasa a EN CURSO (y el grupo a «empezó»).
   const E = (await db().query<{ id: string }>(

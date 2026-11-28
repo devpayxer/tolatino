@@ -482,14 +482,17 @@ export async function vencerNoche(f: { negocio?: string; userId?: string; numero
     const s = await soltarRetencion(v.id, { es: "La mesa venció sin respuesta del local", en: "The table request expired without the venue replying" });
     await avisarCliente(v.num, "noche_exp", { dev: v.dep ? soltadaO(s, { es: ` Se liberó tu depósito de ${usdN(v.dep)}.`, en: ` Your ${usdN(v.dep)} deposit was released.` }) : { es: " No se cobró nada.", en: " Nothing was charged." } });
   }
-  const sinAlt = (await db().query<{ id: string }>(
+  const sinAlt = (await db().query<{ id: string; num: string; dep: number }>(
     `update operations o set status = 'cancelled', cancelled_by = 'system', cancelled_at = now(), cancel_reason = 'alt_vencida', door_code = null, updated_at = now()
-      where o.kind = 'night' and o.status = 'change_proposed' and o.respond_by < now()${y} returning o.id::text`, a)).rows;
+      where o.kind = 'night' and o.status = 'change_proposed' and o.respond_by < now()${y} returning o.id::text, o.number as num, o.deposit_cents as dep`, a)).rows;
   for (const v of sinAlt) {
     await db().query(`update change_proposals set status = 'expired', answered_at = now() where operation_id = $1::bigint and status = 'open'`, [v.id]).catch(() => undefined);
     await db().query(`insert into operation_events (operation_id, kind, actor, note) values ($1::bigint, 'cancelled', 'system', $2::jsonb)`, [v.id, JSON.stringify({ es: "No respondió a la otra hora", en: "No answer to the new time" })]);
-    // Sin aviso: si no se soltó, la alerta hold_stuck ya la tiene el equipo (soltarRetencion) y el barrido la vuelve a soltar.
-    if ((await soltarRetencion(v.id, SWEEP)).e === "retenida") continue;
+    // Si la retención no se soltó, la alerta hold_stuck ya la tiene el equipo (soltarRetencion) y el barrido la vuelve a soltar; el aviso dice lo que pasó con ella.
+    // Se avisa a los dos, una vez: solo la pasada que cancela la reserva llega aquí (la siguiente ya no la ve).
+    const s = await soltarRetencion(v.id, SWEEP);
+    await avisarCliente(v.num, "noche_alt_fin", { dev: v.dep ? soltadaO(s, { es: ` Se liberó tu depósito de ${usdN(v.dep)}.`, en: ` Your ${usdN(v.dep)} deposit was released.` }) : { es: " No se cobró nada.", en: " Nothing was charged." } });
+    await avisarNeg(v.num, "biz_noche_alt_fin", { dinero: soltadaO(s, v.dep ? { es: ` Se liberó su depósito de ${usdN(v.dep)}.`, en: ` Their ${usdN(v.dep)} deposit was released.` } : { es: " No se cobró nada.", en: " Nothing was charged." }, "negocio") });
   }
   // «Pasó la noche» (no es un botón): a las 6 AM se cierra. Lista con entrada / mesa que llegó → done; sin marcar → done «sin_marcar».
   const fin = (await db().query<{ num: string; uid: string }>(

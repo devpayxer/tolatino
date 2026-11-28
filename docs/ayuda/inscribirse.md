@@ -17,7 +17,7 @@ en el lugar** antes de enviar. El lugar confirma tu inscripción.
 
 ## Qué pasa en cada caso
 - **Matrícula de un curso:** hoy se **retiene** en tu tarjeta; se **cobra cuando el lugar confirma** y se descuenta del total.
-- **No hay cupo, no contestan a tiempo o te proponen otro grupo que no te sirve:** no se cobra nada; pedimos que se suelte la retención de la matrícula.
+- **No hay cupo, no contestan a tiempo o te proponen otro grupo que no te sirve:** no se cobra nada; pedimos que se suelte la retención de la matrícula. Si te proponen otro grupo y no contestas a tiempo, la inscripción se cancela sola y te avisamos («Venció el otro grupo»), igual que al lugar.
 - **Cancelas antes de empezar:** es gratis; pedimos la devolución de la matrícula (o que se suelte la retención, si no se había cobrado). **Después de empezar:** la matrícula se queda con la escuela. Antes de confirmar, la hoja te dice qué vamos a pedir con tu tarjeta; lo que pasó lo ves después en la pantalla y en Avisos.
 - **El grupo no abre o el lugar cancela:** pedimos la devolución de todo lo cobrado (o que se suelte la retención, si no se había cobrado), siempre, con el motivo. Lo que pasó lo ves en la pantalla y en Avisos.
 - **Mensualidad, semana de guardería, clase o pase:** se pagan **en el lugar**; la app no pide tarjeta ni cobra nada después.
@@ -56,7 +56,7 @@ sending. The place confirms your enrollment.
 
 ### What happens in each case
 - **A course's enrollment fee:** today it is **held** on your card; it is **charged when the place confirms** and deducted from the total.
-- **There is no spot, they don't reply in time or they offer you another group that doesn't work for you:** nothing is charged; we ask for the hold on the enrollment fee
+- **There is no spot, they don't reply in time or they offer you another group that doesn't work for you:** nothing is charged; if they offer another group and you do not answer in time, the enrollment is cancelled on its own and we tell you («The other group expired»), and we tell the place too; we ask for the hold on the enrollment fee
   to come off.
 - **You cancel before it starts:** it is free; we request a refund of the enrollment fee (or that the hold comes off, if it was not charged). **After it starts:** the school keeps the enrollment fee. Before you confirm, the sheet tells you what we will request with your card; what happened shows afterwards on the screen and in Notifications.
 - **The group doesn't open or the place cancels:** we request a refund of everything charged (or that the hold comes off, if it was not charged), always, with the reason. What happened shows on the screen and in Notifications.

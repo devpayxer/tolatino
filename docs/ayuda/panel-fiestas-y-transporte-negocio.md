@@ -13,7 +13,7 @@ Fiestas y de Transporte. Versión: 10 nov 2026. Audiencia: negocio. Tema: panel.
 
 ## Transporte
 - **Hoy › Viajes que esperan tu respuesta:** Confirmar (se cobra) · Otra salida (las 6 con cupo más cercanas) u otra hora · No hay
-  cupo. Mudanza: mira sus fotos y **Manda el precio cerrado** (vale 48 h; puedes mandar uno nuevo) o «No lo hacemos».
+  cupo. Si propones otra salida u otra hora y la persona no contesta a tiempo, la reserva se cancela sola, los asientos o la fecha quedan libres y te llega el aviso «Venció la otra salida» / «Venció la otra hora» (el cliente recibe el suyo); ahí mismo ves el motivo en la línea de tiempo. Mudanza: mira sus fotos y **Manda el precio cerrado** (vale 48 h; puedes mandar uno nuevo) o «No lo hacemos».
 - **Salidas con pasajeros (hoy y mañana):** Chofer (uno de tus repartidores), Va tarde (10–60 min, avisa a todos), Salió, Llegó,
   Cancelar la salida con motivo (devuelve todo a todos). En cada pasajero: Abordó / No llegó (el cobro no cambia).
 - **Vehículo, envíos y mudanzas:** caja: Recogida hecha → Salió del almacén (con rastreo) → Entregada; el destinatario es privado.
@@ -44,7 +44,7 @@ llama.
 
 ### Transportation
 - **Today › Trips waiting for your reply:** Confirm (it is charged) · Another departure (the 6 nearest with seats) or time · No seats.
-  Moves: look at their photos and **Send the fixed price** (valid 48 h; you can send a new one) or «We don't do that».
+  If you propose another departure or time and the person does not answer in time, the booking is cancelled on its own, the seats or the date are free again and you get the notice «The other departure expired» / «The new time expired» (the customer gets theirs); the reason shows in the timeline. Moves: look at their photos and **Send the fixed price** (valid 48 h; you can send a new one) or «We don't do that».
 - **Departures with passengers (today and tomorrow):** Driver (one of your drivers), Running late (10–60 min, notifies everyone),
   Left, Arrived, Cancel the departure with a reason (refunds everyone in full). For each passenger: Boarded / No-show (the charge does
   not change).

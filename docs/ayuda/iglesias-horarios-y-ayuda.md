@@ -22,7 +22,7 @@ inscribirse**. Lo que sí se pide por la app es una **fecha** (bautizo, bendici�
    **Ayuda con la iglesia**.
 
 ## Qué pasa en cada caso
-- **Responden en 48 horas.** Si no, la solicitud queda sin respuesta y te avisamos; pide otra fecha cuando quieras.
+- **Responden en 48 horas.** Si no, la solicitud queda sin respuesta y te avisamos; pide otra fecha cuando quieras. Si te proponen otra fecha y no contestas a tiempo, la solicitud se cancela sola y te avisamos («Venció la otra fecha»; en consejería y oración, con un aviso que no dice el lugar ni el servicio); pide otra cuando quieras.
 - **Se acabó por hoy:** la despensa lo marca y la tarjeta lo dice solo ese día; a la medianoche se vuelve a prender sola.
 - **Sin papeles:** si la despensa marca «Sin papeles ni seguro social», no te piden ID. Si piden una, la página lo dice.
 - **Consejería, capellanía, oración y recuperación:** los avisos a tu teléfono no dicen el lugar ni el servicio («Tienes una cita
@@ -72,7 +72,7 @@ no sign-up**. What you do ask for through the app is a **date** (baptism, house 
    for **Church help**.
 
 ### What happens in each case
-- **They reply within 48 hours.** If not, the request is left unanswered and we tell you; ask for another date whenever you want.
+- **They reply within 48 hours.** If not, the request is left unanswered and we tell you; ask for another date whenever you want. If they propose another date and you do not answer in time, the request is cancelled on its own and we tell you («The other date expired»; for counseling and prayer, with a notice that does not name the place or the service); ask for another whenever you want.
 - **Out for today:** the food pantry marks it and the card says so only that day; at midnight it turns back on by itself.
 - **No papers:** if the food pantry marks "No papers or SSN," they do not ask for ID. If they ask for one, the page says so.
 - **Counseling, chaplaincy, prayer and recovery:** the notices to your phone do not name the place or the service ("You have a confirmed

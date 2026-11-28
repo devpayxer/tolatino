@@ -561,6 +561,11 @@ export async function barrerViajes(f: { negocio?: string; userId?: string; numer
     if (!hecho) continue;
     const s = await soltarRetencion(v.id, { es: "La reserva del viaje venció sin respuesta", en: "The trip booking expired without a reply" });
     if (v.st === "pending") await avisarCliente(v.num, "viaje_exp", { dinero: dineroSoltado(s) });
+    // «Otra salida» que el cliente no contestó: se cancela y se avisa a los dos, una vez (solo quien la cancela avisa; otra pasada ya no la ve). Con lo que pasó con la retención.
+    else {
+      await avisarCliente(v.num, "viaje_alt_fin", { dinero: dineroSoltado(s) });
+      await avisarNeg(v.num, "biz_viaje_alt_fin", { dinero: soltadaO(s, s.e === "liberada" ? { es: " Se liberó lo retenido.", en: " The hold was released." } : { es: " No se cobró nada.", en: " Nothing was charged." }, "negocio") });
+    }
   }
 }
 

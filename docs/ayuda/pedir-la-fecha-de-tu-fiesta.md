@@ -24,7 +24,7 @@ respuesta y su detalle. Versión: 25 nov 2026. Audiencia: vecino. Tema: citas._
 |---|---|
 | El negocio confirma | La fecha es tuya; se cobra el depósito; tu fiesta muestra el acuerdo por escrito. |
 | Dos personas piden el mismo día | El negocio confirma una; si con eso el día se llena, las demás salen «No pudieron» y pedimos que se suelte la retención de su depósito. |
-| Te proponen otra hora | «Aceptar esta hora» confirma y cobra; «No me sirve»: pedimos que se suelte la retención del depósito. Si no contestas en 24 h, también. |
+| Te proponen otra hora | «Aceptar esta hora» confirma y cobra; «No me sirve»: pedimos que se suelte la retención del depósito. Si no contestas en 24 h, también: la reserva se cancela sola y te avisamos («Venció la otra hora»), igual que al negocio. |
 | No pueden | Pedimos que se suelte la retención de tu depósito y ves sus próximas fechas libres con «Pedir esta». |
 | No contestan en 24 h | «Sin respuesta»: pedimos que se suelte la retención de tu depósito. |
 | Cancelas antes de que confirmen | No se cobra nada: pedimos que se suelte la retención. |
@@ -61,7 +61,7 @@ respuesta y su detalle. Versión: 25 nov 2026. Audiencia: vecino. Tema: citas._
 |---|---|
 | The business confirms | The date is yours; the deposit is charged; your party shows the written agreement. |
 | Two people ask for the same day | The business confirms one; if that fills the day, the others show «They could not» and we ask for the hold on their deposit to come off. |
-| They propose another time | «Accept this time» confirms and charges; «Doesn’t work»: we ask for the deposit hold to come off. If you do not answer in 24 hours, the same. |
+| They propose another time | «Accept this time» confirms and charges; «Doesn’t work»: we ask for the deposit hold to come off. If you do not answer in 24 hours, the same: the booking is cancelled on its own and we tell you («The new time expired»), and we tell the business too. |
 | They can't | We ask for the hold on your deposit to come off and you see their next free dates with «Request this one». |
 | They do not answer in 24 hours | «No answer»: we ask for the hold on your deposit to come off. |
 | You cancel before they confirm | Nothing is charged: we ask for the hold to come off. |

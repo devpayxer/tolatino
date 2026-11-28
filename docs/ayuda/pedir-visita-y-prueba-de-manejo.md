@@ -21,7 +21,7 @@ catecismo. **Nada se cobra en la app: hoy pagas $0, siempre.**
 ## Qué pasa en cada caso
 - **Responden en 4 horas** del horario del negocio, y nunca después de una hora antes de tu visita. Si no, queda **SIN RESPUESTA** y la hora
   vuelve a estar libre. Iglesias: 48 horas.
-- **Te proponen otra hora:** **Aceptar** (queda confirmada) o **No me sirve** (se cancela, sin costo).
+- **Te proponen otra hora:** **Aceptar** (queda confirmada) o **No me sirve** (se cancela, sin costo). Si no contestas a tiempo, también se cancela sola, sin costo, y te avisamos («Venció la otra hora»), igual que al negocio.
 - **No se puede:** te avisan «No hay visita a esa hora». Pide otra cuando quieras.
 - **Se rentó o se vendió antes:** tu visita se cancela **sin culpa tuya** y te avisamos.
 - **La dirección exacta** de un cuarto o de «solo la zona» te llega **cuando confirman**; antes ves la zona (ciudad y código postal).
@@ -63,7 +63,7 @@ app: today you pay $0, always.**
 ### What happens in each case
 - **They reply within 4 hours** of the business's hours, and never later than one hour before your visit. If not, it is left **UNANSWERED** and the time is free
   again. Churches: 48 hours.
-- **They propose another time:** **Accept** (it is confirmed) or **That doesn't work for me** (it is canceled, at no cost).
+- **They propose another time:** **Accept** (it is confirmed) or **That doesn't work for me** (it is canceled, at no cost). If you do not answer in time, it is also canceled on its own, at no cost, and we tell you («The other time expired»), and we tell the business too.
 - **It cannot be done:** they tell you «There is no visit at that time». Ask for another whenever you want.
 - **It was rented or sold before:** your visit is canceled **through no fault of yours** and we tell you.
 - **The exact address** of a room or of «area only» reaches you **when they confirm**; before that you see the area (city and ZIP code).

@@ -30,7 +30,8 @@ precio cerrado por fotos se piden llamando hasta que lleguen a la app.
 ## Qué pasa en cada caso
 - **Pendiente:** el negocio tiene 2 horas si sales hoy, 24 horas si es otro día. Tus asientos ya están apartados.
 - **Otra salida propuesta:** si tu salida no tiene cupo, el negocio te propone otra. «Aceptar esta salida» la confirma y la cobra;
-  «No me sirve»: pedimos que se suelte la retención de tu tarjeta.
+  «No me sirve»: pedimos que se suelte la retención de tu tarjeta. **Si no contestas a tiempo**, la reserva se cancela sola, no se cobra nada y los
+  asientos vuelven a la salida; te avisamos a ti («Venció la otra salida») y avisamos al negocio, una vez cada uno.
 - **Sin respuesta:** si no contestan a tiempo, no se cobra nada y pedimos que se suelte la retención.
 - **Va tarde:** te avisamos la nueva hora en Avisos.
 - **En camino / Llegaste:** lo ves en «Tu viaje» y te pedimos tu reseña.
@@ -85,7 +86,8 @@ requested by phone until they are available in the app.
 ### What happens in each case
 - **Pending:** the business has 2 hours if you leave today, 24 hours if it is another day. Your seats are already held.
 - **Another departure proposed:** if your departure has no room, the business proposes another. «Accept this departure» confirms it and
-  charges it; «Doesn’t work»: we ask for the hold to come off your card.
+  charges it; «Doesn’t work»: we ask for the hold to come off your card. **If you do not answer in time**, the booking is cancelled on its own,
+  nothing is charged and the seats go back to the departure; we tell you («The other departure expired») and we tell the business, once each.
 - **No answer:** if they do not reply in time, nothing is charged and we ask for the hold to come off.
 - **Running late:** we tell you the new time in Notifications.
 - **On the way / You arrived:** you see it in «Your trip» and we ask for your review.

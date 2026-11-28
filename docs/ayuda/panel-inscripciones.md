@@ -8,7 +8,7 @@ Aquí respondes cada inscripción, ves tus grupos con sus inscritos y cupos, la 
 
 ## Cómo se usa
 - **Responder** (en Hoy o en el detalle): **Confirmar** (se cobra la matrícula), **Otro grupo** (la persona tiene 48 h para aceptar) o
-  **No hay cupo** (se libera todo). Si no respondes a tiempo (24 h, o 12 h antes de que empiece el grupo), vence sola.
+  **No hay cupo** (se libera todo). Si propones otro grupo y la persona no contesta, la inscripción se cancela sola, el cupo vuelve y te llega el aviso «Venció el otro grupo» (la persona recibe el suyo); el motivo queda en la línea de tiempo. Si no respondes a tiempo (24 h, o 12 h antes de que empiece el grupo), vence sola.
 - **Grupos:** toca un grupo para marcar **Empezó**, **Terminó** (con o sin certificado) o **El grupo no abre** (motivo obligatorio).
 - **Lista de espera:** **Ofrecer el cupo** aparta un lugar 48 horas a la primera persona. Si no lo toma, se ofrece a la siguiente.
 - **Membresías:** cuando alguien pide la baja, **Confirmar la cancelación** (si no, queda cancelada sola a las 72 h).
@@ -35,7 +35,7 @@ Here you reply to each enrollment and see your groups with their students and se
 
 ### How to use it
 - **Reply** (in Today or the detail): **Confirm** (the registration fee is charged), **Another group** (the person has 48 h to accept) or **No
-  seats** (everything is released). If you don't reply in time (24 h, or 12 h before the group starts), it expires on its own.
+  seats** (everything is released). If you propose another group and the person does not answer, the enrollment is cancelled on its own, the spot comes back and you get the notice «The other group expired» (the person gets theirs); the reason stays in the timeline. If you don't reply in time (24 h, or 12 h before the group starts), it expires on its own.
 - **Groups:** tap a group to mark **Started**, **Finished** (with or without a certificate) or **The group won't open** (reason required).
 - **Waitlist:** **Offer the seat** holds a spot for 48 hours for the first person; if they don't take it, it goes to the next.
 - **Memberships:** when someone asks to cancel, **Confirm the cancellation** (otherwise it is cancelled on its own at 72 h).

@@ -21,7 +21,7 @@ o código. Desde el detalle de cada reserva respondes, marcas la puerta o cancel
 
 ## Qué pasa en cada caso
 - **Confirmas:** el depósito retenido se cobra y le llega el aviso con su código. **Otra hora aceptada:** se cobra; **rechazada o
-  sin respuesta:** se libera completo.
+  sin respuesta:** se libera completo, y si no contestan a tu otra hora te llega el aviso «Venció la otra hora» (ellos reciben el suyo).
 - **No contestas a tiempo:** la solicitud vence sola y pedimos que se suelte la retención del depósito (el aviso de «Responde en…» solo lo dice si hay depósito retenido).
 - **No llegaron / sin identificación:** la noche se cierra y el depósito se queda con el local (la regla de la edad y la
   identificación se le mostró antes de pagar). La app **nunca** guarda la foto de un ID ni pide fecha de nacimiento.
@@ -66,7 +66,7 @@ you answer, mark the door or cancel with a reason.
 
 ### What happens in each case
 - **You confirm:** the held deposit is charged and the customer gets the notice with their code. **Another time accepted:** it is charged;
-  **rejected or unanswered:** it is released in full.
+  **rejected or unanswered:** it is released in full, and if they do not answer your other time you get the notice «The new time expired» (they get theirs).
 - **You do not answer in time:** the request expires on its own and we ask for the deposit hold to come off (the «Reply within…» note only says so if a deposit is held).
 - **They did not show up / no ID:** the night is closed and the deposit stays with the venue (the age and ID rule was shown to them before
   paying). The app **never** stores a photo of an ID or asks for a date of birth.

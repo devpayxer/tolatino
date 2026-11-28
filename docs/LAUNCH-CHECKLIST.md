@@ -2489,9 +2489,20 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       del dinero en la lista (salvo `cliente()`; `rentas.ts` entra con su encargo), el total exactamente en su tope (523: se baja, nunca se sube) y las siete
       `sqldin9b-…` cargando el archivo real que cubren; `alreves9usql` 20/20 (5 casos nuevos). `pruebas/reparto.json` regenerado sin rebalancear (asigna las
       siete; ninguna otra cambió de parte). **La parte del dinero queda hecha.** Sigue abierta: la del Super Admin (232) y la regresión de una sola corrida.
-- [ ] **→ 9t** · **Cuando el cliente no contesta a «otra salida / otra hora», nadie se entera (visto por Opus el 28 nov al probar las consultas).** Viajes,
+- [x] **→ 9t** · **Cuando el cliente no contesta a «otra salida / otra hora», nadie se entera (visto por Opus el 28 nov al probar las consultas).** Viajes,
       Noche, Fiestas, clases y visitas de propiedades cancelan en silencio al vencer la propuesta; solo las citas avisan (`cita_alt_fin`). Revisar si cada
       uno debe avisar al cliente y al negocio (con su plantilla ES/EN) como las citas, o dejarlo escrito como regla.
+      _hecho (28 nov, Sonnet):_ cada uno avisa, y a los DOS (las citas avisan solo al cliente: ahí no se tocó). Migración 0230: `viaje_alt_fin`, `noche_alt_fin`,
+      `fiesta_alt_fin`, `insc_alt_fin` (+ `insc_fe_alt_fin` de Iglesias y `insc_fen_alt_fin` NEUTRA de consejería/oración: `FE_TPL` la suma) y `vis_alt_fin`
+      al cliente; `biz_viaje_alt_fin`, `biz_noche_alt_fin`, `biz_fiesta_alt_fin`, `biz_insc_alt_fin` y `biz_vis_alt_fin` al negocio (ES/EN; sin SMS al negocio). El
+      aviso sale en el barrido, justo después de cancelar y de soltar lo retenido, SOLO por la pasada que cancela la reserva (la siguiente ya no la ve: una vez por
+      parte); lleva lo que pasó con la retención (`{dev}` / `{dinero}` de `soltadaO`, también si no se soltó: antes Noche y Fiestas se callaban en ese caso). El
+      dinero no cambió (mismo `soltarRetencion`, mismo motivo). Panel y Super Admin ya muestran el motivo (línea de tiempo con la nota «No respondió a la otra
+      hora» y `cancel_reason = alt_vencida` en Transacciones): sin cambio. Pruebas `altfin-viajes` (13), `altfin-noche` (15), `altfin-fiestas` (14),
+      `altfin-insc` (20, con los al revés de la clase: pendiente vencida solo `insc_exp`, Iglesias y consejería neutra) y `altfin-visitas` (13), y
+      `alrevesAltFin` (12/12 avisos rotos a propósito, todos cazados). Ayuda: reservar-un-viaje, lista-y-mesa-de-noche, pedir-la-fecha-de-tu-fiesta, inscribirse,
+      iglesias-horarios-y-ayuda, pedir-visita-y-prueba-de-manejo y los cuatro del panel. **Queda sin aviso (otra familia, no «otra hora» del negocio):** la mesa de
+      restaurante que vence (`reservas.ts › vencerMesas`) y la propuesta del evento privado: revisar aparte.
 - [x] **→ 9b** · **`evt6i` inestable en la revisión completa 44947348390** («aviso evp_cancelado_negocio con SMS»): la prueba leía el aviso en cuanto
       veía la devolución en la base, y la acción lo manda después. **Hecho (21 nov, 805468e):** los tres avisos con SMS de `evt6i` y los de `evt6a` y
       `evt6d` se esperan; en la dirigida 44952826764 pasaron a la primera (75, 66 y 126 ✓).

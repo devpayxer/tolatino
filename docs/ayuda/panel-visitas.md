@@ -9,7 +9,7 @@ Respondes cada solicitud de visita, prueba de manejo, cita, precalificación u o
 
 ## Cómo se usa
 - **Responder** (en Hoy o en el detalle): **Confirmar** (le llega el aviso con la dirección), **Otra hora** (eliges una hora libre; la persona tiene
-  hasta 24 h para aceptar) o **No se puede**.
+  hasta 24 h para aceptar; si no contesta, la visita se cancela sola, la hora queda libre y te llega el aviso «Venció la otra hora», y la persona recibe el suyo) o **No se puede**.
 - **Hoy:** cuando llega la hora, **Pasó** (le pedimos su reseña) o **No vino** (sin multa).
 - **Cancelar una confirmada:** con motivo; la persona lo ve y queda en tu historial.
 - **Horas de visita:** en cada propiedad (Propiedades › Horas de visita). **Horas de prueba de manejo:** en Tu herramienta, para cualquier carro
@@ -56,7 +56,7 @@ You answer each request for a visit, test drive, appointment, pre-qualification 
 
 ### How to use it
 - **Reply** (in Today or in the detail): **Confirm** (the person gets the notice with the address), **Another time** (you pick a free time; the
-  person has up to 24 hours to accept) or **Can't**.
+  person has up to 24 hours to accept; if they do not answer, the visit is cancelled on its own, the time is free again and you get the notice «The other time expired», and the person gets theirs) or **Can't**.
 - **Today:** when the time arrives, **Happened** (we ask for their review) or **No-show** (no penalty).
 - **Cancelling a confirmed one:** with a reason; the person sees it and it stays in your history.
 - **Visit hours:** on each property (Properties › Visit hours). **Test drive hours:** in Your tool, for any car on the lot (day, time and how many

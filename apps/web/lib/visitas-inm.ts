@@ -523,6 +523,8 @@ export async function barrerVisitas(f: { negocio?: string; userId?: string; nume
     if (!o) continue;
     n++;
     if (o.status === "pending") await avisarCliente(o, "vis_exp");
+    // «Otra hora» que no contestó: se cancela y se avisa a los dos, una vez (solo quien la cancela avisa; otra pasada ya no la ve).
+    else { await avisarCliente(o, "vis_alt_fin"); await avisarNeg(o, "biz_vis_alt_fin"); }
   }
   // 2. «Pasó»: si nadie marca, a las 24 h de la hora se da por pasada y se abre la reseña.
   const D = (await db().query<{ num: string; id: string }>(

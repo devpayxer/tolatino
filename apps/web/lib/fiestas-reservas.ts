@@ -463,14 +463,17 @@ export async function barrerFiestas(f: { negocio?: string; userId?: string; nume
     const s = await soltarRetencion(v.id, { es: "La fecha venció sin respuesta del negocio", en: "The date request expired without the business replying" });
     await avisarCliente(v.num, "fiesta_exp", { dev: v.dep ? soltadaO(s, { es: ` Se liberó tu depósito de ${money(v.dep)}.`, en: ` Your ${money(v.dep)} deposit was released.` }) : "" });
   }
-  const sinAlt = (await db().query<{ id: string; num: string }>(
+  const sinAlt = (await db().query<{ id: string; num: string; dep: number }>(
     `update operations o set status = 'cancelled', cancelled_by = 'system', cancelled_at = now(), cancel_reason = 'alt_vencida', updated_at = now()
-      where o.kind = 'party' and o.status = 'change_proposed' and o.respond_by < now()${y} returning o.id::text, o.number as num`, a)).rows;
+      where o.kind = 'party' and o.status = 'change_proposed' and o.respond_by < now()${y} returning o.id::text, o.number as num, o.deposit_cents as dep`, a)).rows;
   for (const v of sinAlt) {
     await db().query(`update change_proposals set status = 'expired', answered_at = now() where operation_id = $1::bigint and status = 'open'`, [v.id]).catch(() => undefined);
     await db().query(`insert into operation_events (operation_id, kind, actor, note) values ($1::bigint, 'cancelled', 'system', $2::jsonb)`, [v.id, JSON.stringify({ es: "No respondió a la otra hora en 24 h", en: "No answer to the new time within 24 h" })]);
-    // Sin aviso: si no se soltó, la alerta hold_stuck ya la tiene el equipo (soltarRetencion) y el barrido la vuelve a soltar.
-    if ((await soltarRetencion(v.id, SWEEP)).e === "retenida") continue;
+    // Si la retención no se soltó, la alerta hold_stuck ya la tiene el equipo (soltarRetencion) y el barrido la vuelve a soltar; el aviso dice lo que pasó con ella.
+    // Se avisa a los dos, una vez: solo la pasada que cancela la reserva llega aquí (la siguiente ya no la ve).
+    const s = await soltarRetencion(v.id, SWEEP);
+    await avisarCliente(v.num, "fiesta_alt_fin", { dev: v.dep ? soltadaO(s, { es: ` Se liberó tu depósito de ${money(v.dep)}.`, en: ` Your ${money(v.dep)} deposit was released.` }) : "" });
+    await avisarNeg(v.num, "biz_fiesta_alt_fin", { dinero: v.dep ? soltadaO(s, { es: ` Se liberó su depósito de ${money(v.dep)}.`, en: ` Their ${money(v.dep)} deposit was released.` }, "negocio") : "" });
   }
   // Recordatorio una semana antes (una vez).
   const rec = (await db().query<{ num: string }>(
