@@ -11,6 +11,8 @@ const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  �
 const vis = async (l) => { const n = await l.count(); for (let i = 0; i < n; i++) if (await l.nth(i).isVisible()) return l.nth(i); return null; };
 const clic = async (l) => { for (let i = 0; i < 40; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l + ' · la página dice: ' + (await l.page().locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 300)); };
 const verV = async (l) => { for (let i = 0; i < 60; i++) { if (await vis(l)) return true; await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l + ' · la página dice: ' + (await l.page().locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 300)); };
+// 28 nov · Lo que se toca en el detalle del panel, DENTRO del detalle (entre 1024 y 1199 es una ventana sobre Hoy, que tiene sus propios botones debajo).
+const detalle = (p) => p.locator('[data-screen-label="Panel v2 · detalle"]');
 const espera = async (f, v) => { let x; for (let i = 0; i < 40; i++) { x = f(); if (x === v) return x; await new Promise((r) => setTimeout(r, 250)); } return x; };
 async function pedir(m) {
   await m.goto(B + `/n/${L}?tab=svc`); await clic(m.getByText('Consulta de inmigración', { exact: true }));
@@ -24,12 +26,12 @@ async function pedir(m) {
 }
 async function mandar(d, num, fee, gov, extra) {
   await d.goto(B + `/panel/${L}/hoy?det=cita:${num}`);
-  if (await vis(d.getByRole('button', { name: 'Pasó la consulta' }))) { await clic(d.getByRole('button', { name: 'Pasó la consulta' })); }
-  await verV(d.getByLabel('TU HONORARIO', { exact: true }));
-  await (await vis(d.getByLabel('TU HONORARIO', { exact: true }))).fill(String(fee));
-  await (await vis(d.getByLabel('TARIFA DEL GOBIERNO · APARTE · OPCIONAL', { exact: true }))).fill(String(gov));
-  if (extra) { await (await vis(d.getByLabel('EXTRA OPCIONAL · OPCIONAL', { exact: true }))).fill(extra[0]); await (await vis(d.getByLabel('PRECIO DEL EXTRA', { exact: true }))).fill(String(extra[1])); }
-  await clic(d.getByRole('button', { name: 'Mandar el total por escrito' }));
+  if (await vis(detalle(d).getByRole('button', { name: 'Pasó la consulta' }))) { await clic(detalle(d).getByRole('button', { name: 'Pasó la consulta' })); }
+  await verV(detalle(d).getByLabel('TU HONORARIO', { exact: true }));
+  await (await vis(detalle(d).getByLabel('TU HONORARIO', { exact: true }))).fill(String(fee));
+  await (await vis(detalle(d).getByLabel('TARIFA DEL GOBIERNO · APARTE · OPCIONAL', { exact: true }))).fill(String(gov));
+  if (extra) { await (await vis(detalle(d).getByLabel('EXTRA OPCIONAL · OPCIONAL', { exact: true }))).fill(extra[0]); await (await vis(detalle(d).getByLabel('PRECIO DEL EXTRA', { exact: true }))).fill(String(extra[1])); }
+  await clic(detalle(d).getByRole('button', { name: 'Mandar el total por escrito' }));
 }
 (async () => {
   const b = await chromium.launch(); const err = [];
@@ -55,7 +57,7 @@ async function mandar(d, num, fee, gov, extra) {
   ok((await espera(() => sql(`select count(*) from notifications where ref_id = '${N1}' and tpl = 'biz_pro_ok'`), '1')) === '1', 'la oficina sabe que contrataron');
   await m.reload(); await verV(m.getByText(/Tu trámite está en manos de/)); ok(true, 'cliente: «Tu trámite está en manos de…» · CONTRATADO');
   await m.screenshot({ path: OUT + 'l5-contratado-m.png', fullPage: true });
-  await d.goto(B + `/panel/${L}/hoy?det=cita:${N1}`); await clic(d.getByRole('button', { name: 'Terminó el trámite' }));
+  await d.goto(B + `/panel/${L}/hoy?det=cita:${N1}`); await clic(detalle(d).getByRole('button', { name: 'Terminó el trámite' }));
   ok(await espera(() => sql(`select status || '|' || status_detail from operations where id = ${O1}`), 'done|done') === 'done|done', 'terminó el trámite');
   // ── Versión nueva y no contratar ──
   const N2 = await pedir(m), O2 = sql(`select id from operations where number = '${N2}'`);

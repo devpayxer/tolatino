@@ -315,10 +315,14 @@ const UUIDRE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
   sql(`set session_replication_role = replica; update compa_drafts set at = at - interval '2 days' where staff_id = '${DU}' and at > now() - interval '1 day'`);
   const viejo = borr(TK1.id, DU)[0];
   sql(`set session_replication_role = replica; update compa_drafts set at = now() - interval '2 days' where id = '${viejo}'`);
-  await fetch(B + '/api/interno/barrido', { method: 'POST', headers: { 'x-barrido-token': TOK } });
   await configLista(); // el límite vuelve al de fábrica: la Configuración llegó al servidor (config-lista.cjs mira que la escucha viva)
-  // Los 16 s de antes no eran de la Configuración sino del barrido (que pudiera seguir corriendo): se espera lo que de verdad se afirma, hasta 16 s.
-  ok(await espera(() => sql(`select used from compa_drafts where id = '${viejo}'`) === 'discarded', 16000), 'el barrido: un borrador de hace un día sin enviar → «descartado»');
+  // 28 nov · El barrido central toma un candado (pg_try_advisory_lock en lib/barrido.ts): si ya hay uno corriendo (el que el servidor hace solo al
+  // arrancar y cada tanto, o el de una prueba anterior), el nuestro vuelve sin hacer nada, y el que corre puede haber pasado ya por «compaBorradores»
+  // antes de que el borrador envejeciera (falló así en el iPad, la primera corrida tras levantar el servidor). Se pide el barrido otra vez dentro de
+  // la espera, hasta que uno de verdad pase por ahí (es idempotente).
+  const barrer = () => fetch(B + '/api/interno/barrido', { method: 'POST', headers: { 'x-barrido-token': TOK } }).catch(() => null);
+  await barrer();
+  ok(await espera(async () => { if (sql(`select used from compa_drafts where id = '${viejo}'`) === 'discarded') return true; await barrer(); return false; }, 30000), 'el barrido: un borrador de hace un día sin enviar → «descartado»');
 
   console.log('10 · Super Admin › El Compa: el copiloto en las cifras');
   await pa.goto(B + '/admin/compa'); await pa.getByText('COPILOTO EN SOPORTE · 30 D').waitFor();

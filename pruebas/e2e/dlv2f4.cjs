@@ -9,6 +9,9 @@ const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  �
 const vis = async (l) => { const n = await l.count(); for (let i = 0; i < n; i++) if (await l.nth(i).isVisible()) return l.nth(i); return null; };
 const espera = async (f, v) => { for (let i = 0; i < 40; i++) { if (f() === v) return v; await new Promise((r) => setTimeout(r, 250)); } return f(); };
 const MARISOL = "(select id from users where phone='+15705550122')";
+// 28 nov · El detalle del panel: entre 1024 y 1199 (iPad, 1194) es una ventana encima de Hoy y Hoy tiene sus propios botones debajo (los mismos textos);
+// lo que se toca del detalle se busca DENTRO de él. En escritorio ancho es la columna de la derecha, con la misma marca.
+const detalle = (p) => p.locator('[data-screen-label="Panel v2 · detalle"]');
 const op = (n, c) => sql(`select ${c} from operations where number='${n}'`);
 (async () => {
   // Delivery encendido: 3 mi, envío $3, gratis desde $40, mínimo $15, propina, efectivo al entregar con mi equipo.
@@ -71,7 +74,7 @@ const op = (n, c) => sql(`select ${c} from operations where number='${n}'`);
   await entrar(d, '5705550133'); await d.goto(B + P + `/hoy?det=ped:${n1}`); await d.getByText('ENTREGA', { exact: true }).first().waitFor();
   ok(await d.getByText('420 N Wyoming St, Apt 2').first().isVisible() && await d.getByText('Dejar en la puerta').first().isVisible(), 'panel: a dónde y «Dejar en la puerta»');
   // 19 nov · En el iPad (WebKit) otra pieza tapaba «Aceptar» (30 s). Si pasa otra vez, dice cuál: el elemento que está encima del centro del botón.
-  { const ac = d.getByText('Aceptar', { exact: true }).last();
+  { const ac = detalle(d).getByText('Aceptar', { exact: true }).last();
     // 21 nov · Sonda (ventana del detalle entre 1024 y 1199, el iPad en horizontal): el toque que «no entra» pasa una vez de muchas y solo en
     // WebKit, así que aquí se repite: 12 aperturas, en cada una todo lo que hace un toque menos tocar (desplazar, esperar quieto, mirar quién
     // recibe el punto). Si una falla se anota EN ESE INSTANTE cómo está la ventana (alto, desplazamiento, si es otra ventana que la de antes,
@@ -114,14 +117,14 @@ const op = (n, c) => sql(`select ${c} from operations where number='${n}'`);
       const porque = String(e.message).split('\n').filter((l) => /intercepts|not stable|outside of the viewport|not visible|not enabled|detached/.test(l)).slice(-3).map((l) => l.trim().slice(0, 160)).join(' | ');
       throw new Error(`«Aceptar» tapado: ${encima} · ${hoja} · ${porque}`); } }
   await d.getByText(/ya lo ve en su pedido/).waitFor();
-  await d.getByText('Salió en camino').last().click(); await d.getByText(/ya ve que va en camino/).waitFor();
+  await detalle(d).getByText('Salió en camino').last().click(); await d.getByText(/ya ve que va en camino/).waitFor();
   ok(await espera(() => op(n1, "status||'|'||stage"), 'confirmed|on_the_way') === 'confirmed|on_the_way', 'Salió en camino → on_the_way');
   await shot(d, 'd4-panel-encamino.png');
   await m.reload(); ok(!!(await vis(m.getByText('En camino'))), 'el cliente ve «En camino»');
   await d.reload(); await d.getByText(`Pedido #${n1} · Delivery`).first().waitFor(); ok(await d.getByText('EN CAMINO', { exact: true }).first().isVisible(), 'Hoy: el delivery en camino sigue en la agenda');
   // Anchos: tras recargar, ?det= sigue abierto; entre 1024 y 1199 es una ventana sobre la lista (no se toca lo de atrás): si ya es este pedido, no se vuelve a abrir.
   if (!(await d.locator('[data-screen-label="Panel v2 · detalle"]').getByText(`#${n1}`).count())) await d.getByText(`Pedido #${n1} · Delivery`).first().click();
-  await d.getByText('Entregado', { exact: true }).last().click(); await d.getByText('Anotado · Entregado.').waitFor();
+  await detalle(d).getByText('Entregado', { exact: true }).last().click(); await d.getByText('Anotado · Entregado.').waitFor();
   ok(await espera(() => op(n1, "status||'|'||stage"), 'done|delivered') === 'done|delivered', 'Entregado → done/delivered');
   // Fuera de la zona: la predeterminada a ~12 mi
   sql(`update user_addresses set is_default = false where user_id=${MARISOL} and removed_at is null`); sql(`update user_addresses set is_default = true where user_id=${MARISOL} and removed_at is null and label = 'trabajo'`);

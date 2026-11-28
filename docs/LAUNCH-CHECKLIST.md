@@ -2515,12 +2515,13 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       escribe SIEMPRE, vacía si no hubo; en la confirmación, que corre dos veces, se suman); un carril en verde sin su lista pone la tubería en rojo.
       `tuberiaNoSeSalta` al día; `alreves9b2` 51/51, `alreves9b1` 14/14, `alreves9b3` 59/59, `alreves9m` 41/41. Las de 44961847914 las conté a mano
       leyendo cada carril: 0. Falta verlo en una corrida del CI.
-- [ ] **→ 9b** · **`compa7g` inestable en local (21 nov):** falló una vez («el borrador quedó "editado"») y pasó a la segunda con 98 ✓, en la corrida del
+- [x] **→ 9b** · **`compa7g` inestable en local (21 nov):** falló una vez («el borrador quedó "editado"») y pasó a la segunda con 98 ✓, en la corrida del
       encargo de las hojas (99 pruebas de pantallas del Super Admin). Buscar la espera que falta antes de leer el estado del borrador.
       **Buscada, sin causa probada (21 nov, Sonnet):** no se reprodujo en 16 corridas (10 con el código de antes, 6 con el de ahora). No es «leer
       antes de tiempo» por el lado del servidor: el mensaje (`from_draft`) y el estado del borrador se escriben en la misma transacción
       (`lib/soporte-equipo.ts › responder`). Se dejó una espera por condición y, sobre todo, el mensaje de la comprobación ahora trae el estado
       de antes, el de ahora y el último mensaje: si vuelve a fallar dirá cuál de las tres ramas fue. Sigue abierta hasta verla fallar otra vez.
+      _hecho (28 nov, Sonnet):_ la inestabilidad que se vio otra vez (iPad, primera corrida tras levantar el servidor) fue de la sección 9: «el barrido: un borrador de hace un día sin enviar → descartado». El barrido central toma `pg_try_advisory_lock` (`lib/barrido.ts`): si ya corre uno (el del arranque del servidor o el de otra prueba), el que pide la prueba vuelve sin hacer nada y el que corre ya pasó por «compaBorradores» antes de que la prueba envejeciera el borrador; esperar 16 s no lo arregla. La prueba ahora pide el barrido otra vez dentro de la espera hasta que se descarte (idempotente, hasta 30 s). La rama «quedó editado» no se volvió a ver (8 corridas más) y sigue con su mensaje que dice las tres ramas. En verde: iPad WebKit 5 veces seguidas (98 ✓), Chromium 3.
 - [x] **→ 9u** · **`rev9u2` inestable en la revisión completa 44908076139 («con miniaturas de fotos ya publicadas»): era del producto.** «Para
       mirar» (Super Admin › Contenido › Auto-moderación y el reporte diario) sacaba cinco al azar de TODAS las «publicar» (también las de destino
       privado y las ocultadas después) y la pantalla descartaba las que no tenían dirección pública: salían menos de cinco, o ninguna. **Hecho
@@ -2594,7 +2595,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       De los 55 pasos, solo esa pareja comparte registro; el guardián `pasoQueSuma` falla si dos pasos de una pantalla guardan la misma clave (o
       un `save` con `...`) sin grupo. Falta solo ver correr `toque9t` en el CI (caso Ninos › Edades, 5|8 y vuelta a 2|5). (21 nov)
       **21 nov:** los 5 toques seguidos de `toque9t` (13 ✓) ya corrieron en verde en el CI (44856657972); el caso nuevo de la pareja corre en la próxima.
-- [ ] **→ 9t** · **`dlv2f4` en el iPad horizontal (WebKit): no pudo tocar «Aceptar» en el detalle del pedido, dos veces seguidas** (corrida
+- [x] **→ 9t** · **`dlv2f4` en el iPad horizontal (WebKit): no pudo tocar «Aceptar» en el detalle del pedido, dos veces seguidas** (corrida
       programada 44778631725, ancho iPad 4/4; ya había pasado el 19 nov). El botón queda abajo, dentro de la hoja que se desplaza (y=967 de
       834); en Chromium con las mismas medidas, agente y toque del iPad el clic llega (probado el 20 nov), así que es de WebKit o de un momento.
       La prueba ahora dice por qué no pudo (tapado, moviéndose, fuera de pantalla) y cuánto se desplazó la hoja: leerlo en la próxima corrida
@@ -2608,12 +2609,14 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       punto, las ventanas montadas, los cambios de ancho y si un desplazamiento a mano se queda. Una corrida sola (44884725925): 24 de 24 bien
       (ventana 70..742, alto 672 de 1043, el toque la desplaza a 269 y entra; el toque llega con `d2Up` todavía corriendo y espera). Falta que
       falle bajo carga (corridas con anchos) para leer la causa.
-- [ ] **→ 9t** · **`pro4l2` como requisito no puede tocar «Pasó la consulta» (30 s), dos corridas seguidas:** en la confirmación 44847327303
+      _hecho (28 nov, Sonnet):_ era de la prueba, la misma familia que `ayu4if`: entre 1024 y 1199 el detalle del pedido es una ventana encima de Hoy y Hoy tiene su propio «Aceptar» debajo; `d.getByText('Aceptar').last()` agarraba el de Hoy (el que estaba en y=967 de 834, con un `div` encima) cuando la ventana aún no se había montado. Ahora «Aceptar», «Salió en camino» y «Entregado» se buscan dentro de `[data-screen-label="Panel v2 · detalle"]` (con el detalle por locator la prueba espera a que la ventana exista). No se reprodujo con la versión vieja aquí (WebKit iPad, local); la causa sale de la lectura del CI del 21 nov. En verde aquí: iPad WebKit 3 veces seguidas (23 ✓), Chromium 1360 5 de 6 (22 ✓); la que falló en Chromium fue en «fuera de la zona: No llega a tu dirección» (paso del teléfono del cliente, 30 s, sin relación con el detalle; no se volvió a ver en 5 corridas más): vigilar en la nocturna.
+- [x] **→ 9t** · **`pro4l2` como requisito no puede tocar «Pasó la consulta» (30 s), dos corridas seguidas:** en la confirmación 44847327303
       dejó a `res4m` INESTABLE (pasó al repetir) y en la programada 44851886841 sobre `main` (ancho iPad 2/4) dejó ROJA a `ayu4m` dos veces.
       Corrida sola en ese mismo carril, `pro4l2` pasa (13 ✓). El botón se ve pero el toque no entra: misma familia que `dlv2f4` («Aceptar» en el
       detalle del panel). Sospecha sin comprobar: los botones del detalle llevan `off: c.pending` y la transición del panel queda pendiente.
       `pruebas/lib/requiere.cjs` ahora dice el motivo que da Playwright (deshabilitado, tapado, moviéndose, fuera de pantalla): leerlo en la
       próxima corrida y arreglar la causa, no la prueba. (21 nov)
+      _hecho (28 nov, Sonnet):_ misma familia que `dlv2f4`: `vis(d.getByRole('button', {name:'Pasó la consulta'}))` devolvía el primer botón visible, el de la fila de Hoy bajo la ventana del detalle a 1194 (el toque no entra). Ahora «Pasó la consulta», los campos del total, «Mandar el total por escrito» y «Terminó el trámite» se buscan dentro de `[data-screen-label="Panel v2 · detalle"]`. En verde: iPad WebKit 3 veces (13 ✓) y Chromium 2. Queda la clase en otras pruebas: unas 50 abren `hoy?det=` y tocan botones sin acotar al detalle; revisarlas por familia (no hay guardián todavía: el patrón no se puede distinguir sin leer cada prueba).
 - [ ] **→ 9t** · **La confirmación completa 44856657972 tuvo 4 inestables: por la decisión AG es ROJA para producción** (el CI la dio verde
       porque el tope de 3 era por proceso y la corrida va en partes). Corregido el 21 nov: «tuberia» cuenta las inestables de toda la corrida
       y sale roja con más de 3 (guardián `tuberiaNoSeSalta` + al revés). Falta: una confirmación completa (dos veces + barajada + anchos) con 3
@@ -2911,10 +2914,11 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       (`tx` solo deshace si se lanza): el negocio se queda sin logo. Lanzar dentro de la transacción, como las demás acciones de fotos, y sumarlo al
       guardián `fotosAdjuntarTodoONada`.
       **✓ 22 nov:** lanza dentro de la transacción y devuelve «Esa foto no existe.»; el logo anterior queda puesto (`ayu4m` lo comprueba). `fotosAdjuntarTodoONada` incluye el logo (`alreves9ufotostodo`, 21).
-- [ ] **→ 9t** · **`tarAK` en iPad: el nombre larguísimo no se corta con elipsis dentro de la tarjeta (22 nov):** «el nombre larguísimo se corta con
+- [x] **→ 9t** · **`tarAK` en iPad: el nombre larguísimo no se corta con elipsis dentro de la tarjeta (22 nov):** «el nombre larguísimo se corta con
       elipsis, en una línea y dentro de la tarjeta» falla las dos veces en el ancho de iPad (WebKit; CI 45078878395) y pasa en iPhone SE y escritorio. Estaba
       tapada: la prueba fallaba antes, en el toque. Es de la tarjeta Vitrina (su segunda ronda está parada): ver con captura si es de la pieza o de la prueba.
       Mientras tanto la corrida nocturna de `anchos` sale roja por esto.
+      _hecho (28 nov, Sonnet):_ no era de la pieza: la prueba medía las tarjetas del teléfono a 834 de ancho (con 834 el nombre cabe), y ya se corrigió con `ENT.anchoPropio` (390). Comprobado en WebKit de verdad (iPad Pro 11, `--dispositivo ipad`): 115 ✓ tres veces seguidas, incluido «el nombre larguísimo se corta con elipsis, en una línea y dentro de la tarjeta»; Chromium 2 veces (115 ✓). Sin cambio de CSS, no hay captura antes/después.
 - [x] **→ 9u** · **Aceptar un código de equipo y «Publica tu negocio» ya no ignoran una foto que no se adjunta (23 nov):** la invitación rechaza con
       «Esa foto no existe.» y no gasta el código; Publica rechaza con «Una de las fotos ya no está. Súbela otra vez.» en F1 y no crea nada a medias. Todo
       o nada dentro de la transacción; guardián `fotosAdjuntarTodoONada` (alreves9ufotostodo 40/40); punta a punta `pan9n2` y `publica`.
@@ -3162,6 +3166,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9b** · **Corrida de anchos en WebKit de verdad:** `fic9cab`, `din9t10b` y `tarAK` con `anchoPropio`/`escritorioPropio` se comprobaron emulando
       ipad e iphone-se en Chromium (aquí no hay WebKit); verlos en verde en la próxima corrida nocturna de anchos (4 noches en rojo hasta el 24 nov).
       _28 nov (Opus):_ `expeq9t`/`usr1l` (CI 45933165937) eran del producto: el `router.refresh()` detrás del formulario de descarga hacía que Safari cortara el archivo (enlace de un uso gastado); arreglado con `lib/bajar-post.ts` (también Mi cuenta y el panel), guardián `bajarSinCarrera`. `pat002` y `ayu4if` eran de la prueba (el «request» de la acción llega tarde en WebKit; en el iPad tocaba el «Confirmar» de Hoy tapado por la ventana del detalle). En verde aquí en WebKit (SE e iPad, 2+ veces) y Chromium; falta verlo en la nocturna.
+      _28 nov (Sonnet):_ `tarAK` verificada en WebKit iPad (115 ✓ ×3); `fic9cab` y `din9t10b` siguen sin verse en WebKit.
 - [ ] **→ 9t** · **Bajar un archivo sin conexión (28 nov, revisión de otro modelo):** si el teléfono pierde la señal justo al bajar, `bajarPorPost` no
       refresca la lista (deja de mirar a los 120 s) y la fila del archivo queda como estaba hasta volver a abrir la pantalla. Inofensivo (el archivo no se
       pierde: el enlace de un uso sigue vivo hasta que vence); mostrar «revisa tu conexión» y refrescar al volver la señal. Nota: el guardián
