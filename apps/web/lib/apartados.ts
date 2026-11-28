@@ -282,12 +282,6 @@ export async function apartadosNegocio(negocio: string): Promise<ApartadoFila[]>
       where o.business_id = $1 and o.kind = 'hold' and (o.status in ('pending', 'change_proposed', 'confirmed') or (o.status = 'done' and o.done_at > now() - interval '1 day'))
       order by case o.status when 'pending' then 0 when 'change_proposed' then 1 when 'confirmed' then 2 else 3 end, o.scheduled_at limit 40`, [negocio])).rows;
 }
-export async function misApartados(userId: string): Promise<{ numero: string; st: St; negocio: string; tot: number; at: string }[]> {
-  await barrerApartados({ userId });
-  return (await db().query<{ numero: string; st: St; negocio: string; tot: number; at: string }>(
-    `select o.number as numero, o.status as st, b.name as negocio, o.total_cents as tot, o.sent_at as at from operations o join businesses b on b.id = o.business_id where o.user_id = $1 and o.kind = 'hold' order by o.id desc limit 30`, [userId])).rows;
-}
-
 /* 9t · Mi cuenta › Pedidos › «Apartados» (diseño ordersV: «LO RECOGES Y PAGAS EN EL LOCAL»): los que siguen vivos (enviado, falta algo,
    te lo guardan; en plan o por envío también), con lo apartado, hasta cuándo te lo guardan y el total. Primero el barrido (lo vencido no sale).
    El punto del negocio es el público (PUNTO_PUBLICO: nunca la casa de quien trabaja desde casa). Cada uno abre su página (/apartado/A-…). */

@@ -18031,6 +18031,43 @@ const guardianes = {
     if (!/const esDb = rel\.replace\([^\n]*\)\.endsWith\('apps\/web\/lib\/db\.ts'\) && !!process\.env\.PRUEBAS_ANOTAR_SQL;/.test(t) || !/if \(esDb\) process\.env\.TOLATINO_ENTORNO = 'pruebas';/.test(t)
         || (t.match(/\bevaluar\((?:archivo|r), js, mod, req\);/g) ?? []).length !== 2)
       falla(G, T, 0, "cargar y cargarApp evalúan cada archivo con evaluar(), que le da TOLATINO_ENTORNO=pruebas a la db.ts real mientras se carga si PRUEBAS_ANOTAR_SQL está puesta: sin eso la medida de consultas no cuenta las pruebas de Node");
+    // 28 nov · Las consultas del DINERO que ninguna prueba ejecuta quedan en 0 y la lista no crece. La lista es la de la última medida
+    // (pruebas/consultas-no-ejecutadas.txt, que escribe pruebas/lib/consultas-medir.cjs sumando las corridas anotadas): (1) ningún archivo del dinero en ella,
+    // salvo pagos/pasarela.ts dentro de cliente() (solo corre con Stripe de verdad; en el sandbox devuelve null antes de su consulta); rentas.ts no entra
+    // todavía (otro encargo la está cambiando: sale de la lista con el suyo); (2) el total de sin ejecutar es exactamente el tope de aquí: si una medida nueva
+    // trae más, cada una nueva necesita su prueba; si trae menos, se baja el tope (como pruebas/consultas-fuera.json); (3) las pruebas de Node que las
+    // ejecutan (sqldin9b-…) existen y cargan el archivo REAL que cubren (ts-servidor.cjs). Al revés: alreves9usql.
+    const NE = "pruebas/consultas-no-ejecutadas.txt", TOPE_NO_EJECUTADAS = 523;
+    const DINERO = ["boletos", "boletos-despues", "revision-pasarela", "suscripcion", "cobros", "evt-liquidacion", "evento-privado", "mercado", "apartados", "dinero-alertas",
+      "patrocinio-evento", "viajes", "patrocinio", "planes", "pagos/pasarela"].map((f) => `apps/web/lib/${f}.ts`);
+    const SQLDIN = { "sqldin9b-suscripcion": ["suscripcion"], "sqldin9b-cobros": ["cobros"], "sqldin9b-evento-privado": ["evento-privado"], "sqldin9b-mercado": ["mercado", "apartados", "dinero-alertas"],
+      "sqldin9b-patrocinio": ["patrocinio-evento", "patrocinio"], "sqldin9b-viajes-planes": ["viajes", "planes"], "sqldin9b-pasarela": ["pagos/pasarela", "disputas"] };
+    if (!existsSync(NE)) falla(G, NE, 0, "falta la lista de las consultas que ninguna prueba ejecuta (node pruebas/lib/consultas-medir.cjs <corridas anotadas…>)");
+    else {
+      const ne = readFileSync(NE, "utf8");
+      const tot = /NO ejecutó (\d+);/.exec(ne);
+      if (!tot) falla(G, NE, 0, "no se lee el total de sin ejecutar («… y NO ejecutó N;»): ¿la escribió consultas-medir.cjs?");
+      else if (Number(tot[1]) > TOPE_NO_EJECUTADAS) falla(G, NE, 0, `la medida trae ${tot[1]} consultas que ninguna prueba ejecuta y el tope es ${TOPE_NO_EJECUTADAS}: las nuevas necesitan su prueba (no se sube el tope)`);
+      else if (Number(tot[1]) < TOPE_NO_EJECUTADAS) falla(G, NE, 0, `la medida trae ${tot[1]} sin ejecutar y el tope es ${TOPE_NO_EJECUTADAS}: baja TOPE_NO_EJECUTADAS a ${tot[1]} en consultasSinComprobar`);
+      const pas = existsSync("apps/web/lib/pagos/pasarela.ts") ? readFileSync("apps/web/lib/pagos/pasarela.ts", "utf8").split("\n") : [];
+      // 28 nov (revisión de otro modelo) · La lista guarda NÚMEROS de línea de cuando se midió: comparar con las líneas de hoy de cliente() se rompía con
+      // cualquier cambio más arriba en pasarela.ts. Se perdona a pasarela.ts tantas como consultas tiene cliente() hoy (2); una más sale.
+      const ini = pas.findIndex((l) => /^ {2}async cliente\(userId: string\)/.test(l)), fin = ini < 0 ? -1 : pas.findIndex((l, i) => i > ini && /^ {2}\},?$/.test(l));
+      const nCliente = ini >= 0 && fin > ini ? pas.slice(ini, fin + 1).join("\n").split(".query").length - 1 : 0;
+      const pasL = [];
+      for (const m of ne.matchAll(/^ {2}(apps\/web\/\S+\.ts) \((\d+)\): ([\d, ]+)/gm)) {
+        if (!DINERO.includes(m[1])) continue;
+        const ls = m[3].split(",").map((x) => Number(x.trim())).filter(Boolean);
+        if (m[1] === "apps/web/lib/pagos/pasarela.ts") { pasL.push(...ls); continue; }
+        if (ls.length) falla(G, NE, 0, `${m[1]} (dinero) tiene ${ls.length} consulta(s) que ninguna prueba ejecuta (líneas ${ls.join(", ")}): escribe la prueba que la recorre (como las sqldin9b-…) y vuelve a medir`);
+      }
+      if (pasL.length > nCliente) falla(G, NE, 0, `apps/web/lib/pagos/pasarela.ts (dinero) tiene ${pasL.length} consulta(s) que ninguna prueba ejecuta y solo se perdonan las ${nCliente} de cliente() (líneas ${pasL.join(", ")}): escribe la prueba que la recorre (como las sqldin9b-…) y vuelve a medir`);
+      for (const [t, fs] of Object.entries(SQLDIN)) {
+        const f = `pruebas/e2e/${t}.cjs`, s = existsSync(f) ? readFileSync(f, "utf8") : "";
+        if (!s) { falla(G, f, 0, "falta: es la prueba que ejecuta consultas del dinero que ninguna otra ejecutaba"); continue; }
+        for (const x of fs) if (!s.includes(`cargar('apps/web/lib/${x}.ts'`)) falla(G, f, 0, `no carga el archivo REAL apps/web/lib/${x}.ts (cargar de ts-servidor.cjs): sus consultas dejarían de ejecutarse`);
+      }
+    }
   },
 
   /* 22 nov · Batería de El Compa (fase7-compa.md §7 «Calidad del modelo real»; scripts/compa/bateria/): ≥ 150 casos ES/EN con revisión determinista y

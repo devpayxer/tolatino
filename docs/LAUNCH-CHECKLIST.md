@@ -2470,6 +2470,28 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       Stripe real), `mercado.ts` 3, `apartados.ts`, `dinero-alertas.ts`, `patrocinio-evento.ts`, `rentas.ts`, `viajes.ts` 2, `patrocinio.ts` y
       `planes.ts` 1; `boletos-despues.ts` y `evt-liquidacion.ts` ya en 0. **Sigue:** esos, y la regresión entera con `PRUEBAS_ANOTAR_SQL` (ahora también
       cuenta las de Node) para una lista de una sola corrida. Ojo: la anotación es antes de ejecutar (una consulta que revienta también sale «ejecutada»).
+      _hecho (28 nov, Opus, 2ª parte):_ el resto del dinero, **23 → 0** (19 con prueba nueva y 4 que eran código muerto); solo quedan las 2 de
+      `pagos/pasarela.ts › cliente()` (corre con Stripe de verdad; en el sandbox devuelve null antes de su consulta) y las 2 de `rentas.ts` (las cierra el
+      encargo que la está cambiando). (a) Cinco e2e nuevas de Node con los archivos reales (`ts-servidor.cjs`) y la base, sin servidor ni semilla, verdes
+      tres veces seguidas: `sqldin9b-evento-privado` (32 ✓: los ajustes de fábrica con el grupo mínimo de Reservaciones; «No, gracias»; cancelar sin
+      confirmar; «No puedo» un cambio; rechazar un cambio; cancelar tarde con la captura que no sale: se suelta, nunca «se queda con el restaurante»),
+      `sqldin9b-mercado` (25 ✓: existencias contadas que bajan y «solo quedan N»; liquidar con la pasarela diciendo que no, con OTRO proceso que ya anotó la
+      primera captura y con Stripe capturando otro monto, que alerta una vez; el apartado con envío que no se cobra), `sqldin9b-patrocinio` (19 ✓: «renovar
+      solo» con su auditoría; la renovación que salió sin respuesta y al terminarla ya no cabe: un cobro, su nota, la alerta offsession_unapplied y el
+      aviso), `sqldin9b-viajes-planes` (13 ✓: la otra salida sin respuesta; la visita del plan que ya pasó, con su cita) y `sqldin9b-pasarela` (19 ✓: el
+      simulador con la misma llave otra vez, con otro monto y sin saldo, al devolver y al revertir; aceptar una disputa). (b) **Bug real (el simulador):** la
+      misma llave con OTRO monto en `devolver` y `revertirTransferencia` contestaba `amount_too_large` (un «no» definitivo: la devolución queda fallida) donde
+      Stripe contesta `idempotency_error` (sin respuesta: sigue en camino y la consulta lo resuelve); ahora contesta como Stripe (`transferir` ya lo hacía) y
+      `sqldin9b-pasarela` lo prueba (2 ✗ antes del arreglo). (c) **Código muerto quitado** (nadie lo llamaba): `evpEncendido` (la tarjeta de grupo grande
+      la decide `reservas.ts`), `misApartados` (la reemplazó `apartadosActivos`), `contarEntrada` (la reemplazó `patrocinio-entrada.ts`) y
+      `cuantasAlertasAbiertas`. (d) `pruebas/consultas-no-ejecutadas.txt` regenerada con `consultas-medir.cjs` sumando las cinco corridas del 27 nov y la de
+      hoy: **5.201 de 5.724 (91 %); 523 sin ejecutar** (232 del Super Admin; antes 565 y 243). (e) Guardián `consultasSinComprobar` ampliado: ningún archivo
+      del dinero en la lista (salvo `cliente()`; `rentas.ts` entra con su encargo), el total exactamente en su tope (523: se baja, nunca se sube) y las siete
+      `sqldin9b-…` cargando el archivo real que cubren; `alreves9usql` 20/20 (5 casos nuevos). `pruebas/reparto.json` regenerado sin rebalancear (asigna las
+      siete; ninguna otra cambió de parte). **La parte del dinero queda hecha.** Sigue abierta: la del Super Admin (232) y la regresión de una sola corrida.
+- [ ] **→ 9t** · **Cuando el cliente no contesta a «otra salida / otra hora», nadie se entera (visto por Opus el 28 nov al probar las consultas).** Viajes,
+      Noche, Fiestas, clases y visitas de propiedades cancelan en silencio al vencer la propuesta; solo las citas avisan (`cita_alt_fin`). Revisar si cada
+      uno debe avisar al cliente y al negocio (con su plantilla ES/EN) como las citas, o dejarlo escrito como regla.
 - [x] **→ 9b** · **`evt6i` inestable en la revisión completa 44947348390** («aviso evp_cancelado_negocio con SMS»): la prueba leía el aviso en cuanto
       veía la devolución en la base, y la acción lo manda después. **Hecho (21 nov, 805468e):** los tres avisos con SMS de `evt6i` y los de `evt6a` y
       `evt6d` se esperan; en la dirigida 44952826764 pasaron a la primera (75, 66 y 126 ✓).

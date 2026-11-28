@@ -754,9 +754,6 @@ export async function evpPanel(negocio: string, numero: string): Promise<EvpPane
     cxr: o.cxr,
   };
 }
-/* ¿Este restaurante recibe eventos privados? (la tarjeta de «grupo grande» de Reservar). */
-export async function evpEncendido(negocio: string): Promise<boolean> {
-  return !!(await db().query(`select 1 from private_event_settings s join businesses b on b.id = s.business_id where s.business_id = $1 and s.is_on and b.status = 'active'`, [negocio])).rowCount;
-}
+/* 28 nov · «¿Recibe eventos privados?» (la tarjeta de grupo grande de Reservar) lo dice reservas.ts › rsvPublica (evp); aquí había una copia que nadie llamaba. */
 export const areaEvpL = (k: string, es: boolean) => (es ? AREAS_EVP[k]?.es : AREAS_EVP[k]?.en) ?? k;
 export const occL = (k: string, es: boolean) => lbl(OCASIONES(es), k);

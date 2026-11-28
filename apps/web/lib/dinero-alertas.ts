@@ -200,12 +200,6 @@ export async function alertasDinero(s: Staff, abiertas: boolean, antes: string |
     aMano: mano && ult !== "resuelta_a_mano" && !reciente, otraVez: x.otraVez == null || ult === "resuelta" || ult === "resuelta_sola" ? null : Number(x.otraVez), preguntar: vivo === true, revisar: rev.get(x.id) ?? null }));
   return { filas, sigue: r.rows.length > n ? filas[filas.length - 1]!.id : null };
 }
-export async function cuantasAlertasAbiertas(s: Staff): Promise<number> {
-  return (await db().query<{ n: number }>(
-    `select count(*)::int as n from money_alerts a where ${CIUD}
-        and coalesce((select n.action from money_alert_notes n where n.alert_id = a.id order by n.at desc, n.id desc limit 1), 'reabierta') not in ('resuelta', 'resuelta_a_mano', 'resuelta_sola', 'me_hago_cargo')`, [s.cities])).rows[0]!.n;
-}
-
 /* 9t5 · «Preguntar a Stripe ahora» (Super Admin, tx:aprobar, tus ciudades, con nota): la MISMA función del barrido (resolverCobroPro, resolverCobroFuera,
    resolverTransferencia), sin esperar su turno. La consulta y la auditoría de quien la pidió van en una transacción; la llamada a la pasarela, fuera.
    El servidor decide con lo que contesta Stripe; aquí no entra ningún «sí se cobró». */

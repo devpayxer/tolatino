@@ -605,16 +605,12 @@ export async function vitrinaCategoria(p: Punto, cat: string, sub: Regla | null,
 }
 const cfgPuestos = "(select cfg_int('patrocinio_puestos'))";
 
-/* Vistas (la vitrina se mostró a alguien) y «entraron» (tocaron la tarjeta): las cuenta la base (cifras derivadas), una vez por persona (o
-   dispositivo) y día. Nunca rompen la página. */
+/* Vistas (la vitrina se mostró a alguien): las cuenta la base (cifras derivadas), una vez por persona (o dispositivo) y día. Nunca rompen la página.
+   «Entraron» (tocaron la tarjeta) va por lib/patrocinio-entrada.ts › entroPatrocinado (28 nov: la vieja contarEntrada de aquí ya no la llamaba nadie). */
 export async function contarVistas(kind: "negocio" | "evento", ids: string[], quien: string | null, dev: string | null) {
   const L = ids.filter((x) => /^\d{1,18}$/.test(x));
   if (!L.length || (!quien && !dev)) return;
   await db().query(`select patrocinio_vistas($1, $2::bigint[], $3::uuid, $4::uuid)`, [kind, L, quien, dev]).catch((e) => console.error("[patrocinio] vistas", e instanceof Error ? e.message : e));
-}
-export async function contarEntrada(kind: "negocio" | "evento", id: string, quien: string | null, dev: string | null) {
-  if (!/^\d{1,18}$/.test(String(id))) return false;
-  return (await db().query<{ ok: boolean }>(`select patrocinio_entro($1, $2::bigint, $3::uuid, $4::uuid) as ok`, [kind, id, quien, dev]).catch(() => ({ rows: [{ ok: false }] }))).rows[0]?.ok ?? false;
 }
 
 /* La tarjeta del propio negocio, tal como sale en Patrocinados (la vista previa del panel): desde el centro de su ciudad. */

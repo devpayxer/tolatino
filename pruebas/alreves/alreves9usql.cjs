@@ -5,11 +5,15 @@
 //   una columna rota dentro de una constante que se mete con `${…}` · dentro de una consulta que se pasa entera por su nombre · dentro de una función de
 //   trozos que se llama con argumentos fijos (`scope("…")`) · en la segunda rama de un ternario · en un valor de un objeto que se indexa
 //   (`F_PED[f]`: se preparan todos sus valores) · en una consulta con un comentario entre el paréntesis y el texto; y del guardián: una consulta nueva armada con push/join, un número de la lista aceptada que ya no es, y la db.ts
-//   real cargada por ts-servidor.cjs sin el entorno de pruebas (la medida de consultas dejaría de contar las pruebas de Node).
+//   real cargada por ts-servidor.cjs sin el entorno de pruebas (la medida de consultas dejaría de contar las pruebas de Node); y (28 nov) la lista de las
+//   consultas que ninguna prueba ejecuta con un archivo del dinero, con una de pagos/pasarela.ts fuera de cliente(), con más (o menos) que el tope, y una
+//   prueba sqldin9b-… que deja de cargar el archivo real que cubre.
 // Necesita la base de pruebas arriba (pruebas/servir/base.sh) para los casos de sql9u: no necesita el servidor. Los del guardián no necesitan base.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { spawnSync } = require('child_process');
 const R = ENT.RAIZ, G = 'consultasSinComprobar';
+// 28 nov · El total de la lista de hoy (el tope del guardián es ese mismo número): los casos lo leen, así no se quedan viejos cuando la lista baja.
+const NE = 'pruebas/consultas-no-ejecutadas.txt', NTOT = Number((/NO ejecutó (\d+);/.exec(fs.readFileSync(path.join(R, NE), 'utf8')) || [0, 0])[1]);
 // [archivo que se rompe, texto, texto roto, lo que tiene que decir, (opcional) archivo que lo dice, (opcional) 'guardian' si lo caza el guardián]
 const casos = [
   ['apps/web/app/admin/acciones-colas.ts', "|| ' · ' || (r.name->>'es') as nombre", "|| ' · ' || r.name->>'es' as nombre", 'operator does not exist: text ->> unknown'],
@@ -32,6 +36,13 @@ const casos = [
   // y con cargar() evaluando a pelo, el guardián lo dice.
   ['pruebas/lib/ts-servidor.cjs', "  if (esDb) process.env.TOLATINO_ENTORNO = 'pruebas';\n", '', 'la medida de consultas no cuenta las pruebas de Node', null, 'guardian'],
   ['pruebas/lib/ts-servidor.cjs', '  evaluar(archivo, js, mod, req);', "  new Function('module', 'exports', 'require', js)(mod, mod.exports, req);", 'la medida de consultas no cuenta las pruebas de Node', null, 'guardian'],
+  // 28 nov · Las consultas del dinero que ninguna prueba ejecuta, en 0 y sin crecer: un archivo del dinero en la lista, una de la pasarela fuera de
+  // cliente(), un total mayor o menor que el tope, y una sqldin9b-… que ya no carga el archivo real.
+  [NE, '## Resto, por archivo\n', '## Resto, por archivo\n  apps/web/lib/mercado.ts (1): 204\n', 'apps/web/lib/mercado.ts (dinero) tiene 1 consulta(s) que ninguna prueba ejecuta', null, 'guardian'],
+  [NE, '## Resto, por archivo\n', '## Resto, por archivo\n  apps/web/lib/pagos/pasarela.ts (1): 3\n', 'apps/web/lib/pagos/pasarela.ts (dinero) tiene 3 consulta(s) que ninguna prueba ejecuta y solo se perdonan las 2 de cliente()', null, 'guardian'],
+  [NE, `NO ejecutó ${NTOT};`, `NO ejecutó ${NTOT + 1};`, `la medida trae ${NTOT + 1} consultas que ninguna prueba ejecuta y el tope es ${NTOT}`, null, 'guardian'],
+  [NE, `NO ejecutó ${NTOT};`, `NO ejecutó ${NTOT - 1};`, `baja TOPE_NO_EJECUTADAS a ${NTOT - 1}`, null, 'guardian'],
+  ['pruebas/e2e/sqldin9b-viajes-planes.cjs', "cargar('apps/web/lib/viajes.ts'", "cargar('apps/web/lib/viajes-copia.ts'", 'no carga el archivo REAL apps/web/lib/viajes.ts', null, 'guardian'],
 ];
 const soloTextos = !!process.env.ALREVES_SOLO_TEXTOS;
 const correr = (g) => {

@@ -11,7 +11,7 @@ import { contexto } from "./eventos";
    22 nov (0211) · Con el id del toque de la bandeja (toque, un uuid) va por patrocinio_entro_toque: las MISMAS reglas (llama a patrocinio_entro) y
    además la base no cuenta dos veces el mismo toque (sponsorship_entries.tap_key, único; p. ej. un reintento que cruza la medianoche). Y un fallo
    de la base ya no se traga: sale como error, /api/toque contesta 500 y la bandeja reintenta (antes contestaba 204 y la entrada se perdía).
-   Por eso no pasa por contarEntrada (lib/patrocinio.ts), que convierte un error de la base en «no contó».
+   Por eso no pasaba por la vieja contarEntrada (lib/patrocinio.ts; quitada el 28 nov, nadie la llamaba), que convertía un error de la base en «no contó».
    Archivo propio (no dentro de lib/patrocinio.ts): lib/patrocinio.ts es de DINERO y las pruebas din9t* lo cargan con sus «stubs» contados; lo que
    solo necesita el «entraron» (cuenta, eventos) no entra ahí. */
 export async function entroPatrocinado(kind: "negocio" | "evento", id: string, toque: string | null = null): Promise<void> {

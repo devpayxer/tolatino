@@ -7,6 +7,12 @@ import { ErrorStripe, stripe, stripeArchivo } from "./stripe";
 /* 8i · Una cuenta de revisión de Apple o Google no paga con tarjeta: cada cobro con la tarjeta de la persona lo pregunta primero (guardián revisionAcotada). */
 const pagoRevision = async () => (await import("../tiendas/revision")).pagoBloqueado();
 class SinSaldoSim extends Error {}
+/* 28 nov · Devolver y revertir en el simulador contestan como Stripe con la misma Idempotency-Key: la misma llave con el mismo monto, lo mismo (el mismo id,
+   sin mover otra vez el saldo); la misma llave con OTRO monto, idempotency_error (como transferir), nunca amount_too_large: las devoluciones toman
+   amount_too_large como un «no» definitivo (sin saldo: fallida) e idempotency_error como «sin respuesta» (cobros › SIN_RESPUESTA: sigue en camino y la
+   consulta lo resuelve), que es lo que pasaría en producción; las reversiones lo anotan como su último error. Antes el simulador decía «sin saldo» ahí.
+   Prueba: sqldin9b-pasarela. */
+const simRespuesta = (r: "ok" | "otra_llave" | "sin_saldo", id: string) => (r === "ok" ? { ok: true, id } : { ok: false, codigo: r === "otra_llave" ? "idempotency_error" : "amount_too_large" });
 
 /* La pasarela de pagos: Stripe de verdad (con STRIPE_SECRET_KEY) o el simulador propio del sandbox (sin clave). El resto
    de la app no sabe cuál corre. CANDADO: en producción el simulador no existe; sin clave, la tarjeta queda apagada. */
@@ -244,12 +250,12 @@ export const pasarela = {
       if (meta?.tl_intencion && process.env.TOLATINO_SIM_DEVOLVER === "caida") return { ok: false, codigo: "red" };
       const r = await tx(async (c) => {
         const nueva = (await c.query(`insert into sim_transfer_reversals (id, transfer_id, amount_cents, metadata) values ($1, $2, $3, $4::jsonb) on conflict (id) do nothing returning id`, [id, transfer, centavos, JSON.stringify(meta ?? {})])).rowCount;
-        if (!nueva) return (await c.query<{ amount_cents: number }>(`select amount_cents from sim_transfer_reversals where id = $1`, [id])).rows[0]?.amount_cents === centavos;
+        if (!nueva) return (await c.query<{ amount_cents: number }>(`select amount_cents from sim_transfer_reversals where id = $1`, [id])).rows[0]?.amount_cents === centavos ? "ok" : "otra_llave";
         const u = await c.query(`update sim_transfers set reversed_cents = reversed_cents + $2 where id = $1 and reversed_cents + $2 <= amount_cents`, [transfer, centavos]);
         if (!u.rowCount) throw new SinSaldoSim();
-        return true;
-      }).catch((e) => { if (e instanceof SinSaldoSim) return false; throw e; });
-      return r ? { ok: true, id } : { ok: false, codigo: "amount_too_large" };
+        return "ok";
+      }).catch((e) => { if (e instanceof SinSaldoSim) return "sin_saldo" as const; throw e; });
+      return simRespuesta(r, id);
     }
     try {
       const r = await stripe<{ id: string }>("POST", `/v1/transfers/${encodeURIComponent(transfer)}/reversals`, { amount: centavos, ...(meta ? { metadata: meta } : {}) }, { idem });
@@ -395,12 +401,12 @@ export const pasarela = {
       // Primero la llave (on conflict: la segunda vez, o dos a la vez, no devuelve otra vez); luego el saldo, con su tope.
       const r = await tx(async (c) => {
         const nueva = (await c.query(`insert into sim_refunds (id, payment_intent, amount_cents, metadata) values ($1, $2, $3, $4::jsonb) on conflict (id) do nothing returning id`, [id, pi, centavos, JSON.stringify(o.meta ?? {})])).rowCount;
-        if (!nueva) return (await c.query<{ amount_cents: number }>(`select amount_cents from sim_refunds where id = $1`, [id])).rows[0]?.amount_cents === centavos;
+        if (!nueva) return (await c.query<{ amount_cents: number }>(`select amount_cents from sim_refunds where id = $1`, [id])).rows[0]?.amount_cents === centavos ? "ok" : "otra_llave";
         const u = await c.query(`update sim_intents set refunded_cents = refunded_cents + $2 where id = $1 and status = 'succeeded' and refunded_cents + $2 <= captured_cents`, [pi, centavos]);
         if (!u.rowCount) throw new SinSaldoSim();
-        return true;
-      }).catch((e) => { if (e instanceof SinSaldoSim) return false; throw e; });
-      return r ? { ok: true, id } : { ok: false, codigo: "amount_too_large" };
+        return "ok";
+      }).catch((e) => { if (e instanceof SinSaldoSim) return "sin_saldo" as const; throw e; });
+      return simRespuesta(r, id);
     }
     try {
       const m = o.meta ? { metadata: o.meta } : {};

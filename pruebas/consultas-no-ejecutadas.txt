@@ -1,15 +1,15 @@
-consultas anotadas por la corrida: 6273 textos distintos (de 5 archivo(s))
-sitios .query del código: 6276 · de datos con texto conocido: 5729 · armados en ejecución (sin texto fijo): 220 · que no son de datos o de Postgres: 327
-de los 5729 sitios con texto conocido, la corrida ejecutó 5164 (90 %) y NO ejecutó 565; por textos: 5212 de 5880
-NO ejecutadas del Super Admin: 243 de 565
+consultas anotadas por la corrida: 6430 textos distintos (de 6 archivo(s))
+sitios .query del código: 6271 · de datos con texto conocido: 5724 · armados en ejecución (sin texto fijo): 220 · que no son de datos o de Postgres: 327
+de los 5724 sitios con texto conocido, la corrida ejecutó 5201 (91 %) y NO ejecutó 523; por textos: 5249 de 5875
+NO ejecutadas del Super Admin: 232 de 523
 
 ## Super Admin (consulta no ejecutada → pantallas del admin que la usan)
   apps/web/app/admin/acciones-analitica.ts (2): 51, 57  →  admin
   apps/web/app/admin/acciones-catalogo.ts (2): 486, 490  →  admin
-  apps/web/app/admin/acciones-colas.ts (20): 57, 82, 110, 126, 129, 147, 148, 161, 232, 269, 271, 272, 417, 423, 456, 458, 598, 628, 635, 893  →  admin
+  apps/web/app/admin/acciones-colas.ts (19): 57, 82, 110, 126, 129, 147, 148, 161, 232, 271, 272, 417, 423, 456, 458, 598, 628, 635, 893  →  admin
   apps/web/app/admin/acciones-confianza.ts (8): 68, 214, 217, 235, 237, 238, 253, 256  →  admin
   apps/web/app/admin/acciones-gam.ts (9): 87, 90, 171, 174, 193, 196, 273, 295, 334  →  admin
-  apps/web/app/admin/acciones-negocios.ts (24): 114, 142, 145, 146, 147, 148, 168, 170, 174, 175, 178, 179, 192, 194, 197, 200, 210, 222, 268, 503, 507, 519, 536, 564  →  admin
+  apps/web/app/admin/acciones-negocios.ts (23): 114, 142, 145, 146, 147, 148, 168, 170, 174, 175, 178, 179, 194, 197, 200, 210, 222, 268, 503, 507, 519, 536, 564  →  admin
   apps/web/app/admin/acciones-notif.ts (2): 52, 60  →  admin
   apps/web/app/admin/acciones-usuarios.ts (4): 98, 124, 135, 151  →  admin
   apps/web/app/admin/acciones.ts (6): 28, 46, 48, 50, 51, 90  →  admin
@@ -28,31 +28,29 @@ NO ejecutadas del Super Admin: 243 de 565
   apps/web/lib/canales/plantillas-wa.ts (3): 43, 61, 64  →  admin
   apps/web/lib/ciudades/apertura.ts (18): 214, 301, 322, 325, 341, 343, 364, 371, 378, 396, 400, 403, 410, 411, 412, 423, 427, 428  →  admin
   apps/web/lib/cms-admin.ts (2): 305, 307  →  admin, admin/textos/cadenas, admin/textos/home, admin/textos/rotulos
-  apps/web/lib/compa/canales.ts (8): 130, 132, 137, 171, 311, 318, 328, 334  →  admin, admin/compa
+  apps/web/lib/compa/canales.ts (8): 130, 132, 137, 171, 316, 323, 333, 339  →  admin, admin/compa
   apps/web/lib/correo/index.ts (5): 31, 37, 38, 45, 46  →  admin/crecimiento/volante/[code]
   apps/web/lib/crecimiento/admin.ts (4): 28, 32, 83, 85  →  admin, admin/crecimiento
   apps/web/lib/crecimiento/destacados.ts (1): 46  →  admin, admin/crecimiento
   apps/web/lib/crecimiento/enlaces.ts (1): 49  →  admin, admin/crecimiento
-  apps/web/lib/dinero-alertas.ts (2): 79, 204  →  admin
   apps/web/lib/equipo/dos-pasos.ts (1): 129  →  admin/dos-pasos, admin/seguridad, admin/sistema
   apps/web/lib/evt-admin.ts (8): 278, 280, 282, 298, 313, 314, 322, 324  →  admin, admin/eventos/catalogo
   apps/web/lib/evt-cambios.ts (2): 85, 255  →  admin
   apps/web/lib/evt-revision.ts (4): 56, 85, 110, 111  →  admin, admin/eventos, admin/eventos/[id]
   apps/web/lib/evt.ts (3): 246, 247, 289  →  admin
   apps/web/lib/oficial.ts (2): 96, 102  →  admin, admin/contenido
-  apps/web/lib/pagos/pasarela.ts (5): 240, 375, 427, 450, 453  →  admin/transacciones
-  apps/web/lib/patrocinio.ts (1): 617  →  admin
+  apps/web/lib/pagos/pasarela.ts (2): 456, 459  →  admin/transacciones
   apps/web/lib/puntos.ts (2): 170, 179  →  admin
   apps/web/lib/push/admin.ts (2): 86, 93  →  admin
   apps/web/lib/repartidor-admin.ts (7): 80, 85, 157, 163, 195, 198, 199  →  admin, admin/repartidores, admin/repartidores/[id]
-  apps/web/lib/sistema/despliegues.ts (8): 32, 36, 40, 67, 88, 98, 108, 114  →  admin, admin/sistema/despliegues
-  apps/web/lib/sistema/salud.ts (1): 215  →  admin, admin/sistema/salud
-  apps/web/lib/sistema/vidrio.ts (4): 21, 30, 34, 39  →  admin
+  apps/web/lib/sistema/despliegues.ts (8): 32, 36, 40, 67, 91, 101, 111, 117  →  admin, admin/sistema/despliegues
+  apps/web/lib/sistema/salud.ts (1): 224  →  admin, admin/sistema/salud
+  apps/web/lib/sistema/vidrio.ts (1): 34  →  admin
   apps/web/lib/sms/index.ts (3): 45, 54, 129  →  admin
   apps/web/lib/soporte-equipo.ts (20): 160, 188, 189, 197, 368, 421, 422, 441, 442, 443, 474, 476, 478, 480, 482, 496, 523, 525, 526, 538  →  admin, admin/soporte
   apps/web/lib/tiendas/fichas.ts (4): 86, 89, 153, 179  →  admin
   apps/web/lib/tiendas/llavero.ts (1): 300  →  admin, admin/sistema/integraciones
-  apps/web/lib/tiendas/tuberia.ts (5): 218, 249, 272, 306, 312  →  admin
+  apps/web/lib/tiendas/tuberia.ts (5): 218, 249, 277, 312, 318  →  admin
 
 ## Resto, por archivo
   apps/web/app/(app)/acciones.ts (3): 48, 69, 107
@@ -64,7 +62,7 @@ NO ejecutadas del Super Admin: 243 de 565
   apps/web/app/api/buscar/route.ts (1): 79
   apps/web/app/api/negocio/video/route.ts (1): 66
   apps/web/app/api/salud/route.ts (2): 26, 41
-  apps/web/app/api/stripe/webhook/route.ts (4): 33, 63, 67, 75
+  apps/web/app/api/stripe/webhook/route.ts (3): 33, 63, 75
   apps/web/app/panel/acciones-equipo.ts (6): 85, 88, 111, 125, 183, 184
   apps/web/app/panel/acciones-fiesta.ts (1): 34
   apps/web/app/panel/acciones-mensajes.ts (1): 46
@@ -74,10 +72,9 @@ NO ejecutadas del Super Admin: 243 de 565
   apps/web/app/panel/acciones-reservas.ts (1): 54
   apps/web/app/panel/acciones-retail.ts (1): 123
   apps/web/app/panel/acciones-servicios.ts (6): 67, 124, 131, 138, 151, 176
-  apps/web/app/panel/acciones.ts (19): 33, 74, 76, 111, 114, 135, 196, 200, 203, 227, 229, 284, 285, 302, 303, 366, 368, 370, 372
-  apps/web/lib/apartados.ts (2): 287, 583
+  apps/web/app/panel/acciones.ts (16): 33, 114, 135, 196, 200, 203, 227, 229, 284, 285, 302, 303, 366, 368, 370, 372
   apps/web/lib/autos.ts (8): 133, 135, 190, 248, 284, 289, 363, 365
-  apps/web/lib/ayuda-cita.ts (4): 255, 447, 500, 502
+  apps/web/lib/ayuda-cita.ts (1): 255
   apps/web/lib/ayuda-estafa.ts (4): 30, 34, 65, 82
   apps/web/lib/canales/barrido.ts (3): 61, 119, 120
   apps/web/lib/canales/estados.ts (1): 17
@@ -92,37 +89,33 @@ NO ejecutadas del Super Admin: 243 de 565
   apps/web/lib/comunidad-hilo.ts (5): 254, 284, 287, 346, 348
   apps/web/lib/crecimiento/lista.ts (2): 84, 87
   apps/web/lib/cupones.ts (6): 123, 179, 183, 184, 201, 206
-  apps/web/lib/datos/purgar.ts (2): 108, 195
+  apps/web/lib/datos/purgar.ts (2): 114, 201
   apps/web/lib/direcciones.ts (1): 132
   apps/web/lib/edu.ts (3): 136, 162, 164
   apps/web/lib/espera.ts (2): 124, 127
-  apps/web/lib/estimados.ts (5): 130, 173, 282, 351, 376
-  apps/web/lib/evento-privado.ts (7): 55, 289, 445, 481, 500, 543, 759
+  apps/web/lib/estimados.ts (4): 130, 173, 282, 351
   apps/web/lib/fe.ts (1): 103
-  apps/web/lib/fiestas-reservas.ts (5): 86, 88, 149, 153, 470
+  apps/web/lib/fiestas-reservas.ts (4): 86, 88, 149, 153
   apps/web/lib/fotos-catalogo.ts (1): 21
-  apps/web/lib/fotos-privadas.ts (1): 200
-  apps/web/lib/fotos-variantes.ts (1): 151
+  apps/web/lib/fotos-privadas.ts (1): 195
+  apps/web/lib/fotos-variantes.ts (1): 160
   apps/web/lib/inmuebles.ts (3): 321, 325, 328
-  apps/web/lib/inscripciones.ts (16): 108, 367, 613, 618, 628, 632, 634, 657, 665, 679, 711, 725, 733, 741, 753, 859
+  apps/web/lib/inscripciones.ts (15): 108, 367, 613, 618, 628, 632, 634, 657, 665, 679, 725, 733, 741, 753, 859
   apps/web/lib/jobs.ts (3): 210, 296, 302
-  apps/web/lib/layaway.ts (2): 161, 286
+  apps/web/lib/layaway.ts (1): 286
   apps/web/lib/llaves/llaves.ts (2): 415, 418
   apps/web/lib/mensajes.ts (5): 81, 264, 319, 322, 365
-  apps/web/lib/mercado.ts (3): 204, 270, 280
   apps/web/lib/mesa-espera.ts (2): 142, 153
   apps/web/lib/negocio-cambios.ts (17): 13, 18, 20, 24, 30, 37, 39, 41, 47, 50, 55, 57, 66, 69, 71, 81, 84
   apps/web/lib/ninos-privado.ts (1): 71
-  apps/web/lib/noche-reservas.ts (2): 489, 511
+  apps/web/lib/noche-reservas.ts (1): 511
   apps/web/lib/novedades.ts (10): 115, 132, 133, 153, 155, 156, 310, 354, 363, 441
   apps/web/lib/oficios-publico.ts (4): 103, 105, 151, 152
   apps/web/lib/pagos-banco.ts (2): 42, 53
   apps/web/lib/pases/pases.ts (3): 274, 297, 300
-  apps/web/lib/patrocinio-evento.ts (2): 218, 477
   apps/web/lib/pedidos.ts (3): 277, 280, 281
   apps/web/lib/pedir.ts (1): 573
-  apps/web/lib/perfil.ts (5): 47, 48, 53, 56, 57
-  apps/web/lib/planes.ts (1): 210
+  apps/web/lib/perfil.ts (4): 47, 48, 56, 57
   apps/web/lib/puerta-equipo.ts (9): 87, 89, 91, 93, 103, 107, 136, 183, 197
   apps/web/lib/puerta-paquete.ts (1): 117
   apps/web/lib/puerta-sync.ts (2): 66, 67
@@ -131,10 +124,10 @@ NO ejecutadas del Super Admin: 243 de 565
   apps/web/lib/reclamos.ts (1): 43
   apps/web/lib/renovar-retencion.ts (1): 59
   apps/web/lib/rentas.ts (2): 213, 449
-  apps/web/lib/repartidor-barrido.ts (1): 22
+  apps/web/lib/repartidor-barrido.ts (2): 26, 40
   apps/web/lib/repartidor-ofertas.ts (3): 62, 117, 118
   apps/web/lib/repartidor.ts (8): 67, 70, 72, 93, 94, 267, 334, 336
-  apps/web/lib/resenas.ts (3): 423, 571, 598
+  apps/web/lib/resenas.ts (2): 423, 571
   apps/web/lib/reservas.ts (3): 491, 492, 549
   apps/web/lib/seo/mapa.ts (4): 22, 39, 42, 58
   apps/web/lib/sistema/alertas.ts (3): 22, 28, 40
@@ -146,19 +139,18 @@ NO ejecutadas del Super Admin: 243 de 565
   apps/web/lib/total-escrito.ts (1): 143
   apps/web/lib/transporte.ts (2): 62, 129
   apps/web/lib/vecinos.ts (1): 109
-  apps/web/lib/viajes.ts (2): 557, 557
-  apps/web/lib/visitas-inm.ts (4): 405, 486, 518, 542
+  apps/web/lib/visitas-inm.ts (3): 405, 486, 542
   apps/web/lib/visitas.ts (2): 182, 189
   apps/web/lib/vivienda-cola.ts (1): 25
 
 ## Armadas en ejecución (no se cuentan por texto), por grupo
   tabla, columna u orden elegidos en tiempo de ejecución (variable local o de un objeto que viene de fuera): 30
-    apps/web/app/admin/acciones-colas.ts:179 apps/web/app/admin/acciones-contenido.ts:43 apps/web/app/admin/acciones-contenido.ts:54 apps/web/app/admin/acciones-negocios.ts:333 apps/web/app/panel/acciones-menu.ts:246 apps/web/lib/admin-analitica.ts:63 apps/web/lib/admin-colas.ts:440 apps/web/lib/avisos.ts:32 apps/web/lib/avisos.ts:34 apps/web/lib/citas-flujo.ts:175 apps/web/lib/citas.ts:354 apps/web/lib/cms-admin.ts:207 apps/web/lib/consulta-pasarela.ts:115 apps/web/lib/crecimiento/campanas.ts:56 apps/web/lib/crecimiento/campanas.ts:89 apps/web/lib/crecimiento/campanas.ts:147 apps/web/lib/datos/exportar.ts:122 apps/web/lib/datos/exportar.ts:132 apps/web/lib/datos/exportar.ts:141 apps/web/lib/datos/exportar.ts:143 apps/web/lib/datos/purgar.ts:91 apps/web/lib/datos/purgar.ts:93 apps/web/lib/evt-admin.ts:114 apps/web/lib/evt-admin.ts:123 apps/web/lib/evt-avisos.ts:42 apps/web/lib/ninos-privado.ts:54 apps/web/lib/ninos.ts:52 apps/web/lib/reporte-diario.ts:66 apps/web/lib/tabla.ts:53 apps/web/lib/temas.ts:34
+    apps/web/app/admin/acciones-colas.ts:179 apps/web/app/admin/acciones-contenido.ts:43 apps/web/app/admin/acciones-contenido.ts:54 apps/web/app/admin/acciones-negocios.ts:333 apps/web/app/panel/acciones-menu.ts:246 apps/web/lib/admin-analitica.ts:63 apps/web/lib/admin-colas.ts:440 apps/web/lib/avisos.ts:32 apps/web/lib/avisos.ts:34 apps/web/lib/citas-flujo.ts:175 apps/web/lib/citas.ts:354 apps/web/lib/cms-admin.ts:207 apps/web/lib/consulta-pasarela.ts:115 apps/web/lib/crecimiento/campanas.ts:56 apps/web/lib/crecimiento/campanas.ts:89 apps/web/lib/crecimiento/campanas.ts:147 apps/web/lib/datos/exportar.ts:122 apps/web/lib/datos/exportar.ts:132 apps/web/lib/datos/exportar.ts:141 apps/web/lib/datos/exportar.ts:143 apps/web/lib/datos/purgar.ts:97 apps/web/lib/datos/purgar.ts:99 apps/web/lib/evt-admin.ts:114 apps/web/lib/evt-admin.ts:123 apps/web/lib/evt-avisos.ts:42 apps/web/lib/ninos-privado.ts:54 apps/web/lib/ninos.ts:52 apps/web/lib/reporte-diario.ts:66 apps/web/lib/tabla.ts:53 apps/web/lib/temas.ts:34
   condiciones o columnas que el código junta una a una (push/join) según los filtros: 123
-    apps/web/app/panel/acciones-menu.ts:210 apps/web/app/panel/acciones-menu.ts:211 apps/web/app/panel/acciones-menu.ts:214 apps/web/app/panel/acciones-menu.ts:219 apps/web/app/panel/acciones-menu.ts:221 apps/web/app/panel/acciones-menu.ts:222 apps/web/app/panel/acciones-menu.ts:223 apps/web/app/panel/acciones-menu.ts:225 apps/web/app/panel/acciones-oficios.ts:88 apps/web/app/panel/acciones-salud-pro.ts:98 apps/web/lib/admin-contenido.ts:122 apps/web/lib/admin-negocios-dup.ts:36 apps/web/lib/admin-negocios-dup.ts:72 apps/web/lib/admin-negocios.ts:98 apps/web/lib/admin-negocios.ts:109 apps/web/lib/admin-negocios.ts:111 apps/web/lib/admin-negocios.ts:126 apps/web/lib/admin-tx.ts:69 apps/web/lib/admin-tx.ts:112 apps/web/lib/admin-tx.ts:132 apps/web/lib/admin-usuarios.ts:70 apps/web/lib/admin-usuarios.ts:83 apps/web/lib/apartados.ts:238 apps/web/lib/apartados.ts:524 apps/web/lib/apelaciones.ts:41 apps/web/lib/apelaciones.ts:44 apps/web/lib/autos.ts:310 apps/web/lib/beta.ts:94 apps/web/lib/boletos-admin.ts:41 apps/web/lib/buscar.ts:149 apps/web/lib/citas-flujo.ts:38 apps/web/lib/citas-panel.ts:51 apps/web/lib/comunidad-hilo.ts:125 apps/web/lib/comunidad-hilo.ts:165 apps/web/lib/comunidad-portada.ts:66 apps/web/lib/comunidad.ts:162 apps/web/lib/comunidad.ts:197 apps/web/lib/cupones.ts:32 apps/web/lib/datos/fusionar.ts:38 apps/web/lib/datos/purgar.ts:47 apps/web/lib/deporte.ts:51 apps/web/lib/envios.ts:25 apps/web/lib/evento-privado.ts:193 apps/web/lib/evento-privado.ts:614 apps/web/lib/evento-privado.ts:622 apps/web/lib/evento-privado.ts:632 apps/web/lib/evento-privado.ts:638 apps/web/lib/evento-privado.ts:643 apps/web/lib/evento-privado.ts:650 apps/web/lib/evt-publico.ts:129 apps/web/lib/evt-publico.ts:142 apps/web/lib/evt-publico.ts:155 apps/web/lib/evt-publico.ts:265 apps/web/lib/evt-publico.ts:272 apps/web/lib/evt-revision.ts:146 apps/web/lib/evt-revision.ts:152 apps/web/lib/evt.ts:169 apps/web/lib/fe.ts:65 apps/web/lib/ficha.ts:54 apps/web/lib/ficha.ts:228 apps/web/lib/fiestas-reservas.ts:216 apps/web/lib/fiestas-reservas.ts:458 apps/web/lib/fiestas-reservas.ts:466 apps/web/lib/fiestas-reservas.ts:476 apps/web/lib/fiestas-reservas.ts:483 apps/web/lib/inmuebles.ts:307 apps/web/lib/inscripciones.ts:323 apps/web/lib/inscripciones.ts:701 apps/web/lib/inscripciones.ts:722 apps/web/lib/inscripciones.ts:729 apps/web/lib/inscripciones.ts:737 apps/web/lib/inscripciones.ts:745 apps/web/lib/jobs.ts:245 apps/web/lib/layaway.ts:83 apps/web/lib/layaway.ts:266 apps/web/lib/mapa.ts:41 apps/web/lib/mercado.ts:304 apps/web/lib/mercado.ts:312 apps/web/lib/mercado.ts:315 apps/web/lib/noche-reservas.ts:216 apps/web/lib/noche-reservas.ts:477 apps/web/lib/noche-reservas.ts:485 apps/web/lib/noche-reservas.ts:495 apps/web/lib/noche.ts:139 apps/web/lib/novedades.ts:421 apps/web/lib/pedidos.ts:39 apps/web/lib/pedidos.ts:42 apps/web/lib/pedidos.ts:124 apps/web/lib/pedidos.ts:253 apps/web/lib/puerta.ts:309 apps/web/lib/rentas.ts:684 apps/web/lib/rentas.ts:701 apps/web/lib/rentas.ts:712 apps/web/lib/rentas.ts:719 apps/web/lib/rentas.ts:733 apps/web/lib/resenas.ts:146 apps/web/lib/resenas.ts:167 apps/web/lib/resenas.ts:179 apps/web/lib/resenas.ts:198 apps/web/lib/resenas.ts:214 apps/web/lib/resenas.ts:224 apps/web/lib/resenas.ts:239 apps/web/lib/resenas.ts:254 apps/web/lib/resenas.ts:317 apps/web/lib/resenas.ts:322 apps/web/lib/resenas.ts:324 apps/web/lib/resenas.ts:711 apps/web/lib/reservas.ts:388 apps/web/lib/reservas.ts:396 apps/web/lib/reservas.ts:399 apps/web/lib/reservas.ts:607 apps/web/lib/reservas.ts:628 apps/web/lib/ruta.ts:133 apps/web/lib/tabla.ts:45 apps/web/lib/total-escrito.ts:29 apps/web/lib/transporte.ts:82 apps/web/lib/vecinos.ts:85 apps/web/lib/viajes.ts:242 apps/web/lib/viajes.ts:546 apps/web/lib/visitas-inm.ts:258 apps/web/lib/visitas-inm.ts:506 apps/web/lib/visitas-inm.ts:528 apps/web/lib/visitas-inm.ts:538
+    apps/web/app/panel/acciones-menu.ts:210 apps/web/app/panel/acciones-menu.ts:211 apps/web/app/panel/acciones-menu.ts:214 apps/web/app/panel/acciones-menu.ts:219 apps/web/app/panel/acciones-menu.ts:221 apps/web/app/panel/acciones-menu.ts:222 apps/web/app/panel/acciones-menu.ts:223 apps/web/app/panel/acciones-menu.ts:225 apps/web/app/panel/acciones-oficios.ts:88 apps/web/app/panel/acciones-salud-pro.ts:98 apps/web/lib/admin-contenido.ts:122 apps/web/lib/admin-negocios-dup.ts:36 apps/web/lib/admin-negocios-dup.ts:72 apps/web/lib/admin-negocios.ts:98 apps/web/lib/admin-negocios.ts:109 apps/web/lib/admin-negocios.ts:111 apps/web/lib/admin-negocios.ts:126 apps/web/lib/admin-tx.ts:69 apps/web/lib/admin-tx.ts:112 apps/web/lib/admin-tx.ts:132 apps/web/lib/admin-usuarios.ts:70 apps/web/lib/admin-usuarios.ts:83 apps/web/lib/apartados.ts:238 apps/web/lib/apartados.ts:518 apps/web/lib/apelaciones.ts:41 apps/web/lib/apelaciones.ts:44 apps/web/lib/autos.ts:310 apps/web/lib/beta.ts:94 apps/web/lib/boletos-admin.ts:41 apps/web/lib/buscar.ts:149 apps/web/lib/citas-flujo.ts:38 apps/web/lib/citas-panel.ts:51 apps/web/lib/comunidad-hilo.ts:125 apps/web/lib/comunidad-hilo.ts:165 apps/web/lib/comunidad-portada.ts:66 apps/web/lib/comunidad.ts:162 apps/web/lib/comunidad.ts:197 apps/web/lib/cupones.ts:32 apps/web/lib/datos/fusionar.ts:38 apps/web/lib/datos/purgar.ts:53 apps/web/lib/deporte.ts:51 apps/web/lib/envios.ts:25 apps/web/lib/evento-privado.ts:193 apps/web/lib/evento-privado.ts:614 apps/web/lib/evento-privado.ts:622 apps/web/lib/evento-privado.ts:632 apps/web/lib/evento-privado.ts:638 apps/web/lib/evento-privado.ts:643 apps/web/lib/evento-privado.ts:650 apps/web/lib/evt-publico.ts:129 apps/web/lib/evt-publico.ts:142 apps/web/lib/evt-publico.ts:155 apps/web/lib/evt-publico.ts:265 apps/web/lib/evt-publico.ts:272 apps/web/lib/evt-revision.ts:146 apps/web/lib/evt-revision.ts:152 apps/web/lib/evt.ts:169 apps/web/lib/fe.ts:65 apps/web/lib/ficha.ts:54 apps/web/lib/ficha.ts:228 apps/web/lib/fiestas-reservas.ts:216 apps/web/lib/fiestas-reservas.ts:458 apps/web/lib/fiestas-reservas.ts:466 apps/web/lib/fiestas-reservas.ts:476 apps/web/lib/fiestas-reservas.ts:483 apps/web/lib/inmuebles.ts:307 apps/web/lib/inscripciones.ts:323 apps/web/lib/inscripciones.ts:701 apps/web/lib/inscripciones.ts:722 apps/web/lib/inscripciones.ts:729 apps/web/lib/inscripciones.ts:737 apps/web/lib/inscripciones.ts:745 apps/web/lib/jobs.ts:245 apps/web/lib/layaway.ts:83 apps/web/lib/layaway.ts:266 apps/web/lib/mapa.ts:41 apps/web/lib/mercado.ts:304 apps/web/lib/mercado.ts:312 apps/web/lib/mercado.ts:315 apps/web/lib/noche-reservas.ts:216 apps/web/lib/noche-reservas.ts:477 apps/web/lib/noche-reservas.ts:485 apps/web/lib/noche-reservas.ts:495 apps/web/lib/noche.ts:139 apps/web/lib/novedades.ts:421 apps/web/lib/pedidos.ts:39 apps/web/lib/pedidos.ts:42 apps/web/lib/pedidos.ts:124 apps/web/lib/pedidos.ts:253 apps/web/lib/puerta.ts:309 apps/web/lib/rentas.ts:684 apps/web/lib/rentas.ts:701 apps/web/lib/rentas.ts:712 apps/web/lib/rentas.ts:719 apps/web/lib/rentas.ts:733 apps/web/lib/resenas.ts:146 apps/web/lib/resenas.ts:167 apps/web/lib/resenas.ts:179 apps/web/lib/resenas.ts:198 apps/web/lib/resenas.ts:214 apps/web/lib/resenas.ts:224 apps/web/lib/resenas.ts:239 apps/web/lib/resenas.ts:254 apps/web/lib/resenas.ts:317 apps/web/lib/resenas.ts:322 apps/web/lib/resenas.ts:324 apps/web/lib/resenas.ts:711 apps/web/lib/reservas.ts:388 apps/web/lib/reservas.ts:396 apps/web/lib/reservas.ts:399 apps/web/lib/reservas.ts:607 apps/web/lib/reservas.ts:628 apps/web/lib/ruta.ts:133 apps/web/lib/tabla.ts:45 apps/web/lib/total-escrito.ts:29 apps/web/lib/transporte.ts:82 apps/web/lib/vecinos.ts:85 apps/web/lib/viajes.ts:242 apps/web/lib/viajes.ts:546 apps/web/lib/visitas-inm.ts:258 apps/web/lib/visitas-inm.ts:506 apps/web/lib/visitas-inm.ts:528 apps/web/lib/visitas-inm.ts:538
   trozo armado con una función que depende de datos del momento (centro, punto, radio, límites) o de importaciones dinámicas: 59
-    apps/web/lib/admin-analitica.ts:185 apps/web/lib/admin-colas.ts:43 apps/web/lib/admin-colas.ts:50 apps/web/lib/admin-colas.ts:57 apps/web/lib/admin-colas.ts:191 apps/web/lib/admin-confianza.ts:82 apps/web/lib/apelaciones.ts:123 apps/web/lib/apelaciones.ts:142 apps/web/lib/boletos.ts:705 apps/web/lib/buscar-platos.ts:99 apps/web/lib/categoria.ts:206 apps/web/lib/categoria.ts:227 apps/web/lib/categoria.ts:245 apps/web/lib/categoria.ts:256 apps/web/lib/categoria.ts:264 apps/web/lib/ciudad.ts:19 apps/web/lib/ciudad.ts:25 apps/web/lib/ciudades/aviso.ts:24 apps/web/lib/comunidad.ts:200 apps/web/lib/comunidad.ts:203 apps/web/lib/comunidad.ts:219 apps/web/lib/comunidad.ts:369 apps/web/lib/datos/exportar.ts:126 apps/web/lib/datos/purgar.ts:172 apps/web/lib/directorio.ts:32 apps/web/lib/estimados.ts:405 apps/web/lib/evt-cambios.ts:49 apps/web/lib/evt-cambios.ts:78 apps/web/lib/evt-cambios.ts:104 apps/web/lib/evt-cambios.ts:230 apps/web/lib/evt-publico.ts:152 apps/web/lib/evt-publico.ts:171 apps/web/lib/evt-publico.ts:186 apps/web/lib/evt-publico.ts:195 apps/web/lib/evt-publico.ts:213 apps/web/lib/evt-publico.ts:225 apps/web/lib/evt-publico.ts:239 apps/web/lib/evt-publico.ts:247 apps/web/lib/evt-publico.ts:254 apps/web/lib/evt-publico.ts:279 apps/web/lib/evt-publico.ts:320 apps/web/lib/evt-publico.ts:391 apps/web/lib/hoy.ts:22 apps/web/lib/inscripciones.ts:238 apps/web/lib/mapa.ts:70 apps/web/lib/mensajes-vecinos.ts:52 apps/web/lib/noche-vigilar.ts:18 apps/web/lib/patrocinio-evento.ts:232 apps/web/lib/patrocinio-evento.ts:315 apps/web/lib/patrocinio-evento.ts:321 apps/web/lib/patrocinio-evento.ts:425 apps/web/lib/patrocinio-evento.ts:465 apps/web/lib/patrocinio-evento.ts:531 apps/web/lib/patrocinio.ts:578 apps/web/lib/patrocinio.ts:596 apps/web/lib/patrocinio.ts:626 apps/web/lib/patrocinio.ts:861 apps/web/lib/resenas.ts:725 scripts/carga/lib/comun.mjs:93
+    apps/web/lib/admin-analitica.ts:185 apps/web/lib/admin-colas.ts:43 apps/web/lib/admin-colas.ts:50 apps/web/lib/admin-colas.ts:57 apps/web/lib/admin-colas.ts:191 apps/web/lib/admin-confianza.ts:82 apps/web/lib/apelaciones.ts:123 apps/web/lib/apelaciones.ts:142 apps/web/lib/boletos.ts:705 apps/web/lib/buscar-platos.ts:99 apps/web/lib/categoria.ts:206 apps/web/lib/categoria.ts:227 apps/web/lib/categoria.ts:245 apps/web/lib/categoria.ts:256 apps/web/lib/categoria.ts:264 apps/web/lib/ciudad.ts:19 apps/web/lib/ciudad.ts:25 apps/web/lib/ciudades/aviso.ts:24 apps/web/lib/comunidad.ts:200 apps/web/lib/comunidad.ts:203 apps/web/lib/comunidad.ts:219 apps/web/lib/comunidad.ts:369 apps/web/lib/datos/exportar.ts:126 apps/web/lib/datos/purgar.ts:178 apps/web/lib/directorio.ts:32 apps/web/lib/estimados.ts:405 apps/web/lib/evt-cambios.ts:49 apps/web/lib/evt-cambios.ts:78 apps/web/lib/evt-cambios.ts:104 apps/web/lib/evt-cambios.ts:230 apps/web/lib/evt-publico.ts:152 apps/web/lib/evt-publico.ts:171 apps/web/lib/evt-publico.ts:186 apps/web/lib/evt-publico.ts:195 apps/web/lib/evt-publico.ts:213 apps/web/lib/evt-publico.ts:225 apps/web/lib/evt-publico.ts:239 apps/web/lib/evt-publico.ts:247 apps/web/lib/evt-publico.ts:254 apps/web/lib/evt-publico.ts:279 apps/web/lib/evt-publico.ts:320 apps/web/lib/evt-publico.ts:391 apps/web/lib/hoy.ts:22 apps/web/lib/inscripciones.ts:238 apps/web/lib/mapa.ts:70 apps/web/lib/mensajes-vecinos.ts:52 apps/web/lib/noche-vigilar.ts:18 apps/web/lib/patrocinio-evento.ts:232 apps/web/lib/patrocinio-evento.ts:315 apps/web/lib/patrocinio-evento.ts:321 apps/web/lib/patrocinio-evento.ts:425 apps/web/lib/patrocinio-evento.ts:465 apps/web/lib/patrocinio-evento.ts:531 apps/web/lib/patrocinio.ts:578 apps/web/lib/patrocinio.ts:596 apps/web/lib/patrocinio.ts:622 apps/web/lib/patrocinio.ts:857 apps/web/lib/resenas.ts:725 scripts/carga/lib/comun.mjs:93
   la consulta entera es una variable que arma el código: 5
-    apps/web/lib/comunidad-portada.ts:70 apps/web/lib/pagos/pasarela.ts:658 scripts/carga/lib/comun.mjs:20 scripts/carga/lib/comun.mjs:36 scripts/carga/lib/comun.mjs:46
+    apps/web/lib/comunidad-portada.ts:70 apps/web/lib/pagos/pasarela.ts:664 scripts/carga/lib/comun.mjs:20 scripts/carga/lib/comun.mjs:36 scripts/carga/lib/comun.mjs:46
   la consulta se pasa como objeto o como llamada: 3
     apps/web/lib/nativo/avisos.ts:36 apps/web/lib/nativo/permisos.ts:19 apps/web/lib/traduccion.ts:67
