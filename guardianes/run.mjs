@@ -11244,10 +11244,20 @@ const guardianes = {
       const escr = rl.filter((l) => /(^|[\s;&|])(install|mv)\s/.test(l));
       const git = rl.filter((l) => /(^|[\s(;&|$])git\s|\$\{GITR\[@\]\}"/.test(l));
       const subGit = [...r.matchAll(/"\$\{GITR\[@\]\}" ([a-z-]+)/g)].map((m) => m[1]);
-      if (escr.length !== 2 || escr[0] !== 'install -m 0755 "$NUEVO" "$DST.rescate"' || escr[1] !== 'mv -f "$DST.rescate" "$DST"' || (r.match(/(^|\s)DST=/gm) ?? []).length !== 1 || !/\nDST="\$M\/usr\/local\/bin\/tolatino-sync"\n/.test(r)
+      if (escr.length !== 3 || escr[0] !== 'install -m 0755 "$NUEVO" "$DST.rescate"' || escr[1] !== 'mv -f "$DST.rescate" "$DST"' || escr[2] !== 'mv -f "$DROPIN.rescate" "$DROPIN"' || (r.match(/(^|\s)DST=/gm) ?? []).length !== 1 || !/\nDST="\$M\/usr\/local\/bin\/tolatino-sync"\n/.test(r)
         || !/\nelif ! grep -q "\$MARCA" "\$NUEVO" \|\| ! bash -n "\$NUEVO"; then\n[^\n]*\nelse\n  install -m 0755 "\$NUEVO" "\$DST\.rescate"\n  mv -f "\$DST\.rescate" "\$DST"\n/.test(r)
         || subGit.some((s) => !["rev-parse", "fsck"].includes(s)) || git.some((l) => !/^(if command -v git >\/dev\/null; then|GITR=\(git -c safe\.directory='\*' -C "\$M\/opt\/tolatino"\)|echo "  \(git no está en el rescate: no se comprueba\)")$|\$\{GITR\[@\]\}"/.test(l)))
         falla(G, RD, 0, "el rescate solo instala tolatino-sync (bash -n y que se destrabe solo, primero; 0755 a un archivo nuevo y mv) y en git solo mira (rev-parse, fsck)");
+      // 28 nov · (3/3) el añadido del temporizador: el MISMO texto que SYNC_TIMER de deploy.sh (con OnBootSec=30), a ese archivo y por archivo nuevo + mv.
+      // Es lo único que el rescate escribe fuera de tolatino-sync; ninguna otra redirección al disco.
+      const dTimer = (/\nSYNC_TIMER=(\$'[^'\n]*')\n/.exec(existsSync("infra/pruebas/deploy.sh") ? readFileSync("infra/pruebas/deploy.sh", "utf8") : "") ?? [])[1];
+      const rTimer = (/\nTIMER_OK=(\$'[^'\n]*')\n/.exec(r) ?? [])[1];
+      const redir = rl.filter((l) => /(^|[\s;&|])\d?>>?\s*"?(\$|\/(?!dev\/null))/.test(l));
+      if ((r.match(/(^|\s)DROPIN=/gm) ?? []).length !== 1 || !/\nDROPIN="\$M\/etc\/systemd\/system\/tolatino-sync\.timer\.d\/intervalo\.conf"\n/.test(r)
+        || !dTimer || rTimer !== dTimer || !/OnBootSec=30/.test(rTimer ?? "")
+        || !/\n  mkdir -p "\$\{DROPIN%\/\*\}"\n  printf '%s\\n' "\$TIMER_OK" > "\$DROPIN\.rescate"\n  mv -f "\$DROPIN\.rescate" "\$DROPIN"\n/.test(r)
+        || redir.some((l) => l !== `printf '%s\\n' "$TIMER_OK" > "$DROPIN.rescate"`))
+        falla(G, RD, 0, "el rescate deja el añadido del temporizador con el MISMO texto que SYNC_TIMER de deploy.sh (con OnBootSec=30), en tolatino-sync.timer.d/intervalo.conf, por archivo nuevo y mv; ninguna otra escritura al disco");
       if (!/\n  trap 'sync; \[ "\$MONTADO" = 1 \] && umount "\$M" && echo "== desmontado"' EXIT\n/.test(r) || (r.match(/\bmount\b(?! -o ro "\$p")/g) ?? []).length !== 1 || !/\n  mount "\$RAIZ" "\$M"; MONTADO=1\n/.test(r))
         falla(G, RD, 0, "el script de disco del rescate desmonta siempre al salir (trap … EXIT) y solo monta la raíz del servidor");
     }
@@ -11474,8 +11484,18 @@ const guardianes = {
     if (/^\s*(ARG|ENV)\s+NEXT_SERVER_ACTIONS_ENCRYPTION_KEY\b|NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=["']?[A-Za-z0-9+/]{8,}/m.test(df)) falla(G, DF, 0, "la llave de las acciones del servidor nunca va escrita en la receta (ni ARG ni ENV ni un valor): nace en la caché del servidor");
     for (const f of archivos) if (f !== DF && f !== "guardianes/run.mjs" && !f.startsWith("pruebas/alreves/") && /\.(sh|ya?ml|conf|env|mjs|cjs|js|ts|tsx|json)$|Dockerfile$/.test(f) && /NEXT_SERVER_ACTIONS_ENCRYPTION_KEY\s*[:=]\s*["']?[A-Za-z0-9+/]{8,}/.test(readFileSync(f, "utf8"))) falla(G, f, 0, "una llave de las acciones del servidor escrita en el repo (es pública)");
     if (/build web[^\n]*--no-cache|--no-cache[^\n]*build web/.test(d) || /builder prune|buildx prune/.test(d)) falla(G, D, 0, "deploy.sh construye con su caché: sin --no-cache y sin borrar la caché de builds (eso solo lo hace disco_liberar, pasado el 85 %)");
-    if (!/SYNC_TIMER=\$'\[Timer\]\\nOnUnitActiveSec=\\nOnUnitActiveSec=20\\nAccuracySec=1s'/.test(d) || !/systemctl daemon-reload && systemctl restart tolatino-sync\.timer/.test(d))
-      falla(G, D, 0, "deploy.sh deja tolatino-sync cada 20 s con AccuracySec=1s en la máquina viva (añadido de systemd; antes 60 s y hasta ~2 min de espera)");
+    if (!/SYNC_TIMER=\$'\[Timer\]\\nOnUnitActiveSec=\\nOnBootSec=30\\nOnUnitActiveSec=20\\nAccuracySec=1s'/.test(d) || !/systemctl daemon-reload && systemctl restart tolatino-sync\.timer/.test(d))
+      falla(G, D, 0, "deploy.sh deja tolatino-sync cada 20 s con AccuracySec=1s en la máquina viva (añadido de systemd; antes 60 s y hasta ~2 min de espera) y que arranque 30 s después de cada reinicio (OnBootSec=30)");
+    // 28 nov · En systemd un «On…Sec=» o «OnCalendar=» vacío borra TODOS los disparos del temporizador (también el OnBootSec del archivo base): sin volver
+    // a ponerlo después, tras un reinicio el temporizador no se dispara nunca (el sandbox quedó parado del 26 al 28 nov). Vale para cualquier añadido de
+    // temporizador escrito en la infraestructura (deploy.sh, cloud-init, scripts), del sandbox o de producción.
+    for (const f of archivos.filter((x) => /^(infra|scripts)\//.test(x) && /\.(sh|ya?ml|conf|timer)$|tolatino-sync$/.test(x) && existsSync(x))) {
+      const t = readFileSync(f, "utf8").replace(/\\n/g, "\n");
+      for (const m of t.matchAll(/^\s*(On(?:Active|Boot|Startup|UnitActive|UnitInactive)Sec|OnCalendar)=\s*$/gm)) {
+        const resto = t.slice(m.index + m[0].length, m.index + m[0].length + 400);
+        if (!/^\s*OnBootSec=\d/m.test(resto.split(/\[(?:Unit|Install|Service)\]|'/)[0])) falla(G, f, 0, `un «${m[1]}=» vacío borra todos los disparos del temporizador, también el OnBootSec: hay que volver a poner OnBootSec=… justo después (si no, tras un reinicio no se dispara nunca)`);
+      }
+    }
     const ci = existsSync(CI) ? readFileSync(CI, "utf8") : "";
     if (!/\n      OnUnitActiveSec=20\n      AccuracySec=1s\n/.test(ci)) falla(G, CI, 0, "el cloud-init del sandbox nace con tolatino-sync cada 20 s y AccuracySec=1s");
   },

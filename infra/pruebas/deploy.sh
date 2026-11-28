@@ -46,8 +46,12 @@ esac
 # 1b) 23 nov · tolatino-sync cada 20 s y a su hora. Antes: cada 60 s con la precisión por omisión de systemd (AccuracySec=1min), así que un push esperaba
 #     hasta ~2 min a que el servidor se enterara. Cada vuelta sin cambios es un «git fetch» y nada más (el candado impide que dos se pisen). El temporizador
 #     nació con el cloud-init (que ya trae esto para una máquina nueva); aquí se ajusta la viva con un añadido de systemd, solo si cambió. Nunca corta.
+#     28 nov · OJO: en systemd, un «OnUnitActiveSec=» vacío borra TODOS los disparos del temporizador, también el «OnBootSec=30» del archivo base. Sin
+#     él, tras un reinicio el temporizador no vuelve a dispararse nunca (OnUnitActiveSec cuenta desde la última vuelta, y tras arrancar no hubo
+#     ninguna): el sandbox quedó parado del 26 al 28 nov por el reinicio automático de las 04:30. Por eso el añadido vuelve a poner OnBootSec=30
+#     después del borrado (guardián despliegueCorto; el rescate escribe este mismo texto: sandboxSeArreglaSolo).
 SYNC_DROPIN=/etc/systemd/system/tolatino-sync.timer.d/intervalo.conf
-SYNC_TIMER=$'[Timer]\nOnUnitActiveSec=\nOnUnitActiveSec=20\nAccuracySec=1s'
+SYNC_TIMER=$'[Timer]\nOnUnitActiveSec=\nOnBootSec=30\nOnUnitActiveSec=20\nAccuracySec=1s'
 if [ "$(cat "$SYNC_DROPIN" 2>/dev/null || true)" != "$SYNC_TIMER" ]; then
   { mkdir -p "${SYNC_DROPIN%/*}" && printf '%s\n' "$SYNC_TIMER" > "$SYNC_DROPIN" && systemctl daemon-reload && systemctl restart tolatino-sync.timer \
     && log "tolatino-sync: cada 20 s (AccuracySec=1s)"; } || log "tolatino-sync: no se pudo ajustar el temporizador (sigue el de antes)"

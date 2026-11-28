@@ -7,7 +7,7 @@
 //   de rescate imprime la contraseña, no la enmascara, corre solo o sin confirmar, con otro token u otro servidor, no vuelve a normal o borra de más.
 //   (26 nov, modo llave) la privada se imprime, va a un artefacto o a git; el trabajo usa el entorno «ensayo» o el token; empuja a otra rama o no
 //   borra la suya; el modo por defecto deja de ser «llave»; manda una orden suelta al rescate; el script de disco borra de más, instala otra cosa o
-//   sin bash -n, o no desmonta.
+//   sin bash -n, o no desmonta. (28 nov) El rescate escribe el añadido del temporizador con otro texto que deploy.sh, o escribe algo más en el disco.
 //   migracionConTransaccion · una migración nueva sin begin/commit, o con «index concurrently» dentro; el encabezado de migrar.sh vuelve a decir que
 //   todas traen begin/commit.
 //   migrarUnaLectura · migrar.sh vuelve a preguntar archivo por archivo; aplica sin anotar en la misma sesión o sin comprobar que quedó anotada; la
@@ -26,7 +26,8 @@
 //   pruebasInfraAisladas (tanda 5b) · «aislado» sin red aparte o sin tapar /opt; una prueba que vuelve a «unshare» suelto; la del tolatino-sync sin
 //   aislar_exige; correr.sh corre las que despliegan aunque el aislamiento no pase.
 //   despliegueCorto (23 nov) · la imagen sin la caché de pnpm o de .next, «COPY . .» antes de instalar, sin la llave estable (o sin renovarla), la llave
-//   escrita en la receta o en el repo, deploy.sh con --no-cache, tolatino-sync de vuelta a 60 s (en la máquina viva o en el cloud-init).
+//   escrita en la receta o en el repo, deploy.sh con --no-cache, tolatino-sync de vuelta a 60 s (en la máquina viva o en el cloud-init). (28 nov) El
+//   añadido del temporizador sin OnBootSec después del borrado (en deploy.sh o en cualquier archivo de la infraestructura).
 //   vistaPreviaRetirada (24 nov) · vuelve la carpeta del sitio de vista previa, su puerto (8081), el de su servidor (3010) o un «next dev» en la
 //   infraestructura, algo que la nombra fuera del paso de limpieza; el paso de limpieza sin el contenedor, la imagen, una ruta o «drop owned by», con un
 //   «drop»/«rm -rf» de más, con exit, sin comprobar que el usuario existe, llamado sin «|| log» o después de nginx.
@@ -246,6 +247,12 @@ const casos = [
   ['despliegueCorto', D, '  if ! "${COMPOSE[@]}" build web; then', '  if ! "${COMPOSE[@]}" build web --no-cache; then', 'sin --no-cache'],
   ['despliegueCorto', D, 'OnUnitActiveSec=20\\nAccuracySec=1s', 'OnUnitActiveSec=60', 'cada 20 s con AccuracySec=1s'],
   ['despliegueCorto', 'infra/pruebas/cloud-init.yml', '      OnUnitActiveSec=20\n      AccuracySec=1s\n', '      OnUnitActiveSec=60\n', 'el cloud-init del sandbox nace'],
+  // 28 nov · el añadido del temporizador vuelve a borrar el OnBootSec (el sandbox no se dispara tras un reinicio), en deploy.sh o en cualquier otro
+  // archivo de la infraestructura; el rescate escribe otro texto que deploy.sh o escribe algo más en el disco.
+  ['despliegueCorto', D, '\\nOnBootSec=30\\nOnUnitActiveSec=20', '\\nOnUnitActiveSec=20', 'que arranque 30 s después de cada reinicio'],
+  ['despliegueCorto', 'infra/pruebas/zz-alreves.timer', null, '[Timer]\nOnUnitActiveSec=\nOnUnitActiveSec=20\n[Install]\nWantedBy=timers.target\n', 'borra todos los disparos del temporizador'],
+  ['sandboxSeArreglaSolo', RD, "TIMER_OK=$'[Timer]\\nOnUnitActiveSec=\\nOnBootSec=30\\n", "TIMER_OK=$'[Timer]\\nOnUnitActiveSec=\\n", 'el MISMO texto que SYNC_TIMER de deploy.sh'],
+  ['sandboxSeArreglaSolo', RD, '  mv -f "$DROPIN.rescate" "$DROPIN"\n', '  mv -f "$DROPIN.rescate" "$DROPIN"\n  echo "[Timer]" > "$DROPIN.otro"\n', 'ninguna otra escritura al disco'],
   // 24 nov · vistaPreviaRetirada: la vista previa vuelve por la puerta de atrás o el paso de limpieza de deploy.sh deja de limpiar, toca de más o corta.
   ['vistaPreviaRetirada', 'infra/pruebas/vista-previa', null, 'VISTA_ENCENDIDA=1\n', 'su carpeta no vuelve'],
   ['vistaPreviaRetirada', N, '    listen 80 default_server;\n', '    listen 80 default_server;\n    listen 8081;\n', 'ni su puerto (8081)'],

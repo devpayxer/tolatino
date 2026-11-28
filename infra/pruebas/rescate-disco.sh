@@ -5,7 +5,9 @@
 # El argumento es el tolatino-sync del checkout del repo (el flujo copia antes los dos a /tmp del rescate).
 # (1) busca la partición ext4 con /opt/tolatino/.git y la monta en /mnt/tl; (2) imprime el diagnóstico; (3) borra SOLO los *.lock de /opt/tolatino/.git;
 # (4) si el /usr/local/bin/tolatino-sync instalado es el de antes del 26 nov (no se destraba solo), instala el nuevo (bash -n primero, 0755, cambio
-# atómico con mv); (5) sync y desmonta. Nada más: ni la base, ni el resto de /opt/tolatino, ni systemd. Guardián: sandboxSeArreglaSolo.
+# atómico con mv); (5) (28 nov) deja el añadido del temporizador de tolatino-sync con «OnBootSec=30» (el de deploy.sh, mismo texto: sin él, tras un
+# reinicio el temporizador no vuelve a dispararse; archivo nuevo y mv); (6) sync y desmonta. Nada más: ni la base, ni el resto de /opt/tolatino, ni
+# otro archivo de systemd. Guardián: sandboxSeArreglaSolo.
 # Prueba en local: RESCATE_RAIZ=DIR hace de disco ya montado (no busca, no monta, no desmonta).
 set -euo pipefail
 NUEVO=${1:?falta la ruta del tolatino-sync nuevo}
@@ -39,6 +41,11 @@ echo "== tolatino-sync.timer: systemctl is-enabled (del sistema montado)"; syste
 echo "== enlaces de tolatino-sync en /etc/systemd"
 find "$M/etc/systemd" -name 'tolatino-sync*' -printf '%p -> %l\n' 2>/dev/null | sed "s|^$M||" || true
 [ -L "$M/etc/systemd/system/timers.target.wants/tolatino-sync.timer" ] || echo "(tolatino-sync.timer NO está habilitado: falta el enlace en timers.target.wants)"
+echo "== tolatino-sync: el temporizador, el servicio y sus añadidos"
+for f in "$M"/etc/systemd/system/tolatino-sync.timer "$M"/etc/systemd/system/tolatino-sync.timer.d/*.conf "$M"/etc/systemd/system/tolatino-sync.service.d/*.conf; do
+  [ -f "$f" ] || continue; echo "-- ${f#"$M"}"; cat "$f"
+done
+echo "== journal de tolatino-sync (último arranque, 30 líneas)"; journalctl -D "$M/var/log/journal" -b 0 -u tolatino-sync.timer -u tolatino-sync.service --no-pager 2>/dev/null | tail -n 30 || true
 echo "== /var/lib/tolatino/*"; ls -la "$M/var/lib/tolatino" 2>/dev/null || echo "(no existe)"
 for f in "$M"/var/lib/tolatino/*; do
   [ -f "$f" ] || continue
@@ -75,4 +82,17 @@ else
   install -m 0755 "$NUEVO" "$DST.rescate"
   mv -f "$DST.rescate" "$DST"
   echo "== tolatino-sync: instalado el del repo (sha256 $(sha256sum "$DST" | cut -d' ' -f1), modo $(stat -c %a "$DST"))"
+fi
+
+# Lo ÚNICO que se cambia (3/3, 28 nov): el añadido del temporizador. El de antes («OnUnitActiveSec=» vacío y 20 s) borraba también el OnBootSec=30 del
+# archivo base, así que tras un reinicio tolatino-sync no volvía a correr. Mismo texto que SYNC_TIMER en deploy.sh (así deploy.sh no lo reescribe).
+DROPIN="$M/etc/systemd/system/tolatino-sync.timer.d/intervalo.conf"
+TIMER_OK=$'[Timer]\nOnUnitActiveSec=\nOnBootSec=30\nOnUnitActiveSec=20\nAccuracySec=1s'
+if [ "$(cat "$DROPIN" 2>/dev/null || true)" = "$TIMER_OK" ]; then
+  echo "== temporizador: el añadido ya vuelve a arrancar tras un reinicio; no se toca"
+else
+  mkdir -p "${DROPIN%/*}"
+  printf '%s\n' "$TIMER_OK" > "$DROPIN.rescate"
+  mv -f "$DROPIN.rescate" "$DROPIN"
+  echo "== temporizador: añadido escrito (arranca 30 s después de cada reinicio y después cada 20 s)"
 fi

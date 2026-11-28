@@ -9,7 +9,12 @@ _Manual interno de incidentes (9o; fase9-apertura.md §3.4). No es ayuda de El C
 - En el flujo **Estado del sandbox** (`estado-sandbox.yml`, a mano o cada 6 h): el paso «Salud» da un commit viejo y el paso «Página de estado» muestra una hora vieja o, desde el 26 nov, un recuadro «**No se puede bajar la rama pruebas** desde … · vueltas fallidas seguidas: N · Motivo: …» con lo que dijo git.
 - Antes del 26 nov no se veía nada más: la vuelta salía sin reescribir `/estado/` y la página se quedaba con su hora y sus líneas de antes.
 
-## Causa del 26 nov
+## Causa real del 26 nov (hallada el 28 nov con el rescate)
+- **No eran los candados.** El rescate del 28 nov no encontró ningún `*.lock` y el `.git` estaba sano (HEAD = `origin/pruebas` = 87e7dc2e): `tolatino-sync` no había vuelto a correr ni una vez desde las 04:09 EST del 26 nov.
+- El añadido del temporizador que `deploy.sh` escribe desde el 23 nov (`tolatino-sync.timer.d/intervalo.conf`: `OnUnitActiveSec=` vacío y después `OnUnitActiveSec=20`) **borraba también el `OnBootSec=30` del archivo base**: en systemd, un `On…Sec=` vacío vacía TODOS los disparos del temporizador. Mientras la máquina no se reiniciaba no se notaba (el servicio ya había corrido y `OnUnitActiveSec` contaba desde ahí). El reinicio automático de las 04:30 EST del 26 nov dejó un temporizador sin nada que lo dispare: tras arrancar no hubo «última vuelta» de la que contar 20 s.
+- Arreglo (28 nov): el añadido vuelve a poner `OnBootSec=30` después del borrado (`deploy.sh`, guardián `despliegueCorto`, que además prohíbe en toda la infraestructura un `On…Sec=` vacío sin `OnBootSec` después); el rescate escribe ese mismo añadido en el disco (guardián `sandboxSeArreglaSolo`: mismo texto que `deploy.sh`, archivo nuevo y `mv`, ninguna otra escritura) e imprime el temporizador, sus añadidos y el journal de `tolatino-sync` del último arranque. Producción no tenía el problema (su temporizador nace del cloud-init con `OnBootSec=30` y nadie lo reescribe).
+
+## Lo que se creyó primero (26 nov)
 - El reinicio automático de las actualizaciones (`Unattended-Upgrade::Automatic-Reboot-Time "04:30"`, en `infra/pruebas/cloud-init.yml`) cortó un `git fetch --depth 50` a medias y dejó un candado (`.git/shallow.lock`) en `/opt/tolatino`. Desde ahí cada fetch fallaba con «File exists» y `tolatino-sync` hacía `exit 0` antes de escribir `/estado/`. Última página: 04:29 EST; último despliegue OK: 04:09 EST.
 
 ## Qué hace el sistema solo (desde el 26 nov)
